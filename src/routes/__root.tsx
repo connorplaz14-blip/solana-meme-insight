@@ -16,6 +16,7 @@ import { SideNav } from "@/components/layout/SideNav";
 import { TokenDetailProvider } from "@/components/token/TokenDetailProvider";
 import { CommandPaletteProvider } from "@/components/layout/CommandPaletteContext";
 import { CommandPalette } from "@/components/layout/CommandPalette";
+import { MobileNavProvider } from "@/components/layout/MobileNavContext";
 
 function NotFoundComponent() {
   return (
@@ -106,6 +107,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <TokenDetailProvider>
+        <MobileNavProvider>
         <CommandPaletteProvider>
           <div className="min-h-screen flex flex-col bg-background text-foreground">
             <MarketTape />
@@ -118,6 +120,7 @@ function RootComponent() {
           </div>
           <CommandPalette />
         </CommandPaletteProvider>
+        </MobileNavProvider>
       </TokenDetailProvider>
     </QueryClientProvider>
   );
