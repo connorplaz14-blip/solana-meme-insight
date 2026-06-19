@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useMacro, useMemeOfTheDay, useNarratives } from "@/lib/data";
 import { fmtUsd, fmtPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -9,7 +10,7 @@ function Tone({ pct }: { pct: number }) {
   return <span className={cn("font-mono", tone)}>{fmtPct(pct)}</span>;
 }
 
-function Cell({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
+function Cell({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
   return (
     <div className="flex flex-col justify-center px-3 h-full border-r border-border shrink-0 min-w-[112px]">
       <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
