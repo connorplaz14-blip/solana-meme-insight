@@ -3,10 +3,13 @@ import type {
   MarketPulseSnapshot,
   NarrativeReport,
   ProviderInfo,
+  PumpLaunch,
   SolMarket,
   Token,
+  WalletPnLResult,
 } from "@/types";
 import { providers as providerCatalog } from "@/mocks/providers";
+import { sampleWallet } from "@/mocks/wallet-pnl";
 
 export const getSolMarketFn = createServerFn({ method: "GET" }).handler(async (): Promise<SolMarket> => {
   const { withCache } = await import("./cache.server");
