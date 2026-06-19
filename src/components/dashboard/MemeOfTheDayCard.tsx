@@ -65,7 +65,7 @@ export function MemeOfTheDayCard({ expanded = false }: { expanded?: boolean }) {
         <div className="border-t border-border pt-3">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] uppercase tracking-wider text-info">AI Summary</span>
-            <SourceBadge source="mock" />
+            <SourceBadge source="dexscreener" />
           </div>
           <p className="text-[12px] text-foreground/80 leading-relaxed">{t.aiSummary}</p>
         </div>

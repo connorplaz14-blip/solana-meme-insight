@@ -1,7 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
-import { mockAdapter } from "./adapters/mock";
+import { liveAdapter } from "./adapters/live";
 
-const adapter = mockAdapter;
+// Phase 2: real DexScreener + CoinGecko + Lovable AI behind a server-fn boundary.
+// Swap to `mockAdapter` from "./adapters/mock" if a provider goes down.
+const adapter = liveAdapter;
 
 export type DataState<T> = {
   data: T | null;

@@ -1,107 +1,140 @@
 
-# MemeDesk — Phase 1 Build Plan
+# MemeDesk Phase 2 — Real Data + AI Narratives
 
-Build a complete, professional-looking **frontend shell** for a Solana memecoin intelligence terminal, powered entirely by mock data and structured for future Lovable Cloud + Edge Function integration. No trading, no key handling, no scraping in Phase 1.
+Goal: move MemeDesk from a 100% mock dashboard to real Solana market data + AI-generated narrative summaries, without changing any UI components. All keys stay server-side. The mock adapter remains as a fallback.
 
-## Scope (Phase 1 only)
+## What goes live in Phase 2
 
-- Frontend-only. All data comes from typed mock modules.
-- No backend enabled yet. Code is structured so real API providers can be wired in later via Edge Functions.
-- No auth in Phase 1 — settings page shows provider status only.
+| Surface | Provider | Source of truth |
+| --- | --- | --- |
+| SOL market bar (price, 24h, mcap, vol, dominance) | CoinGecko `simple/price` + `global` | Server fn, cached |
+| Trending Solana tokens table | DexScreener `token-profiles/latest/v1` + `tokens/v1/solana/...` | Server fn, cached |
+| Meme of the Day | Derived: top-ranked DexScreener Solana token by composite score | Server fn |
+| Token chart panel | DexScreener pair `priceUsd` history (5m candles, last 24h) | Server fn |
+| Market pulse (gainers / losers / new pairs) | DexScreener Solana feed | Server fn |
+| Narratives feed + daily summary | Lovable AI Gateway (Gemini) over the structured DexScreener payload | Server fn, cached daily |
+| Watchlist token rows | DexScreener bulk token lookup by mint | Server fn |
+| Wallet P&L | Stays mock (Phase 3) — banner already explains this |
+| Settings provider status | Real ping of each server fn (latency + last error) | Server fn |
 
-## Design System
+Out of scope for Phase 2: Pump.fun launchpad data, Birdeye/Vybe wallet indexing, Browserbase scraping, X API. Those stay Phase 3/4 as planned.
 
-Terminal/Bloomberg aesthetic, committed and consistent:
-- Background: near-black (`oklch(0.14 0 0)`), panels charcoal (`oklch(0.18 0 0)`).
-- Thin 1px borders (`oklch(0.28 0 0)`), sharp 2px radius, dense grid layout.
-- Type: **JJB Mono / JetBrains Mono** for numbers + tabular data, **Inter** for prose labels.
-- Accents: muted green `oklch(0.72 0.15 150)` (positive/active), muted blue `oklch(0.68 0.12 230)` (info/links), amber `oklch(0.75 0.16 70)` (warn), red `oklch(0.62 0.22 25)` (negative/risk).
-- All colors as semantic tokens in `src/styles.css` via `@theme inline` — no hardcoded color classes in components.
-- Tabular-nums everywhere numbers appear. Compact spacing scale (4/8/12/16).
-- No gradients, no neon, no cartoon, no hero marketing patterns.
+## Architecture
 
-## Routes (TanStack file-based)
-
-```
-src/routes/
-  __root.tsx              -> terminal shell: top market bar + left nav + outlet
-  index.tsx               -> redirect to /dashboard
-  dashboard.tsx           -> main grid
-  meme-of-the-day.tsx
-  trending.tsx
-  narratives.tsx
-  watchlist.tsx
-  wallet-pnl.tsx
-  settings.tsx
+```text
+React component
+  → src/lib/data hook (useTrending, useSolMarket, …)
+    → liveAdapter (default in Phase 2)
+      → createServerFn RPC (src/lib/data/*.functions.ts)
+        → server-only fetcher (src/lib/data/*.server.ts)
+          → DexScreener / CoinGecko REST
+          → Lovable AI Gateway (Gemini) for narratives
+        → Lovable Cloud (Supabase) cache tables
 ```
 
-Shell (`__root`) provides: fixed top **MarketBar** (SOL price, 24h %, 24h vol, SOL mcap, last-updated, manual refresh), left **SideNav** with route links, dense main content area.
+Key rules:
+- UI never imports providers. It only calls the hooks already in `src/lib/data/index.ts`.
+- The adapter swap is one line: `const adapter = liveAdapter` instead of `mockAdapter`. Mock stays exported so we can flip back per-method during incidents.
+- Every server function returns a plain DTO that matches the existing TypeScript types in `src/types/index.ts`. No type changes in components.
+- DexScreener and CoinGecko are public APIs with no key. Gemini goes through Lovable AI Gateway with the auto-provisioned `LOVABLE_API_KEY`.
+- Caching: every provider response is written to a Supabase table with a TTL. Server fns read from cache first, then refresh in the background if stale. This handles rate limits and provider downtime.
 
-## Components
+## Lovable Cloud + Gemini
 
-Grouped under `src/components/`:
+- Enable Lovable Cloud (creates a Supabase project + auto-provisions `LOVABLE_API_KEY`).
+- No auth is added in Phase 2 — watchlist stays local-storage. The plan keeps the door open for auth later, but it's not built now to avoid scope creep.
 
-- `terminal/` — `Panel`, `PanelHeader`, `StatCell`, `DataTable`, `ChangeCell`, `RiskBadge`, `SourceBadge`, `CopyAddress`, `Sparkline`, `EmptyState`, `RefreshButton`.
-- `dashboard/` — `MarketBar`, `MemeOfTheDayCard`, `TrendingTable`, `MarketPulse`, `NarrativeFeed`, `TokenChartPanel` (Recharts placeholder with 5m/15m/1h/4h/24h tabs and "chart unavailable" state).
-- `watchlist/` — `WatchlistTable`, `AddTokenDialog`.
-- `wallet/` — `WalletScoreCard`, `PnLStats`, `TokenPnLTable`, `ComingSoonBanner`.
-- `settings/` — `ProviderStatusCard` (Live | Mock | Missing | Error, last call, last error, dependent features).
+## Cache tables (Supabase, public schema)
 
-## Mock data layer
+All tables get `GRANT SELECT ON ... TO anon` because reads are public, plus full grants to `service_role` for the server fns. Writes are server-only.
 
-Strict separation so swapping to real APIs is trivial:
+- `provider_cache (key text pk, payload jsonb, fetched_at timestamptz, ttl_seconds int)` — generic KV cache keyed by `provider:fn:args`.
+- `narratives (date date pk, summary text, dominant_theme text, keywords jsonb, sources jsonb, generated_at timestamptz)` — one row per UTC day.
+- `provider_health (provider text pk, last_ok_at timestamptz, last_error text, last_latency_ms int)` — drives the Settings status panel.
 
-```
-src/mocks/
-  sol-market.ts
-  meme-of-the-day.ts
-  trending-tokens.ts
-  narratives.ts
-  watchlist.ts
-  wallet-pnl.ts
-  providers.ts
-src/types/
-  token.ts, market.ts, narrative.ts, wallet.ts, provider.ts
+RLS: enabled, anon `SELECT` only. No anon writes. All inserts/updates run via `supabaseAdmin` inside server fns.
+
+## New files
+
+```text
 src/lib/data/
-  index.ts          -> provider-agnostic data hooks (useTrending, useSolMarket…)
-  adapters/mock.ts  -> reads from src/mocks
-  adapters/README.md -> how to add a real adapter later
+  adapters/
+    mock.ts                (kept)
+    live.ts                (new — wires hooks to server fns)
+  providers/
+    dexscreener.server.ts  (REST client, score + chart derivation)
+    coingecko.server.ts    (REST client for SOL market)
+    gemini.server.ts       (Lovable AI Gateway provider helper)
+  cache.server.ts          (read/write provider_cache with TTL + SWR)
+  health.server.ts         (record latency/errors into provider_health)
+  sol-market.functions.ts
+  trending.functions.ts
+  meme-of-the-day.functions.ts
+  token-chart.functions.ts
+  market-pulse.functions.ts
+  narratives.functions.ts
+  watchlist-quotes.functions.ts
+  providers.functions.ts
 ```
 
-Hooks return `{ data, status, lastUpdated, refresh }` so a real Edge Function adapter can drop in without component changes.
+`src/lib/data/index.ts` flips to `liveAdapter`. `useWalletPnL` keeps calling the mock adapter explicitly until Phase 3.
 
-## Page details
+## Server-function contracts
 
-- **/dashboard** — 12-col grid: MemeOfTheDay (4 col) + TokenChartPanel (8 col) row; TrendingTable (8 col) + MarketPulse (4 col) row; NarrativeFeed full width.
-- **/meme-of-the-day** — Expanded MemeOfTheDay with token image, name/ticker, contract + copy, mcap, liq, vol, 5m/1h/6h/24h changes, buys/sells, age, RiskBadge, SourceBadges, AI summary, score breakdown.
-- **/trending** — Full TrendingTable with rank, image, name/ticker, short CA + copy, mcap, liq, vol, price changes, txns, age, source, risk, watchlist toggle; sort, search, filters (source, risk, age).
-- **/narratives** — AI daily summary card, dominant theme, fastest-growing meta, repeated keywords (chip cloud), notable launches list, risk warnings, source labels. All copy clearly tagged "AI summary (mock)".
-- **/watchlist** — Add/remove UI, table + card view toggle, persisted to `localStorage` for Phase 1.
-- **/wallet-pnl** — Wallet address input (validated format only), score, realised/unrealised P&L, ROI, win rate, avg hold, best/worst trade, token-level P&L table, prominent "Provider integration coming soon" banner.
-- **/settings** — Provider status cards for: DexScreener, CoinGecko, Lovable AI (Gemini), Bitquery, Solana Tracker, Birdeye, Vybe, Browserbase/browser-use/Oxylabs (future scraping), X API (future social). Each shows status, last call, last error, dependent features. All Mock in Phase 1.
+Each fn returns the same shape the matching mock returns today, so components do not change. Each fn:
+1. Computes a cache key.
+2. Reads `provider_cache`; if fresh, returns it.
+3. Otherwise fetches the provider, validates with Zod, writes to cache, updates `provider_health`, returns DTO.
+4. On provider failure: returns the last cached value if any, otherwise throws a typed error the UI already renders via `status: "error"`.
 
-## Docs (committed in repo)
+TTLs:
+- SOL market: 30s
+- Trending / market pulse: 60s
+- Token chart: 60s
+- Meme of the Day: 5 min
+- Narratives: 1 hour (regenerates only if the underlying DexScreener payload hash changed and it's a new UTC day)
+- Watchlist quotes: 30s
 
-- `docs/MEMEDESK_BUILD_PLAN.md` — product goal, user journey, design system, page-by-page spec, phases, security rules, AI rules.
-- `docs/RESEARCH_REFERENCES.md` — distilled findings from the uploaded plan (Lovable, Reddit, GitHub, Gemini, providers).
-- `docs/API_PROVIDER_MATRIX.md` — provider × feature × status × notes table, why API-first beats scraping, abstraction strategy.
+## Meme of the Day scoring
 
-## Guardrails (enforced in code + docs)
+Computed server-side from the DexScreener Solana payload. Composite score:
+- 24h volume (log-scaled, 30%)
+- Liquidity USD (log-scaled, 20%)
+- 24h price change capped at ±300% (20%)
+- Txn count 24h (15%)
+- Age penalty: < 24h gets a slight boost, > 30 days gets a small penalty (15%)
 
-- No private-key handling, no signing, no swap/trade routes anywhere.
-- No frontend scraping. No third-party API keys in client code.
-- AI rule: summaries operate only on structured data; Phase 1 AI text is clearly labelled mock.
-- Provider abstraction prevents single-vendor lock-in.
+Top token by score becomes Meme of the Day. The breakdown is returned so the existing `MemeOfTheDayCard` shows real numbers. Risk badge stays a simple heuristic (low liquidity + very young + extreme change → high risk).
 
-## Out of scope (Phase 1)
+## Narratives via Lovable AI
 
-- Real API calls, Lovable Cloud, Edge Functions, auth, scraping jobs, X scanning, real wallet indexing, real charts (placeholder Recharts only).
+- Daily server fn `generateDailyNarrative` reduces the top 30 trending tokens to a strict JSON payload (symbol, name, mcap, vol24h, change24h, age).
+- Calls Gemini via Lovable AI Gateway with `output: Output.object({ schema })` — narrative summary, dominant theme, 5 keyword tags, 3 risk callouts.
+- System prompt forbids inventing metrics — model may only summarize the provided payload.
+- Result is stored in `narratives` with the payload hash. UI reads it; never calls Gemini directly.
 
-## Technical notes
+## Settings page
 
-- Stack: React 19 + TanStack Start + Tailwind v4 + shadcn + Recharts (already installed or add via `bun add recharts`).
-- Tokens defined in `src/styles.css` under `:root` + `@theme inline`; load JetBrains Mono + Inter via `<link>` in `__root.tsx` head.
-- File-based routes with correct `createFileRoute("/path")` strings; each route sets its own `head()` meta.
-- Strict TS, no unresolved imports, no placeholder index page left behind.
+`useProviders` switches to `getProvidersStatus` which reads `provider_health` and returns one row per provider with: status (ok/degraded/down/mock), last latency, last error, last success time. DexScreener / CoinGecko / Gemini show real status. Bitquery / Solana Tracker / Birdeye / Vybe / Browserbase / X stay "Not configured" until later phases.
 
-Ready to implement on approval.
+## Verification
+
+- Type-check passes after the adapter swap (component prop shapes already match).
+- `/dashboard` shows real SOL price + a real Solana token list.
+- `/narratives` shows a Gemini-generated summary scoped to today.
+- Disable network on the DexScreener fetcher and confirm the UI shows cached values + a degraded badge in Settings.
+- Confirm no `LOVABLE_API_KEY` or provider key reference exists in any client bundle (grep `src/components`, `src/routes`).
+
+## Out of scope (still mock after Phase 2)
+
+- Wallet P&L (Phase 3 — Birdeye/Vybe/Solana Tracker)
+- Pump.fun launches (Phase 3 — Bitquery/Solana Tracker)
+- X / CT scanning + Browserbase scraping (Phase 4)
+- Auth + per-user watchlists (deferred; watchlist remains in localStorage)
+
+## Risks and mitigations
+
+- **DexScreener rate limits.** Mitigated by `provider_cache` TTL + single shared server-side fetch path.
+- **CoinGecko free-tier throttling.** Cached 30s, single SOL+global call.
+- **Gemini cost / latency.** Narratives generated at most once per hour and short-circuited if the input hash is unchanged.
+- **SSR loader auth.** All Phase 2 server fns are unauthenticated read-only — safe to call from public route loaders during prerender.

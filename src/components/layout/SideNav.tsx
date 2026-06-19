@@ -21,7 +21,7 @@ export function SideNav() {
           Solana · Memecoin Intel
         </div>
         <div className="font-mono text-[10px] text-pos mt-0.5 flex items-center gap-1">
-          <Flame className="h-3 w-3" /> Phase 1 · Mock data
+          <Flame className="h-3 w-3" /> Phase 2 · Live data
         </div>
       </div>
       <ul className="flex-1 py-2">
