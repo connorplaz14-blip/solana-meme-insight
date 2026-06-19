@@ -102,7 +102,7 @@ export async function getOrGenerateNarrative(tokens: Token[]): Promise<Narrative
         name: l.name,
         symbol: l.symbol,
         address: l.address,
-        note: `${l.ageHours < 1 ? `${Math.round(l.ageHours * 60)}m` : `${l.ageHours.toFixed(1)}h`} old · liq ${Math.round(l.liquidityUsd / 1000)}k · ${l.change24hPct.toFixed(1)}% 24h`,
+        note: `${fmtAge(l.ageHours)} old · liq ${Math.round(l.liquidityUsd / 1000)}k · ${l.change24hPct.toFixed(1)}% 24h`,
       }));
     } catch {
       notable = [];

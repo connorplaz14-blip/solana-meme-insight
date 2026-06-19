@@ -62,7 +62,7 @@ function toToken(p: DsPair, rank: number): Token {
       h24: change24,
     },
     txns: { buys24h: num(p.txns?.h24?.buys), sells24h: num(p.txns?.h24?.sells) },
-    ageHours: Math.round(ageHours),
+    ageHours: Math.round(ageHours * 10) / 10,
     risk: pickRisk(liq, ageHours, change24),
     sources: ["dexscreener"],
   };
