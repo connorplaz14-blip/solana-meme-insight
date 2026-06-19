@@ -17,7 +17,7 @@ export function MemeOfTheDayCard({ expanded = false }: { expanded?: boolean }) {
         right={<span className="font-mono">Score <span className="text-pos">{t.score}</span>/100</span>} />
       <PanelBody className="space-y-3">
         <div className="flex items-center gap-3">
-          <TokenAvatar symbol={t.symbol} size={40} />
+          <TokenAvatar symbol={t.symbol} size={40} logoUrl={t.logoUrl} />
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-base font-medium">{t.name}</span>
