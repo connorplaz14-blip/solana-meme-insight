@@ -1,55 +1,52 @@
-## Phase 3 scope
+## Goal
 
-Per `docs/MEMEDESK_BUILD_PLAN.md`, Phase 3 has two live-data goals (Gemini narratives already shipped in Phase 2):
+Stop reinventing trending/launches tables. Compose the dashboard out of best-in-class third-party embeds, and add a Pump.fun-flavoured chart tab next to the existing DexScreener chart.
 
-1. **Pump.fun launches** — replace the mock `notable_launches` / launches feed with a real on-chain source.
-2. **Wallet P&L** — replace the mock `/wallet-pnl` page with a real wallet portfolio + P&L lookup.
+## 1. TokenDetailProvider — add "PF Chart" tab
 
-Both require third-party API keys you'll need to provide. I'll recommend one provider per slot (cheapest path to "live"); you can swap to the alternate later.
+`src/components/token/TokenDetailProvider.tsx` currently has two tabs (Chart, Transactions). Add a third:
 
-## Recommended providers
+- **PF Chart** — iframe `https://www.gmgn.cc/kline/sol/{address}` (GMGN's pump.fun-aware k-line + trades, no API key). Order: Chart (DexScreener) → PF Chart (GMGN) → Transactions (DexScreener trades).
+- Footer of modal keeps existing "Open ↗" link, plus a new "Open on Pump.fun ↗" → `https://pump.fun/{address}`.
 
-| Slot | Recommended | Alternative | Why |
-| --- | --- | --- | --- |
-| Pump.fun launches | **Solana Tracker** (`/tokens/latest`, `/tokens/trending`) | Bitquery GraphQL | Simple REST, generous free tier, no GraphQL wiring |
-| Wallet P&L | **Birdeye** (`/v1/wallet/token_list`, `/defi/portfolio`) | Vybe Network | Mature wallet endpoints, single API key |
+Every clickable token in the app (TrendingTable, MemeOfTheDayCard, PumpfunLaunches, WatchlistView, future embeds) already routes through this provider, so the new tab is one edit, propagates everywhere.
 
-If you'd rather use Bitquery or Vybe, say so before we add secrets and I'll swap.
+## 2. Replace PumpfunLaunches with DexScreener PF embed
 
-## What gets built
+Drop the Solana-Tracker-powered scored table. Replace with an iframe of the canonical DexScreener Pump.fun page, which already ships Trending / Top / Rising / New / Graduated filters.
 
-### 1. Launches provider
-- New `src/lib/data/providers/solana-tracker.server.ts` with `fetchPumpfunLaunches()` (newest mints + early-momentum scoring: age < 24h, liquidity > $5k, txns > 100).
-- New server fn `getPumpfunLaunchesFn` in `src/lib/data/launches.functions.ts`.
-- Extend `DataAdapter` with `getPumpfunLaunches()`; wire `live.ts` to the server fn and `mock.ts` to existing mock.
-- New hook `usePumpfunLaunches()` in `src/lib/data/index.ts`.
-- Cache 60s via existing `cache.server.ts`; health-ping via `health.server.ts`.
-- Feed real launches into `generateDailyNarrative` payload (replaces the mock `notable_launches` array → Gemini gets real signal).
+- Rewrite `src/components/dashboard/PumpfunLaunches.tsx` body to a `Panel` wrapping `<iframe src="https://dexscreener.com/solana/pumpfun?embed=1&theme=dark" />` at ~640px height, lazy-loaded.
+- Keep the panel header ("Pump.fun · New Pairs") with a source badge.
+- Remove the Solana-Tracker dependency for this widget: delete the `usePumpfunLaunches` hook usage here.
 
-### 2. Wallet P&L provider
-- New `src/lib/data/providers/birdeye.server.ts` with `fetchWalletPortfolio(address)` returning `{ totalUsd, tokens: [{symbol, balance, valueUsd, pnl24hPct, pnlAllUsd}], realizedPnlUsd, unrealizedPnlUsd }`.
-- New server fn `getWalletPnLFn` (input: Solana address, Zod-validated).
-- Replace the mock `getWalletPnL` in `live.ts`; keep mock as fallback when address invalid or provider 4xx.
-- Update `WalletView.tsx` to drop the "Phase 3 mock" banner and surface real source badge + last-updated timestamp. UI shape preserved.
-- Cache 30s per address; health-ping registered.
+## 3. Replace TrendingTable on dashboard + /trending with DexScreener trending embed
 
-### 3. UI surface area (minimal)
-- `/wallet-pnl`: banner says "Live · Birdeye" when data is real, "Mock" on fallback.
-- Dashboard `NarrativeFeed` / `notable_launches` block: now real launches with source badge `solana-tracker`.
-- Settings provider matrix: Solana Tracker + Birdeye move from MISSING → LIVE (or MOCK if key not set).
+- New component `src/components/dashboard/DexScreenerEmbed.tsx` — generic iframe wrapper (`src`, `title`, `height`).
+- `/dashboard` row that currently renders `<TrendingTable limit={8} dense />` → render `<DexScreenerEmbed src="https://dexscreener.com/solana?rankBy=trendingScoreH6&order=desc&embed=1&theme=dark" title="Trending · Solana" height={520} />`.
+- `/trending` route swaps the custom table for the same embed at full height (~80vh).
+- Keep `TrendingTable.tsx` file in place but unused — easy to revert. If you want a hard delete, say so and I'll remove it + the `getTrendingFn` server fn.
 
-### 4. Secrets (you provide)
-After you confirm provider choice I'll request via `add_secret`:
-- `SOLANA_TRACKER_API_KEY` — get from solanatracker.io dashboard (free tier OK).
-- `BIRDEYE_API_KEY` — get from birdeye.so/developers (Standard tier, free).
+## 4. Settings page provider matrix
 
-Until each key is set, that slot stays on the mock adapter automatically (no broken UI).
+Update `src/mocks/providers.ts` to add entries for the embed sources (DexScreener PF page, GMGN kline) and mark them `live` by default — they have no key/health to track.
 
-### Out of scope (stays for Phase 4)
-- Browserbase / Oxylabs / Apify scraping.
-- X (Twitter) API CT scanning.
-- Auth / saved watchlists in DB.
+## 5. Out of scope (kept for later)
 
-## Confirm before I start
-1. OK to use **Solana Tracker** for launches and **Birdeye** for wallet P&L? (or pick alternates)
-2. Do you have both API keys ready, or should I scaffold the code first and request keys once it's wired?
+- Wallet P&L (Birdeye) — untouched, still live.
+- MarketPulse, NarrativeFeed, MemeOfTheDayCard — untouched (they aggregate scores from our own data).
+- Solana Tracker server fn / provider — keeps powering the `notable_launches` slot inside the AI narrative (Section 1 of Phase 3 narrative wiring), so the API key is still useful. We can prune later if you'd rather drop it entirely.
+- Watchlist still uses our `Token` shape (no change).
+
+## Files touched
+
+- Edit: `src/components/token/TokenDetailProvider.tsx` (add PF Chart tab + Open on Pump.fun link)
+- Add: `src/components/dashboard/DexScreenerEmbed.tsx`
+- Rewrite: `src/components/dashboard/PumpfunLaunches.tsx` (iframe-based)
+- Edit: `src/routes/dashboard.tsx` (swap TrendingTable for embed)
+- Edit: `src/routes/trending.tsx` (swap to full-height embed; add a small heading)
+- Edit: `src/mocks/providers.ts` (add gmgn + dexscreener-pumpfun entries)
+
+## Confirm
+
+1. OK to keep `TrendingTable.tsx` + `getTrendingFn` in the repo (unused but available), or delete them?
+2. Any other lists to embed (e.g. DexScreener Gainers/Losers, Most Active) as additional tiles on `/trending`?
