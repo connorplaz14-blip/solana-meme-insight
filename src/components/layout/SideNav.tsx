@@ -1,9 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutGrid, Flame, TrendingUp, Newspaper, Star, Wallet, Settings, Trophy } from "lucide-react";
+import { LayoutGrid, Flame, TrendingUp, Newspaper, Star, Wallet, Settings, Trophy, Coins, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
+  { to: "/coins", label: "Coins", icon: Coins },
+  { to: "/ai", label: "AI Desk", icon: MessageSquare },
   { to: "/meme-of-the-day", label: "Meme of the Day", icon: Trophy },
   { to: "/trending", label: "Trending", icon: TrendingUp },
   { to: "/narratives", label: "Narratives", icon: Newspaper },
