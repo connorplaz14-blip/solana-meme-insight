@@ -1,91 +1,63 @@
-## MemeDesk Cockpit Upgrade — Phased Plan
+# Cockpit Revamp — Tactical Mono, Bloomberg Density
 
-Goal: evolve the current terminal into a Bloomberg-style cockpit. Five phases, each ships independently. **Strict rule: no mock panels.** If a panel doesn't have a real data source already wired (DexScreener, GeckoTerminal, Solana Tracker, CoinGecko, Birdeye, Pump.fun, Lovable AI), it doesn't ship.
+Pure black canvas, sharp white text, phosphor-green / red as the only chromatic accents, mono headings everywhere, 1px borders, ultra-dense panels. Full sweep across every page — no business logic, no data sources change.
 
----
+## Visual system
 
-### Phase 1 — Top market tape + ⌘K command bar
+**Color tokens** (rewrite `src/styles.css` `.dark` block, force dark as the only theme):
+- `--background` `#000000` (pure black, not navy)
+- `--panel` `#0a0a0a`, `--panel-2` `#101010` (slightly lifted strata)
+- `--foreground` `#ffffff` (sharp), `--muted-foreground` `#8a8a8a`
+- `--border` `#1f1f1f` (1px hairlines)
+- `--pos` `#00ff88`, `--neg` `#ff3344`, `--warn` `#ffcc00`, `--info` `#ffffff`
+- `--accent` = `--pos` (phosphor green for active states, focus rings, key indicators)
+- Remove all blue/purple/oklch chart defaults; recolor chart-1..5 to green/red/white/amber/grey
 
-What ships:
-- **Tape strip** pinned above main content on every route: SOL, BTC, ETH spot + 24h%, total crypto 24h vol, SOL 24h vol, Solana network status (TPS / slot health), Fear & Greed index, top 24h meme mover, current dominant narrative.
-- Auto-scrolls on mobile, static grid on desktop. Green/red micro-badges, tabular-nums.
-- **⌘K / Ctrl+K command palette** (shadcn `Command`): jump to any route, search tokens by symbol/CA (DexScreener search API), open wallet by address, jump to a narrative.
-- Recent searches in localStorage. ESC closes. `/` also opens it.
+**Typography** (loaded via `<link>` in `__root.tsx` head):
+- Headings + numbers + tickers: **JetBrains Mono** (400/500/700)
+- Body + descriptions: **Work Sans** (400/500)
+- All prices, %, addresses, timestamps → mono, tabular-nums
+- Uppercase tracking-wide on panel headers, 10–11px
 
-Real data sources:
-- BTC/ETH/SOL + global vol: CoinGecko `/simple/price` + `/global` (already wired).
-- Fear & Greed: `api.alternative.me/fng` (free, no key).
-- Solana TPS/slot: `api.mainnet-beta.solana.com` RPC `getRecentPerformanceSamples`.
-- Top mover + narrative: existing snapshot / narrative provider.
-- Token search: DexScreener `/latest/dex/search`.
+**Density rules**:
+- Base font 12px on panels, 11px on table rows, 10px on labels
+- Row height 24–28px in tables (was 36–48)
+- Panel padding 8px (was 12–16)
+- 1px borders only — no shadows, no rounded > 2px (rounded-none on panels)
+- Hover = 1px green left border + bg lift to `#0f0f0f`
 
-Skipped (no real source today): "gas" on Solana — replaced with priority fee / TPS instead.
+## Files touched
 
----
+**Token + chrome (the multiplier — every page inherits):**
+- `src/styles.css` — rewrite color tokens, font tokens, force `.dark` on `<html>`, kill light mode, add `--pos/--neg/--warn` semantic colors, retune chart palette, add `.tabular-nums` defaults
+- `src/routes/__root.tsx` — JetBrains Mono + Work Sans `<link>` preconnect/stylesheet, force dark class
+- `src/components/terminal/Panel.tsx` — `rounded-none`, 1px borders, denser header (h-7, 10px uppercase)
+- `src/components/terminal/StatCell.tsx`, `ChangeCell.tsx`, `RiskBadge.tsx`, `SourceBadge.tsx` — mono numerals, green/red only, square corners
+- `src/components/layout/SideNav.tsx` — black bg, white text, green active rail, mono labels, denser (40px rows)
+- `src/components/layout/MarketTape.tsx` — black bg, mono tickers, green/red deltas, tighter spacing, 28px height
+- `src/components/layout/CommandPalette.tsx` — black sheet, green caret/active, mono input
 
-### Phase 2 — Cockpit visual pass
+**Page sweeps (visual only — no data changes):**
+- `src/routes/dashboard.tsx` — bento gaps to 1px (hairline grid), denser tiles
+- `src/routes/coins.tsx`, `trending.tsx`, `narratives.tsx`, `watchlist.tsx`, `wallet-pnl.tsx`, `ai.tsx`, `meme-of-the-day.tsx`, `settings.tsx` — panel paddings, table row heights, headline sizes
+- `src/components/dashboard/*` (TrendingTable, PumpfunLaunches, MarketPulse, MemeOfTheDayCard, NarrativeFeed, TokenChartPanel, MarketBar, DexScreenerEmbed) — restyle to mono/dense
+- `src/components/trending/AiTrendingTable.tsx`, `src/components/ai/AiChat.tsx`, `DailyBrief.tsx`, `src/components/wallet/WalletView.tsx`, `src/components/watchlist/WatchlistView.tsx`, `src/components/token/TokenDetailProvider.tsx`, `src/components/settings/ProviderStatusCard.tsx` — same treatment
 
-Tighten the existing screens toward the cockpit aesthetic without adding panels.
-- Near-black bg, graphite panels, 1px hairline borders, glassy headers.
-- Neon accents reserved: green = positive flow, red = sell pressure, amber = warn, blue/violet = AI insight. Strip incidental color use elsewhere.
-- Mono font (JetBrains Mono) locked for prices, tickers, CAs, %, sizes. Sans (existing) for labels.
-- Compact density: row height 28px, header 32px, tabular-nums everywhere.
-- Status rail in sidebar footer: "SYSTEM ONLINE" pulse + per-source dots (reuses health.server.ts).
+**shadcn primitives** lightly touched where they clash:
+- `button.tsx` — add `terminal` variant (square, mono, green hover)
+- `badge.tsx` — square variants for pos/neg/warn
+- `table.tsx` — denser row defaults
+- `input.tsx`, `dialog.tsx`, `command.tsx` — square corners, black surfaces
 
-No new data. No new components — restyle only.
+## Out of scope (this pass)
 
----
+- No new panels, no data source changes, no new routes
+- No mobile bottom-nav rebuild (Phase 4 of the cockpit plan stays separate)
+- No draggable widgets, no chart library swap
+- No light mode — dark is the only theme
 
-### Phase 3 — Dashboard as fixed bento workspace
+## Risk / verification
 
-Rebuild `/dashboard` as a dense bento grid (CSS grid, not draggable). Every tile is backed by a real source we already have, or it's cut.
-
-Tiles (all real data):
-- Tape summary (Phase 1 condensed).
-- **Meme of the Day** (existing).
-- **AI Daily Brief** (existing narrative + snapshot; add "Regenerate" button).
-- **Trending — top 8** (existing DexScreener trending, compact).
-- **Live Pump.fun launches — top 6** (existing).
-- **Watchlist mini** (existing watchlist store, sparklines).
-- **Wallet activity strip** (existing wallet-pnl tracked wallets; latest tx per wallet).
-- **Data source health** (existing health.server.ts: connected / degraded / down).
-
-Cut from the inspiration prompt (no real source wired yet — would require mocks):
-- Orderbook, recent trades, buy/sell pressure meter, holder concentration, LP status, dev/insider wallet card, candlestick chart with RSI/MACD/VWAP, backtests, alert builder. These are tracked in a "Phase 6+" backlog, not built now.
-
----
-
-### Phase 4 — Full mobile reflow + bottom nav
-
-- Replace left rail with bottom tab bar on `<md`: Dashboard, Coins, AI, Watchlist, Wallet. Overflow ("More") opens a sheet with Narratives, Trending, Meme of Day, Settings.
-- Tape strip becomes horizontal scroll-snap row.
-- Bento collapses to single column in this order: Tape → Meme of Day → AI Brief → Trending → Pump launches → Watchlist → Wallet.
-- ⌘K palette becomes a full-screen sheet triggered by a search icon in the top bar.
-- Sticky top bar (44px) with logo + search + notification dot.
-- Safe-area insets respected (env(safe-area-inset-bottom)).
-
----
-
-### Phase 5 — Hardening
-
-- Skeletons on every tile (no spinners).
-- Empty + error states per tile, never a whole-page crash.
-- "DEMO" badge logic removed (we have no mock panels by rule).
-- `prefers-reduced-motion` disables tape scroll + pulses.
-- Lighthouse pass on `/dashboard` mobile + desktop.
-
----
-
-### Technical notes
-
-- New route-agnostic shell component `src/components/layout/CockpitShell.tsx` wraps `<Outlet />` with `<MarketTape />` + `<CommandPalette />`. Mounted in `__root.tsx`.
-- `src/lib/data/providers/macro.server.ts` — new: BTC/ETH/SOL/global vol/FNG/TPS. Cached 30s in-memory.
-- `src/lib/data/providers/solana-rpc.server.ts` — new: RPC client for TPS/slot.
-- `src/components/layout/MarketTape.tsx`, `CommandPalette.tsx`, `BottomNav.tsx`, `StatusRail.tsx` — new.
-- `src/routes/dashboard.tsx` — rewritten as bento grid using existing tile components.
-- `src/styles.css` — add `--font-mono`, tighten density tokens, add cockpit color tokens.
-- No new dependencies expected beyond `cmdk` (already shipped via shadcn Command).
-
-### What I'd build first if you greenlight
-
-Phase 1 only (tape + ⌘K). It's the single highest-impact change and unlocks the cockpit feel before any restyle or restructure. Then we decide Phase 2 vs 3 next.
+- After token rewrite, sweep `rg "text-white|bg-black|bg-\[#"` to catch hardcoded colors that bypass tokens
+- Check every page in preview at 1338px to confirm density reads correctly
+- Watch for shadcn components that hardcode `rounded-md` and break the square aesthetic — patch the primitive, not the consumer
