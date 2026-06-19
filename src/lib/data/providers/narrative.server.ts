@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./gateway.server";
 import type { NarrativeReport, Token } from "@/types";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { fmtAge } from "@/lib/format";
 
 const NarrativeSchema = z.object({
   summary: z.string().describe("2–4 sentence overview of today's Solana memecoin market based ONLY on the provided tokens."),
