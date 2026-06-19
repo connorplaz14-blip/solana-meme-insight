@@ -16,7 +16,10 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as NarrativesRouteImport } from './routes/narratives'
 import { Route as MemeOfTheDayRouteImport } from './routes/meme-of-the-day'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CoinsRouteImport } from './routes/coins'
+import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
@@ -53,14 +56,31 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CoinsRoute = CoinsRouteImport.update({
+  id: '/coins',
+  path: '/coins',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai': typeof AiRoute
+  '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
@@ -68,9 +88,12 @@ export interface FileRoutesByFullPath {
   '/trending': typeof TrendingRoute
   '/wallet-pnl': typeof WalletPnlRoute
   '/watchlist': typeof WatchlistRoute
+  '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai': typeof AiRoute
+  '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
@@ -78,10 +101,13 @@ export interface FileRoutesByTo {
   '/trending': typeof TrendingRoute
   '/wallet-pnl': typeof WalletPnlRoute
   '/watchlist': typeof WatchlistRoute
+  '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai': typeof AiRoute
+  '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
@@ -89,11 +115,14 @@ export interface FileRoutesById {
   '/trending': typeof TrendingRoute
   '/wallet-pnl': typeof WalletPnlRoute
   '/watchlist': typeof WatchlistRoute
+  '/api/chat': typeof ApiChatRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ai'
+    | '/coins'
     | '/dashboard'
     | '/meme-of-the-day'
     | '/narratives'
@@ -101,9 +130,12 @@ export interface FileRouteTypes {
     | '/trending'
     | '/wallet-pnl'
     | '/watchlist'
+    | '/api/chat'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ai'
+    | '/coins'
     | '/dashboard'
     | '/meme-of-the-day'
     | '/narratives'
@@ -111,9 +143,12 @@ export interface FileRouteTypes {
     | '/trending'
     | '/wallet-pnl'
     | '/watchlist'
+    | '/api/chat'
   id:
     | '__root__'
     | '/'
+    | '/ai'
+    | '/coins'
     | '/dashboard'
     | '/meme-of-the-day'
     | '/narratives'
@@ -121,10 +156,13 @@ export interface FileRouteTypes {
     | '/trending'
     | '/wallet-pnl'
     | '/watchlist'
+    | '/api/chat'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiRoute: typeof AiRoute
+  CoinsRoute: typeof CoinsRoute
   DashboardRoute: typeof DashboardRoute
   MemeOfTheDayRoute: typeof MemeOfTheDayRoute
   NarrativesRoute: typeof NarrativesRoute
@@ -132,6 +170,7 @@ export interface RootRouteChildren {
   TrendingRoute: typeof TrendingRoute
   WalletPnlRoute: typeof WalletPnlRoute
   WatchlistRoute: typeof WatchlistRoute
+  ApiChatRoute: typeof ApiChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -185,6 +224,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coins': {
+      id: '/coins'
+      path: '/coins'
+      fullPath: '/coins'
+      preLoaderRoute: typeof CoinsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -192,11 +245,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiRoute: AiRoute,
+  CoinsRoute: CoinsRoute,
   DashboardRoute: DashboardRoute,
   MemeOfTheDayRoute: MemeOfTheDayRoute,
   NarrativesRoute: NarrativesRoute,
@@ -204,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrendingRoute: TrendingRoute,
   WalletPnlRoute: WalletPnlRoute,
   WatchlistRoute: WatchlistRoute,
+  ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
