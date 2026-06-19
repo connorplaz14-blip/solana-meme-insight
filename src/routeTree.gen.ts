@@ -16,6 +16,8 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as NarrativesRouteImport } from './routes/narratives'
 import { Route as MemeOfTheDayRouteImport } from './routes/meme-of-the-day'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as CoinsRouteImport } from './routes/coins'
+import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 
@@ -54,6 +56,16 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CoinsRoute = CoinsRouteImport.update({
+  id: '/coins',
+  path: '/coins',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -67,6 +79,8 @@ const ApiChatRoute = ApiChatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai': typeof AiRoute
+  '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
@@ -78,6 +92,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai': typeof AiRoute
+  '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
@@ -90,6 +106,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai': typeof AiRoute
+  '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
@@ -103,6 +121,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ai'
+    | '/coins'
     | '/dashboard'
     | '/meme-of-the-day'
     | '/narratives'
@@ -114,6 +134,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ai'
+    | '/coins'
     | '/dashboard'
     | '/meme-of-the-day'
     | '/narratives'
@@ -125,6 +147,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/ai'
+    | '/coins'
     | '/dashboard'
     | '/meme-of-the-day'
     | '/narratives'
@@ -137,6 +161,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiRoute: typeof AiRoute
+  CoinsRoute: typeof CoinsRoute
   DashboardRoute: typeof DashboardRoute
   MemeOfTheDayRoute: typeof MemeOfTheDayRoute
   NarrativesRoute: typeof NarrativesRoute
@@ -198,6 +224,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/coins': {
+      id: '/coins'
+      path: '/coins'
+      fullPath: '/coins'
+      preLoaderRoute: typeof CoinsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -217,6 +257,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiRoute: AiRoute,
+  CoinsRoute: CoinsRoute,
   DashboardRoute: DashboardRoute,
   MemeOfTheDayRoute: MemeOfTheDayRoute,
   NarrativesRoute: NarrativesRoute,
