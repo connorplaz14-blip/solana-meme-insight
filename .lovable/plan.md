@@ -1,52 +1,37 @@
-## Goal
+# Mobile-friendly Pump.fun widget
 
-Stop reinventing trending/launches tables. Compose the dashboard out of best-in-class third-party embeds, and add a Pump.fun-flavoured chart tab next to the existing DexScreener chart.
+## Findings (research summary)
 
-## 1. TokenDetailProvider — add "PF Chart" tab
+Almost every "good" PF UI (pump.fun itself, GMGN, Photon, BullX, Axiom, Birdeye lists, DexTools) sets `X-Frame-Options: SAMEORIGIN` / CSP `frame-ancestors 'self'` and **cannot be iframed at all**. Only two real candidates work as list embeds:
 
-`src/components/token/TokenDetailProvider.tsx` currently has two tabs (Chart, Transactions). Add a third:
+| Provider | Embed URL | Mobile | Notes |
+|---|---|---|---|
+| **GeckoTerminal** | `geckoterminal.com/solana/pump-fun/pools?embed=1` | **3/5** | Dark by default, no ads, has Trending + New Pools + Top Gainers + bonding-curve % column. Better column density. Embed not officially documented (small risk of future blocking). |
+| **DexScreener** (current) | `dexscreener.com/solana/pumpfun?embed=1&theme=dark` | 2/5 | Officially supported. 10+ columns force horizontal scroll on phones, ad banner at top. |
 
-- **PF Chart** — iframe `https://www.gmgn.cc/kline/sol/{address}` (GMGN's pump.fun-aware k-line + trades, no API key). Order: Chart (DexScreener) → PF Chart (GMGN) → Transactions (DexScreener trades).
-- Footer of modal keeps existing "Open ↗" link, plus a new "Open on Pump.fun ↗" → `https://pump.fun/{address}`.
+Single-token chart embeds (GMGN kline, GeckoTerminal pool, Birdeye TV widget) are not affected — that part of the dashboard stays as-is.
 
-Every clickable token in the app (TrendingTable, MemeOfTheDayCard, PumpfunLaunches, WatchlistView, future embeds) already routes through this provider, so the new tab is one edit, propagates everywhere.
+## Plan
 
-## 2. Replace PumpfunLaunches with DexScreener PF embed
+1. **`PumpfunLaunches.tsx`** — switch the default embed to **GeckoTerminal** (`https://www.geckoterminal.com/solana/pump-fun/pools?embed=1`), which renders meaningfully better on a 360–414px viewport and has no in-embed ad. Keep DexScreener available behind a small segmented toggle (`Gecko | DexScreener`) in the panel header so we don't lose the officially-blessed option if Gecko ever blocks framing. Persist the choice in `localStorage` (`pf-launches-provider`).
 
-Drop the Solana-Tracker-powered scored table. Replace with an iframe of the canonical DexScreener Pump.fun page, which already ships Trending / Top / Rising / New / Graduated filters.
+2. **Mobile scroll wrapper** — wrap the iframe in `overflow-x:auto` with `min-width:640px` on the iframe so the table degrades to a horizontal swipe instead of unreadable truncation. Applies to both providers.
 
-- Rewrite `src/components/dashboard/PumpfunLaunches.tsx` body to a `Panel` wrapping `<iframe src="https://dexscreener.com/solana/pumpfun?embed=1&theme=dark" />` at ~640px height, lazy-loaded.
-- Keep the panel header ("Pump.fun · New Pairs") with a source badge.
-- Remove the Solana-Tracker dependency for this widget: delete the `usePumpfunLaunches` hook usage here.
+3. **`/trending` route (`trending.tsx`)** — same treatment for the main trending tile: default to GeckoTerminal `solana/pools?embed=1`, with a DexScreener toggle. Keep the 24h Gainers DexScreener tile as-is (Gecko doesn't have a clean gainers-only URL).
 
-## 3. Replace TrendingTable on dashboard + /trending with DexScreener trending embed
+4. **`DexScreenerEmbed.tsx`** — rename conceptually but keep the file; generalise to accept any `src` (already does) and add an optional `providerToggle` prop `{ value, onChange, options: [{id,label,src}] }` rendered in the panel header. No behaviour change for callers that don't pass it.
 
-- New component `src/components/dashboard/DexScreenerEmbed.tsx` — generic iframe wrapper (`src`, `title`, `height`).
-- `/dashboard` row that currently renders `<TrendingTable limit={8} dense />` → render `<DexScreenerEmbed src="https://dexscreener.com/solana?rankBy=trendingScoreH6&order=desc&embed=1&theme=dark" title="Trending · Solana" height={520} />`.
-- `/trending` route swaps the custom table for the same embed at full height (~80vh).
-- Keep `TrendingTable.tsx` file in place but unused — easy to revert. If you want a hard delete, say so and I'll remove it + the `getTrendingFn` server fn.
+5. **`mocks/providers.ts`** — add a `geckoterminal-pumpfun` entry (live, no key) alongside the existing `dexscreener-pumpfun`.
 
-## 4. Settings page provider matrix
+## Out of scope
 
-Update `src/mocks/providers.ts` to add entries for the embed sources (DexScreener PF page, GMGN kline) and mark them `live` by default — they have no key/health to track.
+- TokenDetailProvider chart tabs (DexScreener + GMGN kline) — unchanged.
+- Wallet, narrative feed, market pulse, meme-of-the-day, watchlist — unchanged.
+- No new server functions; everything is a public iframe.
 
-## 5. Out of scope (kept for later)
+## Files
 
-- Wallet P&L (Birdeye) — untouched, still live.
-- MarketPulse, NarrativeFeed, MemeOfTheDayCard — untouched (they aggregate scores from our own data).
-- Solana Tracker server fn / provider — keeps powering the `notable_launches` slot inside the AI narrative (Section 1 of Phase 3 narrative wiring), so the API key is still useful. We can prune later if you'd rather drop it entirely.
-- Watchlist still uses our `Token` shape (no change).
-
-## Files touched
-
-- Edit: `src/components/token/TokenDetailProvider.tsx` (add PF Chart tab + Open on Pump.fun link)
-- Add: `src/components/dashboard/DexScreenerEmbed.tsx`
-- Rewrite: `src/components/dashboard/PumpfunLaunches.tsx` (iframe-based)
-- Edit: `src/routes/dashboard.tsx` (swap TrendingTable for embed)
-- Edit: `src/routes/trending.tsx` (swap to full-height embed; add a small heading)
-- Edit: `src/mocks/providers.ts` (add gmgn + dexscreener-pumpfun entries)
-
-## Confirm
-
-1. OK to keep `TrendingTable.tsx` + `getTrendingFn` in the repo (unused but available), or delete them?
-2. Any other lists to embed (e.g. DexScreener Gainers/Losers, Most Active) as additional tiles on `/trending`?
+- Edit `src/components/dashboard/PumpfunLaunches.tsx`
+- Edit `src/components/dashboard/DexScreenerEmbed.tsx` (add optional provider toggle + mobile scroll wrapper)
+- Edit `src/routes/trending.tsx`
+- Edit `src/mocks/providers.ts`

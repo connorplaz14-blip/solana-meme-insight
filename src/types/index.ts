@@ -1,5 +1,5 @@
 export type Risk = "low" | "medium" | "high" | "extreme";
-export type Source = "dexscreener" | "coingecko" | "bitquery" | "solana-tracker" | "birdeye" | "vybe" | "pump.fun" | "mock";
+export type Source = "dexscreener" | "geckoterminal" | "coingecko" | "bitquery" | "solana-tracker" | "birdeye" | "vybe" | "pump.fun" | "mock";
 export type ProviderStatus = "live" | "mock" | "missing" | "error";
 
 export interface SolMarket {

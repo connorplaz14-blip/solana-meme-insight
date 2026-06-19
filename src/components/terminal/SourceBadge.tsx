@@ -1,7 +1,7 @@
 import type { Source } from "@/types";
 
 const labels: Record<Source, string> = {
-  dexscreener: "DEX", coingecko: "CG", bitquery: "BQ",
+  dexscreener: "DEX", geckoterminal: "GECKO", coingecko: "CG", bitquery: "BQ",
   "solana-tracker": "ST", birdeye: "BE", vybe: "VY",
   "pump.fun": "PF", mock: "MOCK",
 };
