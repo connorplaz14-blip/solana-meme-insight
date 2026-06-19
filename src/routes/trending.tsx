@@ -1,6 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DexScreenerEmbed } from "@/components/dashboard/DexScreenerEmbed";
+import { DexScreenerEmbed, type EmbedProviderOption } from "@/components/dashboard/DexScreenerEmbed";
 import { PumpfunLaunches } from "@/components/dashboard/PumpfunLaunches";
+
+const TRENDING_PROVIDERS: EmbedProviderOption[] = [
+  {
+    id: "gecko",
+    label: "Gecko",
+    source: "geckoterminal",
+    src: "https://www.geckoterminal.com/solana/pools?embed=1",
+  },
+  {
+    id: "dexscreener",
+    label: "DexScreener",
+    source: "dexscreener",
+    src: "https://dexscreener.com/solana?rankBy=trendingScoreH6&order=desc&embed=1&theme=dark&info=0",
+  },
+];
 
 export const Route = createFileRoute("/trending")({
   head: () => ({ meta: [
@@ -17,8 +32,10 @@ function TrendingPage() {
     <div className="p-3 space-y-3">
       <DexScreenerEmbed
         title="Trending · Solana"
-        subtitle="DexScreener · 6h trending score"
-        src="https://dexscreener.com/solana?rankBy=trendingScoreH6&order=desc&embed=1&theme=dark&info=0"
+        subtitle="6h trending score"
+        providers={TRENDING_PROVIDERS}
+        defaultProviderId="gecko"
+        storageKey="trending-provider"
         height="78vh"
       />
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
