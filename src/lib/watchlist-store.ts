@@ -29,4 +29,4 @@ export function addToWatchlist(entry: WatchlistEntry) {
 export function removeFromWatchlist(address: string) {
   write(read().filter((e) => e.address !== address));
 }
-export function subscribeWatchlist(cb: () => void) { listeners.add(cb); return () => listeners.delete(cb); }
+export function subscribeWatchlist(cb: () => void) { listeners.add(cb); return () => { listeners.delete(cb); }; }
