@@ -1,4 +1,4 @@
-import { generateObject } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./gateway.server";
 import type { NarrativeReport, Token } from "@/types";
@@ -42,6 +42,14 @@ function todayUtcIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+function parseJsonObject(text: string): unknown {
+  const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  const first = cleaned.indexOf("{");
+  const last = cleaned.lastIndexOf("}");
+  if (first === -1 || last === -1) throw new Error("Model returned no JSON object");
+  return JSON.parse(cleaned.slice(first, last + 1));
+}
+
 export async function getOrGenerateNarrative(tokens: Token[]): Promise<NarrativeReport> {
   const date = todayUtcIso();
   const reduced = reducePayload(tokens);
@@ -61,17 +69,27 @@ export async function getOrGenerateNarrative(tokens: Token[]): Promise<Narrative
   if (!apiKey) throw new Error("LOVABLE_API_KEY is not configured");
 
   const gateway = createLovableAiGatewayProvider(apiKey);
-  const { object: out } = await generateObject({
+  const { text } = await generateText({
     model: gateway("google/gemini-3-flash-preview"),
-    schema: NarrativeSchema,
     system:
       "You are a Solana memecoin market analyst. You may ONLY summarise the structured token list you receive. " +
       "Do not invent token names, prices, market caps, or percentages. Do not reference tokens outside the list. " +
-      "Keep prose tight and professional, like a trading desk note.",
+      "Keep prose tight and professional, like a trading desk note. " +
+      "Respond with ONLY valid JSON matching the schema. No markdown, no commentary.",
     prompt:
-      `Today's top Solana memecoin pairs (from DexScreener):\n\n${JSON.stringify(reduced, null, 2)}\n\n` +
-      `Identify dominant narrative themes, fastest-growing sub-themes, key risk warnings, and concise keyword tags.`,
+      `Schema:\n` +
+      `{\n` +
+      `  "summary": string (2-4 sentences),\n` +
+      `  "dominant_theme": string,\n` +
+      `  "fastest_growing": string,\n` +
+      `  "keywords": [{"word": string, "weight": number 1-10}] (4-8 items),\n` +
+      `  "items": [{"theme": string, "growthPct": number, "description": string, "tokens": string[]}] (2-5 items),\n` +
+      `  "warnings": string[] (1-4 items)\n` +
+      `}\n\n` +
+      `Today's top Solana memecoin pairs (from DexScreener):\n${JSON.stringify(reduced)}\n\n` +
+      `Return only the JSON object.`,
   });
+  const out = NarrativeSchema.parse(parseJsonObject(text));
 
   const notable = tokens
     .filter((t) => t.ageHours < 72 || t.risk === "extreme")
