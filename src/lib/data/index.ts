@@ -32,6 +32,7 @@ function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = []): DataState<T> {
 }
 
 export const useSolMarket = () => useAsync(() => adapter.getSolMarket(), []);
+export const useMacro = () => useAsync(() => adapter.getMacro(), []);
 export const useTrending = () => useAsync(() => adapter.getTrending(), []);
 export const useMemeOfTheDay = () => useAsync(() => adapter.getMemeOfTheDay(), []);
 export const useNarratives = () => useAsync(() => adapter.getNarratives(), []);

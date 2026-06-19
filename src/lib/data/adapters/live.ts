@@ -1,5 +1,7 @@
 import {
   getSolMarketFn,
+  getMacroFn,
+  searchTokensFn,
   getTrendingFn,
   getMemeOfTheDayFn,
   getMarketPulseFn,
@@ -12,6 +14,8 @@ import {
 
 export const liveAdapter = {
   getSolMarket: () => getSolMarketFn(),
+  getMacro: () => getMacroFn(),
+  searchTokens: (q: string) => searchTokensFn({ data: { q } }),
   getTrending: () => getTrendingFn(),
   getMemeOfTheDay: () => getMemeOfTheDayFn(),
   getNarratives: () => getNarrativesFn(),
