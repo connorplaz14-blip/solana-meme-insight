@@ -142,7 +142,11 @@ export function CommandPalette() {
   function handleOpenWallet(addr: string) {
     pushRecent({ kind: "wallet", address: addr });
     close();
-    navigate({ to: "/wallet-pnl", search: { address: addr } as never });
+    // Copy address to clipboard so user can paste into the wallet form.
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      void navigator.clipboard.writeText(addr).catch(() => {});
+    }
+    navigate({ to: "/wallet-pnl" });
   }
 
   return (
