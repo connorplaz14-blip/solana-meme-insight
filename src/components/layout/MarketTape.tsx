@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 import { useMacro, useMemeOfTheDay, useNarratives } from "@/lib/data";
 import { fmtUsd, fmtPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Search, Activity, Flame } from "lucide-react";
+import { Search, Activity, Flame, Menu } from "lucide-react";
 import { useCommandPalette } from "./CommandPaletteContext";
+import { useMobileNav } from "./MobileNavContext";
 
 function Tone({ pct }: { pct: number }) {
   const tone = pct >= 0 ? "text-pos" : "text-neg";
@@ -35,10 +36,18 @@ export function MarketTape() {
   const { data: meme } = useMemeOfTheDay();
   const { data: narr } = useNarratives();
   const { open } = useCommandPalette();
+  const { toggle: toggleNav } = useMobileNav();
 
   return (
     <div className="flex items-stretch h-10 border-b border-border bg-panel">
-      <div className="flex items-center px-3 border-r border-border min-w-[140px] shrink-0">
+      <button
+        onClick={toggleNav}
+        className="md:hidden flex items-center justify-center px-3 border-r border-border text-foreground hover:bg-accent/30 shrink-0"
+        aria-label="Open menu"
+      >
+        <Menu className="h-4 w-4" />
+      </button>
+      <div className="hidden md:flex items-center px-3 border-r border-border min-w-[140px] shrink-0">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos">◆ MemeDesk</span>
       </div>
 
