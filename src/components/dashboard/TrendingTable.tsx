@@ -11,11 +11,13 @@ import { Star, Search } from "lucide-react";
 import type { Risk, Token } from "@/types";
 import { addToWatchlist, isWatched, removeFromWatchlist } from "@/lib/watchlist-store";
 import { cn } from "@/lib/utils";
+import { useTokenDetail } from "@/components/token/TokenDetailProvider";
 
 type SortKey = "rank" | "marketCapUsd" | "liquidityUsd" | "volume24hUsd" | "ageHours" | "h24";
 
 export function TrendingTable({ limit, dense = false }: { limit?: number; dense?: boolean }) {
   const { data, status } = useTrending();
+  const { open } = useTokenDetail();
   const [q, setQ] = useState("");
   const [risk, setRisk] = useState<Risk | "all">("all");
   const [sortKey, setSortKey] = useState<SortKey>("rank");
@@ -112,13 +114,17 @@ export function TrendingTable({ limit, dense = false }: { limit?: number; dense?
                 )}>
                   <td className="font-mono text-muted-foreground">{t.rank}</td>
                   <td>
-                    <div className="flex items-center gap-2 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl })}
+                      className="flex items-center gap-2 min-w-0 text-left hover:text-pos transition-colors"
+                    >
                       <TokenAvatar symbol={t.symbol} size={20} logoUrl={t.logoUrl} />
                       <div className="min-w-0">
                         <div className="truncate">{t.name}</div>
                         <div className="font-mono text-[10px] text-muted-foreground">${t.symbol}</div>
                       </div>
-                    </div>
+                    </button>
                   </td>
                   <td><CopyAddress address={t.address} /></td>
                   <td className="text-right font-mono">{fmtUsd(t.marketCapUsd)}</td>

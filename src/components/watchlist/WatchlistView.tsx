@@ -8,9 +8,11 @@ import { fmtUsd } from "@/lib/format";
 import { ChangeCell } from "@/components/terminal/ChangeCell";
 import { X, Plus } from "lucide-react";
 import type { WatchlistEntry } from "@/types";
+import { useTokenDetail } from "@/components/token/TokenDetailProvider";
 
 export function WatchlistView() {
   const [items, setItems] = useState<WatchlistEntry[]>([]);
+  const { open } = useTokenDetail();
   const [addr, setAddr] = useState("");
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
@@ -53,13 +55,17 @@ export function WatchlistView() {
                 return (
                   <tr key={e.address} className="border-b border-border/50 hover:bg-accent/20 [&>td]:px-2 [&>td]:py-1.5">
                     <td>
-                      <div className="flex items-center gap-2">
-                        <TokenAvatar symbol={e.symbol} size={20} />
+                      <button
+                        type="button"
+                        onClick={() => open({ address: e.address, symbol: e.symbol, name: e.name, logoUrl: t?.logoUrl })}
+                        className="flex items-center gap-2 text-left hover:text-pos transition-colors"
+                      >
+                        <TokenAvatar symbol={e.symbol} size={20} logoUrl={t?.logoUrl} />
                         <div>
                           <div>{e.name}</div>
                           <div className="font-mono text-[10px] text-muted-foreground">${e.symbol}</div>
                         </div>
-                      </div>
+                      </button>
                     </td>
                     <td><CopyAddress address={e.address} /></td>
                     <td className="text-right font-mono">{t ? fmtUsd(t.priceUsd, { compact: false }) : "—"}</td>
