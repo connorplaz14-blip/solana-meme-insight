@@ -9,8 +9,50 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WatchlistRouteImport } from './routes/watchlist'
+import { Route as WalletPnlRouteImport } from './routes/wallet-pnl'
+import { Route as TrendingRouteImport } from './routes/trending'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as NarrativesRouteImport } from './routes/narratives'
+import { Route as MemeOfTheDayRouteImport } from './routes/meme-of-the-day'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 
+const WatchlistRoute = WatchlistRouteImport.update({
+  id: '/watchlist',
+  path: '/watchlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WalletPnlRoute = WalletPnlRouteImport.update({
+  id: '/wallet-pnl',
+  path: '/wallet-pnl',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrendingRoute = TrendingRouteImport.update({
+  id: '/trending',
+  path: '/trending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NarrativesRoute = NarrativesRouteImport.update({
+  id: '/narratives',
+  path: '/narratives',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemeOfTheDayRoute = MemeOfTheDayRouteImport.update({
+  id: '/meme-of-the-day',
+  path: '/meme-of-the-day',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +61,130 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/meme-of-the-day': typeof MemeOfTheDayRoute
+  '/narratives': typeof NarrativesRoute
+  '/settings': typeof SettingsRoute
+  '/trending': typeof TrendingRoute
+  '/wallet-pnl': typeof WalletPnlRoute
+  '/watchlist': typeof WatchlistRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/meme-of-the-day': typeof MemeOfTheDayRoute
+  '/narratives': typeof NarrativesRoute
+  '/settings': typeof SettingsRoute
+  '/trending': typeof TrendingRoute
+  '/wallet-pnl': typeof WalletPnlRoute
+  '/watchlist': typeof WatchlistRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/dashboard': typeof DashboardRoute
+  '/meme-of-the-day': typeof MemeOfTheDayRoute
+  '/narratives': typeof NarrativesRoute
+  '/settings': typeof SettingsRoute
+  '/trending': typeof TrendingRoute
+  '/wallet-pnl': typeof WalletPnlRoute
+  '/watchlist': typeof WatchlistRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/meme-of-the-day'
+    | '/narratives'
+    | '/settings'
+    | '/trending'
+    | '/wallet-pnl'
+    | '/watchlist'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/meme-of-the-day'
+    | '/narratives'
+    | '/settings'
+    | '/trending'
+    | '/wallet-pnl'
+    | '/watchlist'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/meme-of-the-day'
+    | '/narratives'
+    | '/settings'
+    | '/trending'
+    | '/wallet-pnl'
+    | '/watchlist'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DashboardRoute: typeof DashboardRoute
+  MemeOfTheDayRoute: typeof MemeOfTheDayRoute
+  NarrativesRoute: typeof NarrativesRoute
+  SettingsRoute: typeof SettingsRoute
+  TrendingRoute: typeof TrendingRoute
+  WalletPnlRoute: typeof WalletPnlRoute
+  WatchlistRoute: typeof WatchlistRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/watchlist': {
+      id: '/watchlist'
+      path: '/watchlist'
+      fullPath: '/watchlist'
+      preLoaderRoute: typeof WatchlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wallet-pnl': {
+      id: '/wallet-pnl'
+      path: '/wallet-pnl'
+      fullPath: '/wallet-pnl'
+      preLoaderRoute: typeof WalletPnlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trending': {
+      id: '/trending'
+      path: '/trending'
+      fullPath: '/trending'
+      preLoaderRoute: typeof TrendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/narratives': {
+      id: '/narratives'
+      path: '/narratives'
+      fullPath: '/narratives'
+      preLoaderRoute: typeof NarrativesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meme-of-the-day': {
+      id: '/meme-of-the-day'
+      path: '/meme-of-the-day'
+      fullPath: '/meme-of-the-day'
+      preLoaderRoute: typeof MemeOfTheDayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +197,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DashboardRoute: DashboardRoute,
+  MemeOfTheDayRoute: MemeOfTheDayRoute,
+  NarrativesRoute: NarrativesRoute,
+  SettingsRoute: SettingsRoute,
+  TrendingRoute: TrendingRoute,
+  WalletPnlRoute: WalletPnlRoute,
+  WatchlistRoute: WatchlistRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

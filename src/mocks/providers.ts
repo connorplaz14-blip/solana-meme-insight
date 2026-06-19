@@ -1,0 +1,28 @@
+import type { ProviderInfo } from "@/types";
+
+export const providers: ProviderInfo[] = [
+  { id: "dexscreener", name: "DexScreener", category: "dex", status: "mock",
+    features: ["Trending tokens", "Token detail", "Pair liquidity"],
+    docsUrl: "https://docs.dexscreener.com/api/reference",
+    notes: "Primary source for DEX trading + liquidity data in Phase 2." },
+  { id: "coingecko", name: "CoinGecko", category: "market", status: "mock",
+    features: ["SOL price + market cap", "Global market data"],
+    docsUrl: "https://www.coingecko.com/en/api/documentation" },
+  { id: "lovable-ai", name: "Lovable AI (Gemini)", category: "ai", status: "mock",
+    features: ["Daily narrative summary", "Score commentary"],
+    notes: "Summarises STRUCTURED data only. Never invents token metrics." },
+  { id: "bitquery", name: "Bitquery", category: "launchpad", status: "mock",
+    features: ["Pump.fun launches", "On-chain DEX trades"], docsUrl: "https://docs.bitquery.io" },
+  { id: "solana-tracker", name: "Solana Tracker", category: "launchpad", status: "mock",
+    features: ["Pump.fun + Raydium feeds", "Token analytics"], docsUrl: "https://docs.solanatracker.io" },
+  { id: "birdeye", name: "Birdeye", category: "wallet", status: "mock",
+    features: ["Wallet portfolio", "Token holders"], docsUrl: "https://docs.birdeye.so" },
+  { id: "vybe", name: "Vybe Network", category: "wallet", status: "mock",
+    features: ["Wallet P&L", "Token flows"], docsUrl: "https://docs.vybenetwork.com" },
+  { id: "browserbase", name: "Browserbase / browser-use / Oxylabs", category: "scraping", status: "missing",
+    features: ["Future fallback scraping (backend only)"],
+    notes: "Phase 3+. Backend jobs only, never from the browser." },
+  { id: "x-api", name: "X (Twitter) API", category: "social", status: "missing",
+    features: ["CT narrative scanning", "Mention velocity"],
+    notes: "Phase 3+. Requires paid X API access." },
+];

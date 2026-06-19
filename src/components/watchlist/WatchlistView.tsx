@@ -1,0 +1,118 @@
+import { useEffect, useState } from "react";
+import { Panel, PanelHeader, PanelBody } from "@/components/terminal/Panel";
+import { CopyAddress } from "@/components/terminal/CopyAddress";
+import { TokenAvatar } from "@/components/terminal/TokenAvatar";
+import { useTrending } from "@/lib/data";
+import { addToWatchlist, getWatchlist, removeFromWatchlist, subscribeWatchlist } from "@/lib/watchlist-store";
+import { fmtUsd } from "@/lib/format";
+import { ChangeCell } from "@/components/terminal/ChangeCell";
+import { X, Plus } from "lucide-react";
+import type { WatchlistEntry } from "@/types";
+
+export function WatchlistView() {
+  const [items, setItems] = useState<WatchlistEntry[]>([]);
+  const [addr, setAddr] = useState("");
+  const [name, setName] = useState("");
+  const [symbol, setSymbol] = useState("");
+  const { data: trending } = useTrending();
+
+  useEffect(() => {
+    setItems(getWatchlist());
+    return subscribeWatchlist(() => setItems(getWatchlist()));
+  }, []);
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!addr || !symbol) return;
+    addToWatchlist({ address: addr.trim(), name: name.trim() || symbol.trim(), symbol: symbol.trim().toUpperCase(), addedAt: new Date().toISOString() });
+    setAddr(""); setName(""); setSymbol("");
+  }
+
+  function findToken(address: string) { return trending?.find((t) => t.address === address); }
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
+      <Panel>
+        <PanelHeader title="Watchlist" subtitle={`${items.length} tokens`} accent="warn" />
+        <PanelBody className="p-0">
+          <table className="w-full text-[12px]">
+            <thead className="bg-panel-2/60 border-b border-border">
+              <tr className="[&>th]:px-2 [&>th]:py-1.5 [&>th]:font-normal [&>th]:text-[10px] [&>th]:uppercase [&>th]:tracking-wider [&>th]:text-muted-foreground">
+                <th className="text-left">Token</th>
+                <th className="text-left">Contract</th>
+                <th className="text-right">Price</th>
+                <th className="text-right">Mcap</th>
+                <th className="text-right">24h</th>
+                <th className="text-left">Added</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((e) => {
+                const t = findToken(e.address);
+                return (
+                  <tr key={e.address} className="border-b border-border/50 hover:bg-accent/20 [&>td]:px-2 [&>td]:py-1.5">
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <TokenAvatar symbol={e.symbol} size={20} />
+                        <div>
+                          <div>{e.name}</div>
+                          <div className="font-mono text-[10px] text-muted-foreground">${e.symbol}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><CopyAddress address={e.address} /></td>
+                    <td className="text-right font-mono">{t ? fmtUsd(t.priceUsd, { compact: false }) : "—"}</td>
+                    <td className="text-right font-mono">{t ? fmtUsd(t.marketCapUsd) : "—"}</td>
+                    <td className="text-right">{t ? <ChangeCell value={t.changes.h24} /> : <span className="text-muted-foreground">—</span>}</td>
+                    <td className="font-mono text-[11px] text-muted-foreground">{new Date(e.addedAt).toLocaleDateString()}</td>
+                    <td>
+                      <button onClick={() => removeFromWatchlist(e.address)} className="text-muted-foreground hover:text-neg">
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {items.length === 0 && (
+                <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground font-mono text-[11px]">Watchlist is empty. Add a token →</td></tr>
+              )}
+            </tbody>
+          </table>
+        </PanelBody>
+      </Panel>
+
+      <Panel>
+        <PanelHeader title="Add Token" accent="pos" />
+        <PanelBody>
+          <form onSubmit={submit} className="space-y-2">
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Contract address</span>
+              <input value={addr} onChange={(e) => setAddr(e.target.value)} placeholder="Mint address"
+                className="w-full mt-0.5 bg-panel-2 border border-border px-2 py-1 font-mono text-[11px] outline-none focus:border-pos" />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Symbol</span>
+                <input value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="WIF"
+                  className="w-full mt-0.5 bg-panel-2 border border-border px-2 py-1 font-mono text-[11px] outline-none focus:border-pos" />
+              </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Name</span>
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="dogwifhat"
+                  className="w-full mt-0.5 bg-panel-2 border border-border px-2 py-1 font-mono text-[11px] outline-none focus:border-pos" />
+              </label>
+            </div>
+            <button type="submit"
+              className="w-full mt-1 inline-flex items-center justify-center gap-1 border border-pos/40 bg-pos/10 hover:bg-pos/20 text-pos font-mono text-[11px] uppercase tracking-wider py-1.5">
+              <Plus className="h-3 w-3" /> Add to watchlist
+            </button>
+            <p className="text-[10px] text-muted-foreground mt-2">
+              Mock mode — entries are saved to your browser only. Real price/volume joins via the trending feed.
+            </p>
+          </form>
+        </PanelBody>
+      </Panel>
+    </div>
+  );
+}
