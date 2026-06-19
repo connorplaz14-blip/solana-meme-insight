@@ -7,26 +7,32 @@ import { SourceBadge } from "@/components/terminal/SourceBadge";
 import { CopyAddress } from "@/components/terminal/CopyAddress";
 import { TokenAvatar } from "@/components/terminal/TokenAvatar";
 import { fmtUsd, fmtNum, fmtAge } from "@/lib/format";
+import { useTokenDetail } from "@/components/token/TokenDetailProvider";
 
 export function MemeOfTheDayCard({ expanded = false }: { expanded?: boolean }) {
   const { data: t } = useMemeOfTheDay();
+  const { open } = useTokenDetail();
   if (!t) return <Panel><PanelHeader title="Meme of the Day" /><PanelBody>Loading…</PanelBody></Panel>;
   return (
     <Panel>
       <PanelHeader title="Meme of the Day" accent="pos"
         right={<span className="font-mono">Score <span className="text-pos">{t.score}</span>/100</span>} />
       <PanelBody className="space-y-3">
-        <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl })}
+          className="flex items-center gap-3 w-full text-left hover:bg-accent/20 -mx-1 px-1 py-1 transition-colors"
+        >
           <TokenAvatar symbol={t.symbol} size={40} logoUrl={t.logoUrl} />
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-base font-medium">{t.name}</span>
+              <span className="text-base font-medium hover:text-pos transition-colors">{t.name}</span>
               <span className="font-mono text-xs text-muted-foreground">${t.symbol}</span>
               <RiskBadge risk={t.risk} />
             </div>
-            <div className="mt-0.5"><CopyAddress address={t.address} /></div>
+            <div className="mt-0.5" onClick={(e) => e.stopPropagation()}><CopyAddress address={t.address} /></div>
           </div>
-        </div>
+        </button>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 border-t border-border pt-3">
           <StatCell label="Price" value={fmtUsd(t.priceUsd, { compact: false })} />
