@@ -11,9 +11,11 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { MarketBar } from "@/components/dashboard/MarketBar";
+import { MarketTape } from "@/components/layout/MarketTape";
 import { SideNav } from "@/components/layout/SideNav";
 import { TokenDetailProvider } from "@/components/token/TokenDetailProvider";
+import { CommandPaletteProvider } from "@/components/layout/CommandPaletteContext";
+import { CommandPalette } from "@/components/layout/CommandPalette";
 
 function NotFoundComponent() {
   return (
@@ -104,15 +106,18 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <TokenDetailProvider>
-        <div className="min-h-screen flex flex-col bg-background text-foreground">
-          <MarketBar />
-          <div className="flex flex-1 min-h-0">
-            <SideNav />
-            <main className="flex-1 min-w-0 overflow-auto">
-              <Outlet />
-            </main>
+        <CommandPaletteProvider>
+          <div className="min-h-screen flex flex-col bg-background text-foreground">
+            <MarketTape />
+            <div className="flex flex-1 min-h-0">
+              <SideNav />
+              <main className="flex-1 min-w-0 overflow-auto">
+                <Outlet />
+              </main>
+            </div>
           </div>
-        </div>
+          <CommandPalette />
+        </CommandPaletteProvider>
       </TokenDetailProvider>
     </QueryClientProvider>
   );

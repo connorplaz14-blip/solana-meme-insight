@@ -1,11 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import type {
   MarketPulseSnapshot,
+  MacroSnapshot,
   NarrativeReport,
   ProviderInfo,
   PumpLaunch,
   SolMarket,
   Token,
+  TokenSearchResult,
   WalletPnLResult,
 } from "@/types";
 import { providers as providerCatalog } from "@/mocks/providers";
@@ -17,6 +19,25 @@ export const getSolMarketFn = createServerFn({ method: "GET" }).handler(async ()
   const { fetchSolMarket } = await import("./providers/coingecko.server");
   return withCache("coingecko:sol-market", 30, () => trackProvider("coingecko", fetchSolMarket));
 });
+
+export const getMacroFn = createServerFn({ method: "GET" }).handler(async (): Promise<MacroSnapshot> => {
+  const { withCache } = await import("./cache.server");
+  const { trackProvider } = await import("./health.server");
+  const { fetchMacro } = await import("./providers/macro.server");
+  return withCache("macro:tape:v1", 30, () => trackProvider("coingecko", fetchMacro));
+});
+
+export const searchTokensFn = createServerFn({ method: "GET" })
+  .inputValidator((d: { q: string }) => ({ q: String(d?.q ?? "").trim().slice(0, 60) }))
+  .handler(async ({ data }): Promise<TokenSearchResult[]> => {
+    if (!data.q || data.q.length < 2) return [];
+    const { withCache } = await import("./cache.server");
+    const { trackProvider } = await import("./health.server");
+    const { searchSolanaTokens } = await import("./providers/dexsearch.server");
+    return withCache(`dexscreener:search:${data.q.toLowerCase()}`, 60, () =>
+      trackProvider("dexscreener", () => searchSolanaTokens(data.q, 8)),
+    );
+  });
 
 export const getTrendingFn = createServerFn({ method: "GET" }).handler(async (): Promise<Token[]> => {
   const { withCache } = await import("./cache.server");
