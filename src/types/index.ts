@@ -86,3 +86,24 @@ export interface ProviderInfo {
   docsUrl?: string;
   notes?: string;
 }
+
+export interface PumpLaunch {
+  name: string;
+  symbol: string;
+  address: string;
+  ageHours: number;
+  liquidityUsd: number;
+  marketCapUsd: number;
+  priceUsd: number;
+  change24hPct: number;
+  buys24h: number;
+  sells24h: number;
+  logoUrl?: string;
+  risk: Risk;
+  source: Source;
+}
+
+export interface WalletPnLResult extends WalletPnL {
+  source: "birdeye" | "vybe" | "mock";
+  lastUpdatedIso: string;
+}
