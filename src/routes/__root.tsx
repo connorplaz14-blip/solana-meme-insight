@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { MarketBar } from "@/components/dashboard/MarketBar";
 import { SideNav } from "@/components/layout/SideNav";
+import { TokenDetailProvider } from "@/components/token/TokenDetailProvider";
 
 function NotFoundComponent() {
   return (
@@ -102,15 +103,17 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen flex flex-col bg-background text-foreground">
-        <MarketBar />
-        <div className="flex flex-1 min-h-0">
-          <SideNav />
-          <main className="flex-1 min-w-0 overflow-auto">
-            <Outlet />
-          </main>
+      <TokenDetailProvider>
+        <div className="min-h-screen flex flex-col bg-background text-foreground">
+          <MarketBar />
+          <div className="flex flex-1 min-h-0">
+            <SideNav />
+            <main className="flex-1 min-w-0 overflow-auto">
+              <Outlet />
+            </main>
+          </div>
         </div>
-      </div>
+      </TokenDetailProvider>
     </QueryClientProvider>
   );
 }
