@@ -5,47 +5,71 @@ import { useWalletPnL } from "@/lib/data";
 import { fmtUsd, fmtPct } from "@/lib/format";
 import { ChangeCell } from "@/components/terminal/ChangeCell";
 import { CopyAddress } from "@/components/terminal/CopyAddress";
-import { AlertTriangle } from "lucide-react";
+import { SourceBadge } from "@/components/terminal/SourceBadge";
+import { Info } from "lucide-react";
 
 export function WalletView() {
   const [addr, setAddr] = useState("");
   const [submitted, setSubmitted] = useState<string | null>(null);
-  const { data } = useWalletPnL(submitted);
+  const { data, status } = useWalletPnL(submitted);
+  const source = (data && (data as { source?: string }).source) ?? "mock";
+  const isLive = source === "birdeye";
 
   return (
     <div className="space-y-3">
-      <div className="border border-warn/40 bg-warn/10 text-warn px-3 py-2 flex items-start gap-2 text-[12px]">
-        <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-        <div>
-          <div className="font-medium uppercase tracking-wider text-[11px]">Coming soon · Provider integration</div>
-          <div className="text-warn/80">Phase 1 shows mock P&L only. Live wallet data lands in Phase 3 via Birdeye / Vybe / Solana Tracker (backend Edge Functions).</div>
-        </div>
-      </div>
-
       <Panel>
         <PanelHeader title="Wallet Lookup" accent="info" />
         <PanelBody>
-          <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); setSubmitted(addr || "demo-wallet"); }}>
-            <input value={addr} onChange={(e) => setAddr(e.target.value)}
-              placeholder="Solana wallet address (mock — any text works)"
-              className="flex-1 bg-panel-2 border border-border px-2 py-1.5 font-mono text-[12px] outline-none focus:border-info" />
-            <button type="submit" className="border border-info/40 bg-info/10 hover:bg-info/20 text-info font-mono text-[11px] uppercase tracking-wider px-4">
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setSubmitted(addr.trim() || "demo-wallet");
+            }}
+          >
+            <input
+              value={addr}
+              onChange={(e) => setAddr(e.target.value)}
+              placeholder="Solana wallet address (32–44 chars)"
+              className="flex-1 bg-panel-2 border border-border px-2 py-1.5 font-mono text-[12px] outline-none focus:border-info"
+            />
+            <button
+              type="submit"
+              className="border border-info/40 bg-info/10 hover:bg-info/20 text-info font-mono text-[11px] uppercase tracking-wider px-4"
+            >
               Analyse
             </button>
           </form>
+          <div className="mt-2 text-[10px] text-muted-foreground font-mono flex items-center gap-1.5">
+            <Info className="h-3 w-3" />
+            Live portfolio via Birdeye for valid Solana addresses. Realised P&L needs trade history (not wired yet) — shown as 0; unrealised is 24h price-change inferred.
+          </div>
         </PanelBody>
       </Panel>
+
+      {submitted && status === "loading" && (
+        <Panel><PanelBody><p className="text-[12px] text-muted-foreground text-center py-6 font-mono">Loading wallet…</p></PanelBody></Panel>
+      )}
 
       {data && (
         <>
           <Panel>
-            <PanelHeader title="Wallet Score" subtitle={data.address} accent="pos"
-              right={<span className="font-mono text-pos text-base">{data.score}/100</span>} />
+            <PanelHeader
+              title="Wallet Score"
+              subtitle={data.address}
+              accent="pos"
+              right={
+                <div className="flex items-center gap-2">
+                  <SourceBadge source={isLive ? "birdeye" : "mock"} />
+                  <span className="font-mono text-pos text-base">{data.score}/100</span>
+                </div>
+              }
+            />
             <PanelBody>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <StatCell label="Realised P&L" value={fmtUsd(data.realisedUsd)} tone={data.realisedUsd >= 0 ? "pos" : "neg"} />
                 <StatCell label="Unrealised P&L" value={fmtUsd(data.unrealisedUsd)} tone={data.unrealisedUsd >= 0 ? "pos" : "neg"} />
-                <StatCell label="ROI" value={fmtPct(data.roiPct)} tone={data.roiPct >= 0 ? "pos" : "neg"} />
+                <StatCell label="ROI (24h)" value={fmtPct(data.roiPct)} tone={data.roiPct >= 0 ? "pos" : "neg"} />
                 <StatCell label="Win rate" value={`${data.winRatePct}%`} />
                 <StatCell label="Avg hold" value={`${data.avgHoldHours}h`} />
                 <StatCell label="Best trade" value={`${data.bestTrade.symbol} ${fmtPct(data.bestTrade.roiPct)}`} tone="pos" sub={fmtUsd(data.bestTrade.pnlUsd)} />
@@ -66,13 +90,13 @@ export function WalletView() {
                     <th className="text-right">Cost</th>
                     <th className="text-right">Value</th>
                     <th className="text-right">P&L</th>
-                    <th className="text-right">ROI</th>
+                    <th className="text-right">ROI (24h)</th>
                     <th className="text-left">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.positions.map((p) => (
-                    <tr key={p.symbol} className="border-b border-border/50 [&>td]:px-2 [&>td]:py-1.5">
+                    <tr key={p.address || p.symbol} className="border-b border-border/50 [&>td]:px-2 [&>td]:py-1.5">
                       <td>
                         <div>{p.name}</div>
                         <div className="font-mono text-[10px] text-muted-foreground">${p.symbol}</div>
@@ -100,7 +124,7 @@ export function WalletView() {
         <Panel>
           <PanelBody>
             <p className="text-[12px] text-muted-foreground text-center py-6 font-mono">
-              Enter a wallet address above to see a mock P&L breakdown.
+              Enter a Solana wallet address above to see its current portfolio + 24h P&L.
             </p>
           </PanelBody>
         </Panel>

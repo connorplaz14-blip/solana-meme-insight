@@ -4,6 +4,7 @@ import { TrendingTable } from "@/components/dashboard/TrendingTable";
 import { MarketPulse } from "@/components/dashboard/MarketPulse";
 import { NarrativeFeed } from "@/components/dashboard/NarrativeFeed";
 import { TokenChartPanel } from "@/components/dashboard/TokenChartPanel";
+import { PumpfunLaunches } from "@/components/dashboard/PumpfunLaunches";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [
@@ -26,7 +27,10 @@ function Dashboard() {
         <div className="xl:col-span-8"><TrendingTable limit={8} dense /></div>
         <div className="xl:col-span-4"><MarketPulse /></div>
       </div>
-      <NarrativeFeed compact />
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
+        <div className="xl:col-span-6"><PumpfunLaunches /></div>
+        <div className="xl:col-span-6"><NarrativeFeed compact /></div>
+      </div>
     </div>
   );
 }

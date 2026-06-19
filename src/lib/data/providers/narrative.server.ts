@@ -91,10 +91,29 @@ export async function getOrGenerateNarrative(tokens: Token[]): Promise<Narrative
   });
   const out = NarrativeSchema.parse(parseJsonObject(text));
 
-  const notable = tokens
-    .filter((t) => t.ageHours < 72 || t.risk === "extreme")
-    .slice(0, 3)
-    .map((t) => ({ name: t.name, symbol: t.symbol, address: t.address, note: `${t.changes.h24.toFixed(1)}% 24h · liq ${Math.round(t.liquidityUsd / 1000)}k` }));
+  // Prefer real Pump.fun launches from Solana Tracker; fall back to fresh
+  // DexScreener tokens when key is missing or the call fails.
+  let notable: NarrativeReport["notableLaunches"] = [];
+  if (process.env.SOLANA_TRACKER_API_KEY) {
+    try {
+      const { fetchPumpfunLaunches } = await import("./solana-tracker.server");
+      const launches = await fetchPumpfunLaunches(6);
+      notable = launches.slice(0, 5).map((l) => ({
+        name: l.name,
+        symbol: l.symbol,
+        address: l.address,
+        note: `${l.ageHours < 1 ? `${Math.round(l.ageHours * 60)}m` : `${l.ageHours.toFixed(1)}h`} old · liq ${Math.round(l.liquidityUsd / 1000)}k · ${l.change24hPct.toFixed(1)}% 24h`,
+      }));
+    } catch {
+      notable = [];
+    }
+  }
+  if (notable.length === 0) {
+    notable = tokens
+      .filter((t) => t.ageHours < 72 || t.risk === "extreme")
+      .slice(0, 3)
+      .map((t) => ({ name: t.name, symbol: t.symbol, address: t.address, note: `${t.changes.h24.toFixed(1)}% 24h · liq ${Math.round(t.liquidityUsd / 1000)}k` }));
+  }
 
   await supabaseAdmin.from("narratives").upsert({
     date,

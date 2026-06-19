@@ -6,8 +6,9 @@ import {
   getTokenChartFn,
   getNarrativesFn,
   getProvidersFn,
+  getPumpfunLaunchesFn,
+  getWalletPnLFn,
 } from "../live.functions";
-import { sampleWallet } from "@/mocks/wallet-pnl";
 
 export const liveAdapter = {
   getSolMarket: () => getSolMarketFn(),
@@ -15,8 +16,8 @@ export const liveAdapter = {
   getMemeOfTheDay: () => getMemeOfTheDayFn(),
   getNarratives: () => getNarrativesFn(),
   getMarketPulse: () => getMarketPulseFn(),
-  // Wallet P&L stays mock until Phase 3 (Birdeye / Vybe / Solana Tracker).
-  getWalletPnL: async (_address: string) => sampleWallet,
+  getWalletPnL: (address: string) => getWalletPnLFn({ data: { address } }),
+  getPumpfunLaunches: () => getPumpfunLaunchesFn(),
   getProviders: () => getProvidersFn(),
   getTokenChart: (address: string, points = 96) => getTokenChartFn({ data: { address, points } }),
 };

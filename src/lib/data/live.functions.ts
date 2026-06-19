@@ -3,10 +3,13 @@ import type {
   MarketPulseSnapshot,
   NarrativeReport,
   ProviderInfo,
+  PumpLaunch,
   SolMarket,
   Token,
+  WalletPnLResult,
 } from "@/types";
 import { providers as providerCatalog } from "@/mocks/providers";
+import { sampleWallet } from "@/mocks/wallet-pnl";
 
 export const getSolMarketFn = createServerFn({ method: "GET" }).handler(async (): Promise<SolMarket> => {
   const { withCache } = await import("./cache.server");
@@ -114,3 +117,40 @@ export const getProvidersFn = createServerFn({ method: "GET" }).handler(async ()
     };
   });
 });
+
+export const getPumpfunLaunchesFn = createServerFn({ method: "GET" }).handler(async (): Promise<PumpLaunch[]> => {
+  if (!process.env.SOLANA_TRACKER_API_KEY) return [];
+  const { withCache } = await import("./cache.server");
+  const { trackProvider } = await import("./health.server");
+  const { fetchPumpfunLaunches } = await import("./providers/solana-tracker.server");
+  try {
+    return await withCache("solana-tracker:launches:25", 60, () =>
+      trackProvider("solana-tracker", () => fetchPumpfunLaunches(25)),
+    );
+  } catch {
+    return [];
+  }
+});
+
+export const getWalletPnLFn = createServerFn({ method: "POST" })
+  .inputValidator((d: { address: string }) => ({ address: String(d?.address ?? "").trim() }))
+  .handler(async ({ data }): Promise<WalletPnLResult> => {
+    const nowIso = new Date().toISOString();
+    const addr = data.address;
+    const looksLikeSolAddr = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
+
+    if (!looksLikeSolAddr || !process.env.BIRDEYE_API_KEY) {
+      return { ...sampleWallet, address: addr || sampleWallet.address, source: "mock", lastUpdatedIso: nowIso };
+    }
+    const { withCache } = await import("./cache.server");
+    const { trackProvider } = await import("./health.server");
+    const { fetchWalletPortfolio } = await import("./providers/birdeye.server");
+    try {
+      const live = await withCache(`birdeye:wallet:${addr}`, 30, () =>
+        trackProvider("birdeye", () => fetchWalletPortfolio(addr)),
+      );
+      return { ...live, source: "birdeye", lastUpdatedIso: nowIso };
+    } catch {
+      return { ...sampleWallet, address: addr, source: "mock", lastUpdatedIso: nowIso };
+    }
+  });
