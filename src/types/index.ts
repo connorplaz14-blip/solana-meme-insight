@@ -107,3 +107,33 @@ export interface WalletPnLResult extends WalletPnL {
   source: "birdeye" | "vybe" | "mock";
   lastUpdatedIso: string;
 }
+
+export interface MacroAsset {
+  priceUsd: number;
+  change24hPct: number;
+  volume24hUsd: number;
+  marketCapUsd: number;
+}
+
+export interface MacroSnapshot {
+  btc: MacroAsset;
+  eth: MacroAsset;
+  sol: MacroAsset;
+  totalMarketCapUsd: number;
+  totalVolume24hUsd: number;
+  totalMcapChange24hPct: number;
+  fearGreed: { value: number; label: string } | null;
+  solana: { tps: number; slot: number } | null;
+  lastUpdated: string;
+}
+
+export interface TokenSearchResult {
+  address: string;
+  symbol: string;
+  name: string;
+  logoUrl?: string;
+  priceUsd: number;
+  liquidityUsd: number;
+  volume24hUsd: number;
+  change24hPct: number;
+}
