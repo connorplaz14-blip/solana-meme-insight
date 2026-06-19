@@ -22,6 +22,11 @@ export function fmtPct(n: number, digits = 2) {
   return s + n.toFixed(digits) + "%";
 }
 export function fmtAge(hours: number) {
+  if (!isFinite(hours) || hours < 0) return "—";
+  if (hours < 1) {
+    const mins = Math.max(1, Math.round(hours * 60));
+    return mins + "m";
+  }
   if (hours < 24) return Math.round(hours) + "h";
   const d = Math.round(hours / 24);
   if (d < 30) return d + "d";
