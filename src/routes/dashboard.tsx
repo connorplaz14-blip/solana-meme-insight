@@ -27,8 +27,9 @@ function Dashboard() {
         <div className="xl:col-span-8">
           <DexScreenerEmbed
             title="Trending · Solana"
-            subtitle="DexScreener · 6h trending score"
-            src="https://dexscreener.com/solana?rankBy=trendingScoreH6&order=desc&embed=1&theme=dark&info=0"
+            subtitle="GeckoTerminal · all pools"
+            src="https://www.geckoterminal.com/solana/pools?embed=1"
+            source="geckoterminal"
             height={520}
           />
         </div>
