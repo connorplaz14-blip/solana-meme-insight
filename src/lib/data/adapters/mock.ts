@@ -12,7 +12,13 @@ export const mockAdapter = {
   getMemeOfTheDay: async () => memeOfTheDay,
   getNarratives: async () => narrativeReport,
   getMarketPulse: async () => marketPulse,
-  getWalletPnL: async (_address: string) => sampleWallet,
+  getWalletPnL: async (address: string) => ({
+    ...sampleWallet,
+    address: address || sampleWallet.address,
+    source: "mock" as const,
+    lastUpdatedIso: new Date().toISOString(),
+  }),
+  getPumpfunLaunches: async () => [] as never[],
   getProviders: async () => providers,
   getTokenChart: async (_address: string, points = 96) => generateCandleSeries(points),
 };
