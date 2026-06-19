@@ -113,7 +113,7 @@ export function TrendingTable({ limit, dense = false }: { limit?: number; dense?
                   <td className="font-mono text-muted-foreground">{t.rank}</td>
                   <td>
                     <div className="flex items-center gap-2 min-w-0">
-                      <TokenAvatar symbol={t.symbol} size={20} />
+                      <TokenAvatar symbol={t.symbol} size={20} logoUrl={t.logoUrl} />
                       <div className="min-w-0">
                         <div className="truncate">{t.name}</div>
                         <div className="font-mono text-[10px] text-muted-foreground">${t.symbol}</div>
