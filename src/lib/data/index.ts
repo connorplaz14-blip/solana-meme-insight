@@ -41,3 +41,4 @@ export const useWalletPnL = (address: string | null) =>
 export const useProviders = () => useAsync(() => adapter.getProviders(), []);
 export const useTokenChart = (address: string, points = 96) =>
   useAsync(() => adapter.getTokenChart(address, points), [address, points]);
+export const usePumpfunLaunches = () => useAsync(() => adapter.getPumpfunLaunches(), []);
