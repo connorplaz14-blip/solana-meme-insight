@@ -16,7 +16,7 @@ export function NarrativeFeed({ compact = false }: { compact?: boolean }) {
       />
       <PanelBody className="space-y-4">
         <div>
-          <div className="text-[10px] uppercase tracking-wider text-info mb-1">AI Summary (mock)</div>
+          <div className="text-[10px] uppercase tracking-wider text-info mb-1">AI Summary · Gemini</div>
           <p className="text-[12px] leading-relaxed text-foreground/85">{data.summary}</p>
         </div>
 
