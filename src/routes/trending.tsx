@@ -1,21 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DexScreenerEmbed, type EmbedProviderOption } from "@/components/dashboard/DexScreenerEmbed";
+import { DexScreenerEmbed } from "@/components/dashboard/DexScreenerEmbed";
 import { PumpfunLaunches } from "@/components/dashboard/PumpfunLaunches";
-
-const TRENDING_PROVIDERS: EmbedProviderOption[] = [
-  {
-    id: "gecko",
-    label: "Gecko",
-    source: "geckoterminal",
-    src: "https://www.geckoterminal.com/solana/pools?embed=1",
-  },
-  {
-    id: "dexscreener",
-    label: "DexScreener",
-    source: "dexscreener",
-    src: "https://dexscreener.com/solana?rankBy=trendingScoreH6&order=desc&embed=1&theme=dark&info=0",
-  },
-];
 
 export const Route = createFileRoute("/trending")({
   head: () => ({ meta: [
@@ -32,18 +17,18 @@ function TrendingPage() {
     <div className="p-3 space-y-3">
       <DexScreenerEmbed
         title="Trending · Solana"
-        subtitle="6h trending score"
-        providers={TRENDING_PROVIDERS}
-        defaultProviderId="gecko"
-        storageKey="trending-provider"
+        subtitle="GeckoTerminal · all pools"
+        src="https://www.geckoterminal.com/solana/pools?embed=1"
+        source="geckoterminal"
         height="78vh"
       />
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
         <PumpfunLaunches height={620} />
         <DexScreenerEmbed
           title="Top Gainers · 24h"
-          subtitle="DexScreener · Solana"
-          src="https://dexscreener.com/solana?rankBy=priceChangeH24&order=desc&embed=1&theme=dark&info=0"
+          subtitle="GeckoTerminal · Solana"
+          src="https://www.geckoterminal.com/solana/pools?embed=1&sort=h24_price_change_percentage"
+          source="geckoterminal"
           height={620}
         />
       </div>
