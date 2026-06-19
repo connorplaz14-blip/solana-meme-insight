@@ -40,7 +40,6 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
   const addr = token.address;
   const chartSrc = `https://dexscreener.com/solana/${addr}?embed=1&theme=dark&trades=0&info=0`;
   const txnsSrc = `https://dexscreener.com/solana/${addr}?embed=1&theme=dark&trades=1&info=0`;
-  const bubbleSrc = `https://app.bubblemaps.io/sol/token/${addr}`;
 
   return (
     <div className="flex flex-col max-h-[88vh]">
@@ -69,7 +68,6 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
         <TabsList className="mx-4 mt-3 self-start bg-panel-2 border border-border h-8">
           <TabsTrigger value="chart" className="font-mono text-[11px] uppercase tracking-wider">Chart</TabsTrigger>
           <TabsTrigger value="txns" className="font-mono text-[11px] uppercase tracking-wider">Transactions</TabsTrigger>
-          <TabsTrigger value="bubble" className="font-mono text-[11px] uppercase tracking-wider">Bubble Map</TabsTrigger>
         </TabsList>
 
         <TabsContent value="chart" className="flex-1 min-h-0 m-0 p-3 pt-2">
@@ -94,18 +92,6 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
           />
         </TabsContent>
 
-        <TabsContent value="bubble" className="flex-1 min-h-0 m-0 p-3 pt-2">
-          <iframe
-            key={`bubble-${addr}`}
-            src={bubbleSrc}
-            title={`${token.symbol} holder bubble map`}
-            loading="lazy"
-            className="w-full h-[65vh] border-0 bg-background"
-          />
-          <p className="mt-2 font-mono text-[10px] text-muted-foreground">
-            Bubble Map via Bubblemaps.io · holder concentration & cluster analysis.
-          </p>
-        </TabsContent>
       </Tabs>
     </div>
   );
