@@ -1,60 +1,109 @@
-# Unify embed providers — GMGN for lists, DEX/Pump.fun for charts
+# MemeDesk — 5-Phase Completion Plan
 
-Today the embeds are inconsistent: `/coins` and `PumpfunLaunches` use GeckoTerminal; the dashboard token chart and the detail-modal "Chart" tab use DexScreener; the detail modal also has a separate GMGN "PF Chart" tab. Standardise on one provider per job.
+Grounded in a live audit. The app is mostly on real data already (CoinGecko, DexScreener, Solana Tracker, Birdeye, Lovable AI/Gemini, Supabase). Remaining gaps are concentrated in: chart data (synthetic), silent mock fallbacks (wallet, providers), mobile iframe overflow, empty/error states, and a few "generic SaaS" surfaces.
 
-## Provider matrix
+Each phase is shippable on its own and ends with a live-data verification step. I won't start phase N+1 until phase N is green.
 
-- **Token lists** (trending pools, new pairs) → **GMGN**
-- **Charts for bonded tokens** (have a DEX pool) → **DexScreener**
-- **Charts for not-yet-bonded tokens** (Pump.fun only) → **Pump.fun chart** (via GMGN kline `gmgn.cc/kline/sol/<addr>`, since `pump.fun` itself blocks iframing)
+---
 
-"Bonded" = `token.sources` includes `"dexscreener"`. No new server calls.
+## Phase 1 — Truth in data: kill silent mocks, surface "needs key" states
 
-## Changes
+**Why first:** any other polish is meaningless if a panel is quietly serving `sampleWallet` or an empty array.
 
-### 1. New unified components — `src/components/dashboard/embeds/`
+**Scope**
+- `live.functions.ts`: when `SOLANA_TRACKER_API_KEY` is missing, return a structured `{ status: "missing-key", provider: "solana-tracker" }` instead of `[]`. Same for Birdeye wallet.
+- `PumpfunLaunches` + `WalletView`: render a clear "Connect Solana Tracker / Birdeye to enable" empty state with a link to `/settings`, instead of looking broken.
+- `wallet-pnl.tsx` meta: drop the "mock preview in Phase 1" copy.
+- `adapters/README.md`: update to reflect that `liveAdapter` is the shipped adapter; `mockAdapter` is dev-only.
+- `ProviderStatusCard` + `/settings`: clearly distinguish "live", "degraded", "not configured" (today everything starts as `ni`). Add the missing-key CTA inline.
+- Remove `@/mocks/providers` import from `live.functions.ts`; derive the catalog from the providers actually wired in `src/lib/data/providers/`.
 
-- `TokenListEmbed.tsx` — single source of truth for multi-token list embeds. Props: `kind: "trending" | "new-pairs"`. Resolves to GMGN URLs:
-  - trending → `https://www.gmgn.cc/meme/sol`
-  - new-pairs → `https://www.gmgn.cc/new-pair/sol`
-  Renders inside an existing `Panel` with the GMGN `SourceBadge`. Keeps the responsive height behaviour we already use (`78vh`).
-- `TokenChartEmbed.tsx` — single chart component. Props: `address`, `symbol`, `bonded?: boolean`, `defaultProvider?: "dex" | "pf"`, `height`. Picks DexScreener when `bonded`, Pump.fun (GMGN kline) when not. Exposes a small two-button toggle (DEX / PF) so the user can override the auto-pick. Persists the override per session in `localStorage` under `chart-provider:<addr>`.
+**Verify:** `/coins`, `/wallet-pnl`, `/settings` all show either real data or an honest "needs configuration" panel — never a silent empty/mock.
 
-Both components reuse the existing `Panel`/`PanelHeader`/`PanelBody` chrome, no new design tokens.
+---
 
-### 2. Helper — `src/lib/token-bonded.ts`
+## Phase 2 — Real charts (kill the synthetic OHLCV)
 
-Tiny pure function `isBonded(token: { sources: Source[] }): boolean` → returns `token.sources.includes("dexscreener")`. Used by callers that know the token; the modal accepts an explicit `bonded` prop so callers can pass it through.
+**Why:** `chart.server.ts` is a sine-wave walk. A trading dashboard with fake candles is a non-starter.
 
-### 3. Update callers
+**Scope**
+- Add a real OHLCV provider in `src/lib/data/providers/`:
+  - Primary: **Birdeye** `/defi/ohlcv` (already have a key path) for bonded tokens.
+  - Fallback: **DexScreener** pair history (1m/5m/1h buckets) — no key needed.
+  - For Pump.fun-only (unbonded) tokens, keep the GMGN kline iframe path that's already in `TokenChartEmbed`.
+- Update `getTokenChartFn` to call the real provider, with graceful fallback chain → synthetic only as last resort, badged `SYNTH`.
+- Add timeframe selector (5m / 1h / 4h / 1d) to `TokenChartPanel` and the modal Chart tab.
+- Cache series in `cache.server.ts` with short TTL (30–60s).
 
-- `src/routes/coins.tsx` → replace both `DexScreenerEmbed` instances with `<TokenListEmbed kind="trending" />` and `<TokenListEmbed kind="new-pairs" />`. Titles/subtitles updated to mention GMGN.
-- `src/components/dashboard/PumpfunLaunches.tsx` → use `<TokenListEmbed kind="new-pairs" />`.
-- `src/components/dashboard/TokenChartPanel.tsx` → use `<TokenChartEmbed address={mod.address} symbol={mod.symbol} bonded={isBonded(mod)} />`. Drops the hand-rolled DexScreener iframe.
-- `src/components/token/TokenDetailProvider.tsx`:
-  - Extend `TokenRef` with optional `bonded?: boolean`. `useTokenDetail().open(...)` accepts it.
-  - Update every call site that opens the modal (`TrendingTable`, `MemeOfTheDayCard`, `WatchlistView`) to pass `bonded: isBonded(token)`. Watchlist looks up the matching `trending` row first; falls back to `undefined`.
-  - Collapse the `Chart` / `PF Chart` tabs into a single `Chart` tab that renders `<TokenChartEmbed bonded={token.bonded} />` with the built-in DEX/PF toggle. Keep the `Transactions` tab on DexScreener (it's always pool-based — only useful when bonded; if not bonded, render a small "No DEX pool yet" empty state).
+**Verify:** Open meme-of-the-day chart, switch timeframes, confirm candles update from Birdeye/DexScreener (check `SourceBadge`), confirm the synth fallback only fires when both upstreams 4xx/5xx.
 
-### 4. Keep `DexScreenerEmbed` for now
+---
 
-Don't delete `src/components/dashboard/DexScreenerEmbed.tsx` — `TokenChartEmbed` reuses it internally for the DEX iframe (already handles responsive height + source badge). Just stop using it as a list-embed wrapper.
+## Phase 3 — Trading-desk density & visual hierarchy
 
-## Risks / caveats
+**Why:** Right now `/dashboard` is a 2-card hero + "jump in" link tiles — too SaaS-y. Traders want eyes-on-market density.
 
-- GMGN pages (`/meme/sol`, `/new-pair/sol`) are full SPA pages, not an `?embed=1` widget. They may set `X-Frame-Options` / CSP `frame-ancestors` that block embedding. **Fallback plan**: if GMGN refuses to frame, `TokenListEmbed` falls back to GeckoTerminal with a visible "GMGN unreachable — showing GeckoTerminal" notice and the corresponding `SourceBadge`. Detection is best-effort (an iframe `onLoad` that never fires within 4s → assume blocked); this stays inside `TokenListEmbed` so callers don't care.
-- `pump.fun` itself does not allow iframe embedding, so the "PF" provider is the GMGN kline URL we already use. Source badge labelled `PF` to keep the user-facing language consistent.
+**Scope**
+- Replace the "Jump In" link cards on `/dashboard` with live modules:
+  - **Top Gainers / Top Losers** (split panel, derived from `useTrending()` sorted by `changes.h24`).
+  - **Fresh Launches** strip (top 5 from `usePumpfunLaunches`, horizontal scroller).
+  - **Narrative Pulse** mini (one-line narrative summary + keyword chips from `useNarratives`).
+- Tighten `MarketPulse`: add 24h Solana TPS (free Solana RPC, already wired in `macro.server.ts`), DEX volume, fear/greed inline.
+- Promote `AiTrendingTable` to dashboard as a collapsed module (default 5 picks, expand to all).
+- Tokenize spacing: stop using ad-hoc paddings; use the existing `Panel/PanelBody` system everywhere.
+- Replace generic emoji/Lucide icons in headers with the existing `SourceBadge` + tone accents.
 
-## Out of scope
+**Verify:** `/dashboard` on a 1440px monitor shows ≥6 live data modules above the fold; no "Coming soon" / link-only cards; every panel has a `SourceBadge`.
 
-- No data-layer changes (`live.functions.ts`, `dexscreener.server.ts`, mocks, narratives all keep their existing sources).
-- No new API integrations, no AI prompt changes.
-- `DexScreenerEmbed` keeps its current API; only its callers change.
+---
 
-## Verification
+## Phase 4 — Mobile-first overflow & nav fixes
 
-- `/coins`: both panels load via GMGN, fallback message appears only if GMGN blocks.
-- `/dashboard`: Token Chart shows DexScreener for the meme-of-the-day (which has a DEX pool).
-- Open a trending token from the table → modal shows single `Chart` tab on DexScreener with a `DEX | PF` toggle.
-- Manually pass a `bonded: false` token (e.g. via a Pump.fun-only mock) → modal Chart defaults to PF and Transactions shows the empty state.
-- Mobile (375px portrait) still has no horizontal overflow — the responsive iframe rules from the last pass still apply.
+**Why:** Audit found three iframes hard-set to `min-w-[640–760px]` with a `sm:min-w-0` reset that doesn't fire until ≥640px — so every phone scrolls horizontally inside panels. Plus `MarketBar`/`MarketTape` have unguarded min-widths.
+
+**Scope**
+- Replace all DexScreener iframe embeds on small screens with a native compact view derived from data we already fetch (price, change, liq, mcap, top txns) — fall back to iframe only at `md:`.
+- Fix `MarketTape` so the SOL/BTC/ETH/FNG row truncates and wraps cleanly under 380px; ensure the hamburger never gets pushed off-screen.
+- Audit every `min-w-[…]` flagged in §8 of the audit; switch to `grid-cols-[minmax(0,1fr)_auto]` + `truncate` patterns per the responsive-layout guide.
+- Promote `OverflowGuard` from dev-only to a one-shot prod check that no-ops after first clean render (or just leave dev-only but fix the violations it currently logs).
+
+**Verify:** Open `/dashboard`, `/coins`, `/trending`, `/wallet-pnl`, token-detail modal at 375×812 (iPhone SE-ish). Zero horizontal page scroll; no panel scrolls horizontally either — either it shows the native view or it's clearly a contained iframe.
+
+---
+
+## Phase 5 — Loading / error / empty states + polish pass
+
+**Scope**
+- Every `Panel` gets a real skeleton (terminal-style shimmering monospaced rows, not generic gray bars). Build one shared `<PanelSkeleton rows={n}/>`.
+- Every fetch path renders a typed error panel with a Retry button calling `router.invalidate()`.
+- Empty states: write copy that's useful (e.g. "No new launches in the last 30m — Pump.fun is quiet"), not generic "No data".
+- Token detail modal: persist last-active tab per token in `localStorage`.
+- Add a global "Last updated · 12s ago" footer to `MarketTape` driven by `useSolMarket().lastUpdated`.
+- Final accessibility pass: focus rings on table rows, `aria-live` on the tape, keyboard navigation on `CommandPalette` already works — verify.
+- Strip leftover `console.log`, dead imports, the unused `mockAdapter` export if nothing dev-only depends on it.
+
+**Verify:** Throttle network in DevTools → skeletons appear, then real data; force an API to 500 → error state with Retry that recovers; offline → tape shows a "stale" indicator instead of going blank.
+
+---
+
+## Execution order & guardrails
+
+```text
+Phase 1 (truth)  ──►  Phase 2 (charts)  ──►  Phase 3 (density)  ──►  Phase 4 (mobile)  ──►  Phase 5 (polish)
+   │                    │                       │                       │                       │
+   └─ live-data check ──┴─ live-data check ─────┴─ live-data check ─────┴─ live-data check ─────┴─ live + responsive check
+```
+
+- After each phase I will: run the dev server, hit each affected route, confirm `SourceBadge` shows real provider (not `MOCK` / `SYNTH`), screenshot mobile + desktop, then report back.
+- No new components duplicate existing ones — `Panel`, `SourceBadge`, `RiskBadge`, `ChangeCell`, `StatCell`, `TokenAvatar`, `CopyAddress`, `TokenChartEmbed`, `TokenListEmbed` are the canonical building blocks.
+- No new mock data. New fallbacks must be honest "needs-config" states.
+
+## Out of scope (explicit)
+- Auth / user accounts.
+- Trade execution / wallet signing.
+- New data providers beyond what's listed in Phase 2.
+- Visual redesign of the terminal aesthetic — only density + hierarchy improvements within it.
+
+## Open question I'll ask before Phase 2
+
+Birdeye OHLCV is gated by their paid plan tier for fine-grained intervals. If your current Birdeye key is the free tier, I'll use DexScreener pair history as the primary and badge accordingly — no extra cost, slightly coarser candles. I'll confirm which you have when I start Phase 2.
