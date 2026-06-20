@@ -183,12 +183,9 @@ export function WatchlistView() {
                   className="w-full mt-0.5 bg-panel-2 border border-border px-2 py-1 font-mono text-[11px] outline-none focus:border-pos" />
               </label>
             </div>
-            <button type="submit"
-              className="w-full mt-1 inline-flex items-center justify-center gap-1 border border-pos/40 bg-pos/10 hover:bg-pos/20 text-pos font-mono text-[11px] uppercase tracking-wider py-1.5">
-              <Plus className="h-3 w-3" /> Add to watchlist
-            </button>
             <button type="submit" disabled={adding || !addr.trim()}
-              className="hidden">
+              className="w-full mt-1 inline-flex items-center justify-center gap-1 border border-pos/40 bg-pos/10 hover:bg-pos/20 disabled:opacity-40 disabled:cursor-not-allowed text-pos font-mono text-[11px] uppercase tracking-wider py-1.5">
+              <Plus className="h-3 w-3" /> {adding ? "Resolving…" : "Add to watchlist"}
             </button>
             {addError && <p className="text-[10px] text-neg mt-1">{addError}</p>}
             <p className="text-[10px] text-muted-foreground mt-2">
