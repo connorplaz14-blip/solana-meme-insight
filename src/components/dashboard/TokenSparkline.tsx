@@ -37,8 +37,8 @@ export function TokenSparkline({ address, height = 88 }: { address: string; heig
   }, [data]);
 
   const tone = view ? (view.changePct >= 0 ? "pos" : "neg") : "info";
-  const stroke = tone === "pos" ? "hsl(var(--pos))" : tone === "neg" ? "hsl(var(--neg))" : "hsl(var(--info))";
-  const fill = tone === "pos" ? "hsl(var(--pos) / 0.12)" : "hsl(var(--neg) / 0.12)";
+  const stroke = tone === "pos" ? "var(--pos)" : tone === "neg" ? "var(--neg)" : "var(--info)";
+  const fill = tone === "pos" ? "color-mix(in srgb, var(--pos) 14%, transparent)" : "color-mix(in srgb, var(--neg) 14%, transparent)";
 
   return (
     <div className="border-b border-border bg-panel-2/30">
