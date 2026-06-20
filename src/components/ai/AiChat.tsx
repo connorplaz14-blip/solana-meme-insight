@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Panel, PanelHeader, PanelBody } from "@/components/terminal/Panel";
-import { Sparkles, Send, RotateCcw } from "lucide-react";
+import { Sparkles, Send, RotateCcw, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const transport = new DefaultChatTransport({ api: "/api/chat" });
@@ -142,12 +142,29 @@ function MessageBubble({ message }: { message: UIMessage }) {
   const text = message.parts
     .map((p) => (p.type === "text" ? p.text : ""))
     .join("");
+  const toolCalls = (message.parts as unknown as Array<{ type: string; toolName?: string }>)
+    .filter((p) => typeof p.type === "string" && p.type.startsWith("tool-"))
+    .map((p) => p.toolName ?? p.type.slice(5))
+    .filter((n, i, a) => a.indexOf(n) === i);
   const isUser = message.role === "user";
   return (
     <div className={cn("flex flex-col gap-1", isUser ? "items-end" : "items-start")}>
       <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
         {isUser ? "You" : "SCBOL AI"}
       </div>
+      {!isUser && toolCalls.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {toolCalls.map((name) => (
+            <span
+              key={name}
+              className="inline-flex items-center gap-1 border border-info/30 bg-info/5 text-info px-1.5 py-[1px] font-mono text-[9px] uppercase tracking-wider"
+            >
+              <Wrench className="h-2.5 w-2.5" />
+              {name}
+            </span>
+          ))}
+        </div>
+      )}
       <div
         className={cn(
           "max-w-[88%] text-[12px] leading-relaxed",

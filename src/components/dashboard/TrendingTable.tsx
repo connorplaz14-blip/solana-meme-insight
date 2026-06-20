@@ -7,12 +7,13 @@ import { SourceBadge } from "@/components/terminal/SourceBadge";
 import { CopyAddress } from "@/components/terminal/CopyAddress";
 import { TokenAvatar } from "@/components/terminal/TokenAvatar";
 import { fmtUsd, fmtNum, fmtAge } from "@/lib/format";
-import { Star, Search } from "lucide-react";
+import { Star, Search, Sparkles } from "lucide-react";
 import type { Risk, Token } from "@/types";
 import { addToWatchlist, isWatched, removeFromWatchlist } from "@/lib/watchlist-store";
 import { cn } from "@/lib/utils";
 import { useTokenDetail } from "@/components/token/TokenDetailProvider";
 import { isBonded } from "@/lib/token-bonded";
+import { TokenDeepDiveDialog } from "@/components/ai/TokenDeepDiveDialog";
 
 type SortKey = "rank" | "marketCapUsd" | "liquidityUsd" | "volume24hUsd" | "ageHours" | "h24";
 
@@ -24,6 +25,10 @@ export function TrendingTable({ limit, dense = false }: { limit?: number; dense?
   const [sortKey, setSortKey] = useState<SortKey>("rank");
   const [asc, setAsc] = useState(true);
   const [, force] = useState(0);
+  const [dlg, setDlg] = useState<{ open: boolean; query: string }>({
+    open: false,
+    query: "",
+  });
 
   const rows = useMemo(() => {
     let r = (data ?? []).slice();
@@ -165,6 +170,7 @@ export function TrendingTable({ limit, dense = false }: { limit?: number; dense?
                 <th className="text-left">Src</th>
                 <th className="text-left">Risk</th>
                 <th className="text-center w-8">★</th>
+                <th className="text-center w-8">AI</th>
               </tr>
             </thead>
             <tbody>
@@ -216,18 +222,32 @@ export function TrendingTable({ limit, dense = false }: { limit?: number; dense?
                       <Star className={cn("h-3.5 w-3.5", isWatched(t.address) && "fill-current")} />
                     </button>
                   </td>
+                  <td className="text-center">
+                    <button
+                      onClick={() => setDlg({ open: true, query: t.symbol })}
+                      className="text-muted-foreground hover:text-info transition-colors"
+                      title="AI deep dive"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {status === "loading" && (
-                <tr><td colSpan={15} className="px-3 py-4 text-center text-muted-foreground font-mono text-[11px]">Loading…</td></tr>
+                <tr><td colSpan={16} className="px-3 py-4 text-center text-muted-foreground font-mono text-[11px]">Loading…</td></tr>
               )}
               {status === "ready" && rows.length === 0 && (
-                <tr><td colSpan={15} className="px-3 py-4 text-center text-muted-foreground font-mono text-[11px]">No matches</td></tr>
+                <tr><td colSpan={16} className="px-3 py-4 text-center text-muted-foreground font-mono text-[11px]">No matches</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </PanelBody>
+      <TokenDeepDiveDialog
+        query={dlg.query}
+        open={dlg.open}
+        onOpenChange={(o) => setDlg((d) => ({ ...d, open: o }))}
+      />
     </Panel>
   );
 }
