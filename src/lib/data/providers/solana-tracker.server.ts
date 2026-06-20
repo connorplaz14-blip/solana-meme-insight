@@ -19,6 +19,8 @@ export interface PumpLaunch {
 const ENDPOINT = "https://data.solanatracker.io/tokens/latest";
 const HOLDERS_ENDPOINT = (mint: string) =>
   `https://data.solanatracker.io/tokens/${mint}/holders/top`;
+const TOKEN_ENDPOINT = (mint: string) =>
+  `https://data.solanatracker.io/tokens/${mint}`;
 
 export interface TopHolder {
   rank: number;
@@ -62,6 +64,76 @@ export async function fetchTopHolders(mint: string, limit = 20): Promise<TopHold
       insider: h.insider ?? false,
     };
   }).filter((h) => h.address);
+}
+
+export interface TokenRiskFactor {
+  name: string;
+  description: string;
+  level: "warn" | "danger" | "info";
+  score: number;
+}
+
+export interface TokenRisk {
+  score: number; // 0-10
+  rugged: boolean;
+  jupiterVerified: boolean;
+  top10Pct: number;
+  devPct: number;
+  sniperCount: number;
+  insiderCount: number;
+  factors: TokenRiskFactor[];
+  creator?: string;
+}
+
+type STRiskFactor = { name?: string; description?: string; level?: string; score?: number };
+type STTokenDetail = {
+  token?: { creation?: { creator?: string } | string };
+  risk?: {
+    score?: number;
+    rugged?: boolean;
+    jupiterVerified?: boolean;
+    top10?: number;
+    dev?: { percentage?: number };
+    snipers?: { count?: number };
+    insiders?: { count?: number };
+    risks?: STRiskFactor[];
+  };
+};
+
+export async function fetchTokenRisk(mint: string): Promise<TokenRisk | null> {
+  const apiKey = process.env.SOLANA_TRACKER_API_KEY;
+  if (!apiKey) throw new Error("SOLANA_TRACKER_API_KEY not configured");
+  const res = await fetch(TOKEN_ENDPOINT(mint), {
+    headers: { accept: "application/json", "x-api-key": apiKey },
+  });
+  if (!res.ok) throw new Error(`Solana Tracker token ${res.status}`);
+  const json = (await res.json()) as STTokenDetail;
+  if (!json.risk) return null;
+  const r = json.risk;
+  const creation = json.token?.creation;
+  const creator = typeof creation === "string" ? creation : creation?.creator;
+  const normLevel = (l?: string): TokenRiskFactor["level"] => {
+    const v = (l ?? "").toLowerCase();
+    if (v === "danger" || v === "high") return "danger";
+    if (v === "warn" || v === "warning" || v === "medium") return "warn";
+    return "info";
+  };
+  return {
+    score: r.score ?? 0,
+    rugged: !!r.rugged,
+    jupiterVerified: !!r.jupiterVerified,
+    top10Pct: r.top10 ?? 0,
+    devPct: r.dev?.percentage ?? 0,
+    sniperCount: r.snipers?.count ?? 0,
+    insiderCount: r.insiders?.count ?? 0,
+    factors: (r.risks ?? []).map((f) => ({
+      name: f.name ?? "Unknown risk",
+      description: f.description ?? "",
+      level: normLevel(f.level),
+      score: f.score ?? 0,
+    })),
+    creator,
+  };
 }
 
 type STToken = {

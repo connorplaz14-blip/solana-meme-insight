@@ -12,6 +12,7 @@ import {
   getWalletPnLFn,
   getTokenHoldersFn,
   getTokenWhaleTradesFn,
+  getTokenRiskFn,
 } from "../live.functions";
 
 export const liveAdapter = {
@@ -29,6 +30,7 @@ export const liveAdapter = {
   getTokenHolders: (address: string) => getTokenHoldersFn({ data: { address } }),
   getTokenWhaleTrades: (address: string, minUsd = 1000) =>
     getTokenWhaleTradesFn({ data: { address, minUsd } }),
+  getTokenRisk: (address: string) => getTokenRiskFn({ data: { address } }),
 };
 
 export type LiveAdapter = typeof liveAdapter;
