@@ -18,10 +18,14 @@ export type XTweet = {
   retweets?: number;
   views?: number;
   hasMedia?: boolean;
+  photos?: { url: string; width?: number; height?: number }[];
+  videos?: { url: string; thumb?: string; width?: number; height?: number }[];
 };
 
 type FxAuthor = { name?: string; screen_name?: string };
-type FxMedia = { all?: unknown[]; photos?: unknown[]; videos?: unknown[] };
+type FxPhoto = { url?: string; width?: number; height?: number };
+type FxVideo = { url?: string; thumbnail_url?: string; width?: number; height?: number };
+type FxMedia = { all?: unknown[]; photos?: FxPhoto[]; videos?: FxVideo[] };
 type FxStatus = {
   id?: string;
   url?: string;
@@ -91,6 +95,17 @@ function normalize(s: FxStatus | undefined | null): XTweet | null {
       (media.photos?.length ?? 0) > 0 ||
       (media.videos?.length ?? 0) > 0)
   );
+  const photos = (media?.photos ?? [])
+    .filter((p): p is FxPhoto & { url: string } => !!p?.url)
+    .map((p) => ({ url: p.url, width: p.width, height: p.height }));
+  const videos = (media?.videos ?? [])
+    .filter((v): v is FxVideo & { url: string } => !!v?.url)
+    .map((v) => ({
+      url: v.url,
+      thumb: v.thumbnail_url,
+      width: v.width,
+      height: v.height,
+    }));
   return {
     id: s.id,
     url: s.url ?? `https://x.com/${handle}/status/${s.id}`,
@@ -103,6 +118,8 @@ function normalize(s: FxStatus | undefined | null): XTweet | null {
     retweets: typeof s.retweets === "number" ? s.retweets : undefined,
     views: typeof s.views === "number" ? s.views : undefined,
     hasMedia,
+    photos: photos.length ? photos : undefined,
+    videos: videos.length ? videos : undefined,
   };
 }
 
