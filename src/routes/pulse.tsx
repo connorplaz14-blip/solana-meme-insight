@@ -31,7 +31,7 @@ const tabs = [
   { key: "social", label: "X / Social", icon: MessageSquare },
   { key: "news", label: "News", icon: Newspaper },
   { key: "trending", label: "Trending", icon: TrendingUp },
-  { key: "whales", label: "Whales", icon: Whale },
+  { key: "whales", label: "Whales", icon: Fish },
 ] as const;
 
 type TabKey = (typeof tabs)[number]["key"];
