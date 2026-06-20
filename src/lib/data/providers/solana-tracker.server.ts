@@ -21,6 +21,8 @@ const HOLDERS_ENDPOINT = (mint: string) =>
   `https://data.solanatracker.io/tokens/${mint}/holders/top`;
 const TOKEN_ENDPOINT = (mint: string) =>
   `https://data.solanatracker.io/tokens/${mint}`;
+const TRADES_ENDPOINT = (mint: string) =>
+  `https://data.solanatracker.io/trades/${mint}`;
 
 export interface TopHolder {
   rank: number;
