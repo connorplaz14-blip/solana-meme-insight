@@ -6,6 +6,7 @@ import { CopyAddress } from "@/components/terminal/CopyAddress";
 import { TokenChartEmbed } from "@/components/dashboard/embeds/TokenChartEmbed";
 import { HoldersTable } from "@/components/token/HoldersTable";
 import { WhaleFeed } from "@/components/token/WhaleFeed";
+import { RiskPanel } from "@/components/token/RiskPanel";
 
 export type TokenRef = {
   address: string;
@@ -76,6 +77,7 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
           <TabsTrigger value="txns" className="font-mono text-[11px] uppercase tracking-wider">Transactions</TabsTrigger>
           <TabsTrigger value="holders" className="font-mono text-[11px] uppercase tracking-wider">Holders</TabsTrigger>
           <TabsTrigger value="whales" className="font-mono text-[11px] uppercase tracking-wider">Whales</TabsTrigger>
+          <TabsTrigger value="risk" className="font-mono text-[11px] uppercase tracking-wider">Risk</TabsTrigger>
         </TabsList>
 
         <TabsContent value="chart" className="flex-1 min-h-0 m-0 p-3 pt-2">
@@ -122,6 +124,10 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
           ) : (
             <WhaleFeed address={addr} />
           )}
+        </TabsContent>
+
+        <TabsContent value="risk" className="flex-1 min-h-0 m-0 p-3 pt-2">
+          <RiskPanel address={addr} />
         </TabsContent>
 
       </Tabs>

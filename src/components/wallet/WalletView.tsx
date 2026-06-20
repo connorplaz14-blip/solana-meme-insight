@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Panel, PanelHeader, PanelBody } from "@/components/terminal/Panel";
 import { StatCell } from "@/components/terminal/StatCell";
 import { useWalletPnL } from "@/lib/data";
@@ -8,9 +8,16 @@ import { CopyAddress } from "@/components/terminal/CopyAddress";
 import { SourceBadge } from "@/components/terminal/SourceBadge";
 import { Info } from "lucide-react";
 
-export function WalletView() {
-  const [addr, setAddr] = useState("");
-  const [submitted, setSubmitted] = useState<string | null>(null);
+export function WalletView({ initialAddress }: { initialAddress?: string } = {}) {
+  const [addr, setAddr] = useState(initialAddress ?? "");
+  const [submitted, setSubmitted] = useState<string | null>(initialAddress ?? null);
+  useEffect(() => {
+    if (initialAddress && initialAddress !== submitted) {
+      setAddr(initialAddress);
+      setSubmitted(initialAddress);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialAddress]);
   const { data, status } = useWalletPnL(submitted);
   const source = (data && (data as { source?: string }).source) ?? "mock";
   const isLive = source === "birdeye";
