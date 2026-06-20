@@ -8,6 +8,7 @@ import { CopyAddress } from "@/components/terminal/CopyAddress";
 import { TokenAvatar } from "@/components/terminal/TokenAvatar";
 import { fmtUsd, fmtNum, fmtAge } from "@/lib/format";
 import { useTokenDetail } from "@/components/token/TokenDetailProvider";
+import { isBonded } from "@/lib/token-bonded";
 
 export function MemeOfTheDayCard({ expanded = false }: { expanded?: boolean }) {
   const { data: t } = useMemeOfTheDay();
@@ -21,8 +22,8 @@ export function MemeOfTheDayCard({ expanded = false }: { expanded?: boolean }) {
         <div
           role="button"
           tabIndex={0}
-          onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl })}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl }); }}
+          onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl, bonded: isBonded(t) })}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl, bonded: isBonded(t) }); }}
           className="flex items-center gap-3 w-full text-left cursor-pointer hover:bg-accent/20 -mx-1 px-1 py-1 transition-colors"
         >
           <TokenAvatar symbol={t.symbol} size={40} logoUrl={t.logoUrl} />

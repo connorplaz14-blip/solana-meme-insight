@@ -9,6 +9,7 @@ import { ChangeCell } from "@/components/terminal/ChangeCell";
 import { X, Plus } from "lucide-react";
 import type { WatchlistEntry } from "@/types";
 import { useTokenDetail } from "@/components/token/TokenDetailProvider";
+import { isBonded } from "@/lib/token-bonded";
 
 export function WatchlistView() {
   const [items, setItems] = useState<WatchlistEntry[]>([]);
@@ -46,7 +47,7 @@ export function WatchlistView() {
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => open({ address: e.address, symbol: e.symbol, name: e.name, logoUrl: t?.logoUrl })}
+                      onClick={() => open({ address: e.address, symbol: e.symbol, name: e.name, logoUrl: t?.logoUrl, bonded: t ? isBonded(t) : undefined })}
                       className="flex items-center gap-2 min-w-0 text-left hover:text-pos transition-colors flex-1"
                     >
                       <TokenAvatar symbol={e.symbol} size={22} logoUrl={t?.logoUrl} />
@@ -109,7 +110,7 @@ export function WatchlistView() {
                     <td>
                       <button
                         type="button"
-                        onClick={() => open({ address: e.address, symbol: e.symbol, name: e.name, logoUrl: t?.logoUrl })}
+                        onClick={() => open({ address: e.address, symbol: e.symbol, name: e.name, logoUrl: t?.logoUrl, bonded: t ? isBonded(t) : undefined })}
                         className="flex items-center gap-2 text-left hover:text-pos transition-colors"
                       >
                         <TokenAvatar symbol={e.symbol} size={20} logoUrl={t?.logoUrl} />

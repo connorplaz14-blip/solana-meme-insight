@@ -3,12 +3,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TokenAvatar } from "@/components/terminal/TokenAvatar";
 import { CopyAddress } from "@/components/terminal/CopyAddress";
+import { TokenChartEmbed } from "@/components/dashboard/embeds/TokenChartEmbed";
 
 export type TokenRef = {
   address: string;
   symbol: string;
   name?: string;
   logoUrl?: string;
+  bonded?: boolean;
 };
 
 type Ctx = { open: (t: TokenRef) => void };
@@ -38,9 +40,8 @@ export function TokenDetailProvider({ children }: { children: ReactNode }) {
 
 function TokenDetailBody({ token }: { token: TokenRef }) {
   const addr = token.address;
-  const chartSrc = `https://dexscreener.com/solana/${addr}?embed=1&theme=dark&trades=0&info=0`;
   const txnsSrc = `https://dexscreener.com/solana/${addr}?embed=1&theme=dark&trades=1&info=0`;
-  const pfChartSrc = `https://www.gmgn.cc/kline/sol/${addr}`;
+  const bonded = token.bonded;
 
   return (
     <div className="flex flex-col max-h-[88vh]">
@@ -70,41 +71,34 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
       <Tabs defaultValue="chart" className="flex-1 min-h-0 flex flex-col">
         <TabsList className="mx-4 mt-3 self-start bg-panel-2 border border-border h-8">
           <TabsTrigger value="chart" className="font-mono text-[11px] uppercase tracking-wider">Chart</TabsTrigger>
-          <TabsTrigger value="pf" className="font-mono text-[11px] uppercase tracking-wider">PF Chart</TabsTrigger>
           <TabsTrigger value="txns" className="font-mono text-[11px] uppercase tracking-wider">Transactions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="chart" className="flex-1 min-h-0 m-0 p-3 pt-2">
-          <iframe
-            key={`chart-${addr}`}
-            src={chartSrc}
-            title={`${token.symbol} chart`}
-            loading="lazy"
-            className="w-full h-[65vh] border-0 bg-background"
-            allow="clipboard-write"
-          />
-        </TabsContent>
-
-        <TabsContent value="pf" className="flex-1 min-h-0 m-0 p-3 pt-2">
-          <iframe
-            key={`pf-${addr}`}
-            src={pfChartSrc}
-            title={`${token.symbol} Pump.fun chart (GMGN)`}
-            loading="lazy"
-            className="w-full h-[65vh] border-0 bg-background"
-            allow="clipboard-write"
+          <TokenChartEmbed
+            address={addr}
+            symbol={token.symbol}
+            bonded={bonded}
+            withChrome={false}
+            height="65vh"
           />
         </TabsContent>
 
         <TabsContent value="txns" className="flex-1 min-h-0 m-0 p-3 pt-2">
-          <iframe
-            key={`txns-${addr}`}
-            src={txnsSrc}
-            title={`${token.symbol} transactions`}
-            loading="lazy"
-            className="w-full h-[65vh] border-0 bg-background"
-            allow="clipboard-write"
-          />
+          {bonded === false ? (
+            <div className="h-[65vh] flex items-center justify-center text-muted-foreground font-mono text-[11px]">
+              No DEX pool yet — token still on Pump.fun bonding curve.
+            </div>
+          ) : (
+            <iframe
+              key={`txns-${addr}`}
+              src={txnsSrc}
+              title={`${token.symbol} transactions`}
+              loading="lazy"
+              className="w-full h-[65vh] border-0 bg-background"
+              allow="clipboard-write"
+            />
+          )}
         </TabsContent>
 
       </Tabs>

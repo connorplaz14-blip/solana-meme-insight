@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DexScreenerEmbed } from "@/components/dashboard/DexScreenerEmbed";
+import { TokenListEmbed } from "@/components/dashboard/embeds/TokenListEmbed";
 
 export const Route = createFileRoute("/coins")({
   head: () => ({
@@ -23,20 +23,8 @@ export const Route = createFileRoute("/coins")({
 function CoinsPage() {
   return (
     <div className="p-3 space-y-3">
-      <DexScreenerEmbed
-        title="Trending · Solana · 24h"
-        subtitle="GeckoTerminal · sorted by 24h volume"
-        src="https://www.geckoterminal.com/solana/pools?embed=1&sort=h24_volume_usd"
-        source="geckoterminal"
-        height="78vh"
-      />
-      <DexScreenerEmbed
-        title="Pump.fun · New Pairs · Live"
-        subtitle="GeckoTerminal · bonding-curve pools as they appear"
-        src="https://www.geckoterminal.com/solana/pump-fun/pools?embed=1"
-        source="geckoterminal"
-        height="78vh"
-      />
+      <TokenListEmbed kind="trending" height="78vh" />
+      <TokenListEmbed kind="new-pairs" height="78vh" />
     </div>
   );
 }

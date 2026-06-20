@@ -12,6 +12,7 @@ import type { Risk, Token } from "@/types";
 import { addToWatchlist, isWatched, removeFromWatchlist } from "@/lib/watchlist-store";
 import { cn } from "@/lib/utils";
 import { useTokenDetail } from "@/components/token/TokenDetailProvider";
+import { isBonded } from "@/lib/token-bonded";
 
 type SortKey = "rank" | "marketCapUsd" | "liquidityUsd" | "volume24hUsd" | "ageHours" | "h24";
 
@@ -93,7 +94,7 @@ export function TrendingTable({ limit, dense = false }: { limit?: number; dense?
                 <span className="font-mono text-[10px] text-muted-foreground w-5 shrink-0">{t.rank}</span>
                 <button
                   type="button"
-                  onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl })}
+                  onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl, bonded: isBonded(t) })}
                   className="flex items-center gap-2 min-w-0 flex-1 text-left hover:text-pos transition-colors"
                 >
                   <TokenAvatar symbol={t.symbol} size={22} logoUrl={t.logoUrl} />
@@ -176,7 +177,7 @@ export function TrendingTable({ limit, dense = false }: { limit?: number; dense?
                   <td>
                     <button
                       type="button"
-                      onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl })}
+                      onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl, bonded: isBonded(t) })}
                       className="flex items-center gap-2 min-w-0 text-left hover:text-pos transition-colors"
                     >
                       <TokenAvatar symbol={t.symbol} size={20} logoUrl={t.logoUrl} />
