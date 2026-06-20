@@ -79,13 +79,16 @@ export function TokenChartEmbed({
   );
 
   const iframe = (
-    <div className="w-full overflow-hidden" style={{ height: heightStyle }}>
+    <div
+      className="w-full overflow-x-auto overflow-y-hidden"
+      style={{ height: heightStyle, WebkitOverflowScrolling: "touch" }}
+    >
       <iframe
         key={src}
         src={src}
         title={`${symbol ?? "token"} chart (${provider === "dex" ? "DexScreener" : "Pump.fun"})`}
         loading="lazy"
-        className="w-full h-full border-0 bg-background"
+        className="h-full border-0 bg-background w-full min-w-[640px] sm:min-w-0"
         allow="clipboard-write"
       />
     </div>
