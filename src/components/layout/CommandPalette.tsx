@@ -32,8 +32,8 @@ import { TokenAvatar } from "@/components/terminal/TokenAvatar";
 import { cn } from "@/lib/utils";
 
 const ROUTES = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { to: "/pulse", label: "Pulse", icon: Radio },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { to: "/coins", label: "Coins", icon: Coins },
   { to: "/ai", label: "AI Desk", icon: MessageSquare },
   { to: "/meme-of-the-day", label: "Meme of the Day", icon: Trophy },
