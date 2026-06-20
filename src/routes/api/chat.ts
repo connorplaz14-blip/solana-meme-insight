@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from "ai";
 
 type ChatRequestBody = { messages?: unknown };
 
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/api/chat")({
           "@/lib/data/providers/gateway.server"
         );
         const { buildMarketSnapshot } = await import("@/lib/ai/snapshot.server");
+        const { buildSCBOLTools } = await import("@/lib/ai/tools.server");
 
         let snapshotJson = "{}";
         try {
@@ -32,12 +33,18 @@ export const Route = createFileRoute("/api/chat")({
 
         const system = [
           "You are SCBOL AI, a Solana memecoin trading-desk analyst.",
-          "You only reason from the JSON market snapshot below. NEVER invent",
-          "tokens, prices, market caps, or % moves not present in the snapshot.",
+          "Reason from the JSON market snapshot below plus tool results. NEVER",
+          "invent tokens, prices, market caps, % moves, tweets, or headlines.",
+          "Prefer calling tools for specific tokens, KOLs, or recent events:",
+          "  - lookup_token: any ticker/mint not in the snapshot",
+          "  - get_token_tweets: what people are saying about $TICKER",
+          "  - get_kol_take: what a specific handle (Ansem, Murad, etc.) thinks",
+          "  - search_news: breaking headlines on a topic",
+          "Cite sources inline: tweets as @handle, news as (Source).",
           "When the user asks 'what's the meta', summarise the dominant theme +",
           "the fastest-growing sub-narrative and cite 2-3 leading tokens by symbol.",
-          "When asked about a token, find it in the snapshot by symbol or address.",
-          "If it's missing, say it isn't in today's trending feed instead of guessing.",
+          "When asked about a token, first check the snapshot; if missing, call",
+          "lookup_token before answering. If still nothing, say so plainly.",
           "Keep replies tight, like a desk note. Use markdown lists/tables when useful.",
           "Never give buy/sell advice or price predictions. Analytics only.",
           "",
@@ -51,6 +58,8 @@ export const Route = createFileRoute("/api/chat")({
           model: gateway("google/gemini-3-flash-preview"),
           system,
           messages: await convertToModelMessages(messages as UIMessage[]),
+          tools: buildSCBOLTools(),
+          stopWhen: stepCountIs(6),
         });
 
         return result.toUIMessageStreamResponse({
