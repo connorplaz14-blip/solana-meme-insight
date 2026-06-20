@@ -28,8 +28,8 @@ function NotFoundComponent() {
         <h2 className="mt-3 text-base uppercase tracking-[0.18em] text-foreground">Route not found</h2>
         <p className="mt-2 text-xs text-muted-foreground">The terminal path you requested doesn't exist.</p>
         <div className="mt-5">
-          <Link to="/dashboard" className="inline-flex items-center justify-center border border-pos/40 bg-pos/10 text-pos px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-pos/20">
-            Go to dashboard
+          <Link to="/pulse" className="inline-flex items-center justify-center border border-pos/40 bg-pos/10 text-pos px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-pos/20">
+            Go to Pulse
           </Link>
         </div>
       </div>
