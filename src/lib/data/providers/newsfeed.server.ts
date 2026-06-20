@@ -19,6 +19,17 @@ export type SocialItem = {
   url: string;
   publishedAt: string;
   source: string;
+  // Optional fields for rich card kinds. UI degrades gracefully when absent.
+  kind?: "post" | "signal" | "launch";
+  ticker?: string;
+  icon?: string;
+  signal?: number;       // 0-100
+  buzz?: number;         // -100..100
+  mentions?: number;
+  priceChg?: number;     // percent
+  spark?: number[];      // mention counts timeseries
+  links?: { label?: string; type?: string; url: string }[];
+  headlines?: { text: string; src: string; lean?: string }[];
 };
 
 const NEWS_FEEDS: { source: string; url: string }[] = [
@@ -174,8 +185,14 @@ export async function fetchSocialFeed(query: string, limit = 30): Promise<Social
   const { mode, value } = detectMode(query);
   if (!value) return [];
 
-  // 1) Bluesky (public, no auth) — primary working source in 2026
-  const bsky = await fetchBlueskyFeed(mode, value, limit).catch(() => [] as SocialItem[]);
+  // Three live, no-auth sources fanned out in parallel. Each may fail; we
+  // merge whatever comes back. This is what makes the column never empty
+  // in 2026 when X mirrors are dead.
+  const [bsky, signals, launches] = await Promise.all([
+    fetchBlueskyFeed(mode, value, Math.ceil(limit / 2)).catch(() => [] as SocialItem[]),
+    fetchSocialSignals(mode, value, 8).catch(() => [] as SocialItem[]),
+    fetchDexLaunches(mode, value, 12).catch(() => [] as SocialItem[]),
+  ]);
 
   // 2) Try Nitter for any X mirrors that still respond
   let nitter: SocialItem[] = [];
@@ -193,8 +210,9 @@ export async function fetchSocialFeed(query: string, limit = 30): Promise<Social
     }
   }
 
-  // 3) RSSHub fallback for X
-  if (nitter.length === 0) {
+  // 3) RSSHub fallback for X — skip when we already have plenty from working
+  // sources to keep latency down.
+  if (nitter.length === 0 && bsky.length + signals.length + launches.length < 6) {
     for (const host of RSSHUB_HOSTS) {
       const url =
         mode === "user"
@@ -210,16 +228,22 @@ export async function fetchSocialFeed(query: string, limit = 30): Promise<Social
     }
   }
 
-  // Merge, dedupe by id, sort newest first
+  // Merge, dedupe by id. Signal cards float to the top, then mix posts +
+  // launches sorted by recency.
   const seen = new Set<string>();
-  const merged: SocialItem[] = [];
-  for (const it of [...bsky, ...nitter]) {
+  const all: SocialItem[] = [];
+  for (const it of [...signals, ...bsky, ...launches, ...nitter]) {
     if (seen.has(it.id)) continue;
     seen.add(it.id);
-    merged.push(it);
+    all.push(it);
   }
-  merged.sort((a, b) => +new Date(b.publishedAt) - +new Date(a.publishedAt));
-  return merged.slice(0, limit);
+  const rank = (k?: string) => (k === "signal" ? 0 : 1);
+  all.sort((a, b) => {
+    const r = rank(a.kind) - rank(b.kind);
+    if (r !== 0) return r;
+    return +new Date(b.publishedAt) - +new Date(a.publishedAt);
+  });
+  return all.slice(0, limit);
 }
 
 // ─── Bluesky ────────────────────────────────────────────────────────────────
@@ -312,4 +336,170 @@ async function fetchBlueskyFeed(
   return (json?.posts ?? [])
     .map((p) => normalizePost(p))
     .filter((x): x is SocialItem => !!x);
+}
+// ─── socialtickers.com (signal scores) ──────────────────────────────────────
+// No auth. Single endpoint returns 60+ crypto tickers with signal score,
+// buzz, mentions, sparkline, and embedded news headlines per ticker.
+
+type StNewsItem = { t: string; src: string; lean?: string };
+type StTicker = {
+  ticker: string;
+  name?: string;
+  mentions?: number;
+  signal?: number;
+  buzz?: number;
+  priceChg?: number;
+  spark?: [number, number][];
+  news?: { items?: StNewsItem[] };
+};
+
+async function fetchSocialTickers(): Promise<StTicker[]> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch(
+      "https://socialtickers.com/api/v1/leaderboard?class=crypto&sort=trending&win=1h",
+      {
+        signal: ctrl.signal,
+        headers: { accept: "application/json", "user-agent": "MemeDeskBot/1.0" },
+      },
+    );
+    clearTimeout(t);
+    if (!r.ok) return [];
+    const j = (await r.json()) as { results?: StTicker[] };
+    return j.results ?? [];
+  } catch {
+    return [];
+  }
+}
+
+function matchTicker(t: StTicker, mode: "user" | "search", value: string): boolean {
+  if (mode === "user") return false;
+  const v = value.replace(/^\$/, "").toLowerCase();
+  if (!v) return true;
+  return (
+    t.ticker?.toLowerCase().includes(v) ||
+    (t.name?.toLowerCase().includes(v) ?? false)
+  );
+}
+
+async function fetchSocialSignals(
+  mode: "user" | "search",
+  value: string,
+  limit: number,
+): Promise<SocialItem[]> {
+  const tickers = await fetchSocialTickers();
+  const filtered = tickers.filter((t) => matchTicker(t, mode, value)).slice(0, limit);
+  const now = new Date().toISOString();
+  return filtered.map((t) => ({
+    id: `st:${t.ticker}`,
+    author: t.name ?? t.ticker,
+    handle: `$${t.ticker}`,
+    text: (t.news?.items ?? [])
+      .slice(0, 2)
+      .map((n) => n.t)
+      .join(" · ") || `${t.name ?? t.ticker} trending`,
+    url: `https://socialtickers.com/asset/${encodeURIComponent(t.ticker)}`,
+    publishedAt: now,
+    source: "SocialTickers",
+    kind: "signal",
+    ticker: t.ticker,
+    signal: typeof t.signal === "number" ? t.signal : undefined,
+    buzz: typeof t.buzz === "number" ? t.buzz : undefined,
+    mentions: typeof t.mentions === "number" ? t.mentions : undefined,
+    priceChg: typeof t.priceChg === "number" ? t.priceChg : undefined,
+    spark: (t.spark ?? []).map(([, v]) => v),
+    headlines: (t.news?.items ?? []).slice(0, 4).map((n) => ({
+      text: n.t,
+      src: n.src,
+      lean: n.lean,
+    })),
+  }));
+}
+
+// ─── DexScreener token profiles (launch announcements) ──────────────────────
+// Free, no auth. Stream of newly profiled Solana tokens with descriptions
+// and links — effectively a "launch feed" with built-in social links.
+
+type DexProfile = {
+  chainId?: string;
+  tokenAddress?: string;
+  url?: string;
+  description?: string;
+  icon?: string;
+  links?: { label?: string; type?: string; url?: string }[];
+};
+
+async function dexJson<T>(url: string): Promise<T | null> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { accept: "application/json", "user-agent": "MemeDeskBot/1.0" },
+    });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    return (await r.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchDexLaunches(
+  mode: "user" | "search",
+  value: string,
+  limit: number,
+): Promise<SocialItem[]> {
+  const [latest, boosted] = await Promise.all([
+    dexJson<DexProfile[]>("https://api.dexscreener.com/token-profiles/latest/v1"),
+    dexJson<DexProfile[]>("https://api.dexscreener.com/token-boosts/top/v1"),
+  ]);
+  const merged: DexProfile[] = [...(latest ?? []), ...(boosted ?? [])].filter(
+    (p) => p.chainId === "solana" && p.tokenAddress,
+  );
+
+  // Filter by query when it makes sense (tag/term). Match against description
+  // and the token address suffix users sometimes paste.
+  const needle = value.replace(/^[@$]/, "").toLowerCase();
+  const matching = needle
+    ? merged.filter(
+        (p) =>
+          (p.description ?? "").toLowerCase().includes(needle) ||
+          (p.tokenAddress ?? "").toLowerCase().includes(needle) ||
+          (p.links ?? []).some((l) =>
+            (l.url ?? "").toLowerCase().includes(needle),
+          ),
+      )
+    : merged;
+
+  const seen = new Set<string>();
+  const out: SocialItem[] = [];
+  for (const p of matching) {
+    if (!p.tokenAddress || seen.has(p.tokenAddress)) continue;
+    seen.add(p.tokenAddress);
+    const twitter = (p.links ?? []).find((l) => l.type === "twitter");
+    const handle = twitter?.url?.match(/(?:x|twitter)\.com\/([A-Za-z0-9_]+)/)?.[1];
+    out.push({
+      id: `dex:${p.tokenAddress}`,
+      author: handle ? `@${handle}` : "Solana launch",
+      handle: handle ? `@${handle}` : `${p.tokenAddress.slice(0, 4)}…${p.tokenAddress.slice(-4)}`,
+      text: (p.description ?? "").trim() || "New Solana token profiled on DexScreener.",
+      url: p.url ?? `https://dexscreener.com/solana/${p.tokenAddress}`,
+      publishedAt: new Date().toISOString(),
+      source: "DexScreener",
+      kind: "launch",
+      icon: p.icon,
+      links: (p.links ?? [])
+        .filter((l): l is { url: string; type?: string; label?: string } => !!l.url)
+        .slice(0, 4),
+    });
+    if (out.length >= limit) break;
+  }
+  // If the user filtered to nothing, surface a few latest anyway so the column
+  // is never empty.
+  if (out.length === 0 && needle && merged.length > 0) {
+    return fetchDexLaunches(mode, "", limit);
+  }
+  return out;
 }

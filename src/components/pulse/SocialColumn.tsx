@@ -3,7 +3,17 @@ import { useSocialFeed } from "@/lib/data";
 import { PulseColumn } from "./PulseColumn";
 import { timeAgo } from "./timeAgo";
 import { cn } from "@/lib/utils";
-import { Search, X } from "lucide-react";
+import {
+  Search,
+  X,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Link as LinkIcon,
+  Rocket,
+  MessageCircle,
+  Newspaper,
+} from "lucide-react";
 
 const KEY = "memedesk.pulse.social-queries.v2";
 const DEFAULTS = [
@@ -65,6 +75,15 @@ export function SocialColumn() {
 
   const { data, status, refresh } = useSocialFeed(active);
   const meta = useMemo(() => classify(active), [active]);
+
+  const counts = useMemo(() => {
+    const c = { signal: 0, launch: 0, post: 0 };
+    for (const it of data ?? []) {
+      const k = (it.kind ?? "post") as keyof typeof c;
+      c[k] = (c[k] ?? 0) + 1;
+    }
+    return c;
+  }, [data]);
 
   function addQuery() {
     const q = draft.trim();
@@ -173,46 +192,243 @@ export function SocialColumn() {
           <span className="font-mono text-[10px] text-muted-foreground truncate">
             {active}
           </span>
+          <span className="ml-auto flex items-center gap-1.5 font-mono text-[9px] text-muted-foreground shrink-0">
+            <span className="text-pos">◆ {counts.signal}</span>
+            <span className="text-warn">▲ {counts.launch}</span>
+            <span className="text-info">● {counts.post}</span>
+          </span>
         </div>
       </div>
       <ul className="divide-y divide-border">
         {(data?.length ?? 0) === 0 && status !== "loading" && (
           <li className="p-3 font-mono text-[11px] text-muted-foreground">
             No posts for <span className="text-foreground">{active}</span>.
-            Sources: Bluesky search · X mirrors (Nitter/RSSHub, often blocked
-            in 2026). Try a different tag or a preset.
+            Sources: SocialTickers signal · DexScreener launches · Bluesky.
+            Try a different tag or a preset.
           </li>
         )}
-        {data?.map((p) => (
-          <li key={p.id} className="group hover:bg-accent/20">
-            <a href={p.url} target="_blank" rel="noopener noreferrer" className="block px-3 py-2">
-              <div className="flex items-center justify-between gap-2 mb-0.5">
-                <span className="font-mono text-[10px] text-info truncate">
-                  {p.handle || "—"}
-                </span>
-                <span className="flex items-center gap-1.5 shrink-0">
-                  <span
-                    className={cn(
-                      "font-mono text-[9px] uppercase tracking-wider px-1 rounded-sm",
-                      p.source === "Bluesky"
-                        ? "bg-info/15 text-info"
-                        : "bg-muted/30 text-muted-foreground",
-                    )}
-                  >
-                    {p.source}
-                  </span>
-                  <span className="font-mono text-[10px] text-muted-foreground">
-                    {timeAgo(p.publishedAt)}
-                  </span>
-                </span>
-              </div>
-              <div className="text-[12px] leading-snug text-foreground group-hover:text-pos line-clamp-4">
-                {p.text}
-              </div>
-            </a>
-          </li>
-        ))}
+        {data?.map((p) => {
+          const kind = p.kind ?? "post";
+          if (kind === "signal") return <SignalCard key={p.id} item={p} />;
+          if (kind === "launch") return <LaunchCard key={p.id} item={p} />;
+          return <PostCard key={p.id} item={p} />;
+        })}
       </ul>
     </PulseColumn>
+  );
+}
+
+// ─── Cards ──────────────────────────────────────────────────────────────────
+
+type Item = NonNullable<ReturnType<typeof useSocialFeed>["data"]>[number];
+
+function SourceBadge({ source }: { source: string }) {
+  const cls =
+    source === "Bluesky"
+      ? "bg-info/15 text-info"
+      : source === "SocialTickers"
+        ? "bg-pos/15 text-pos"
+        : source === "DexScreener"
+          ? "bg-warn/15 text-warn"
+          : "bg-muted/30 text-muted-foreground";
+  return (
+    <span
+      className={cn(
+        "font-mono text-[9px] uppercase tracking-wider px-1 rounded-sm",
+        cls,
+      )}
+    >
+      {source}
+    </span>
+  );
+}
+
+function Sparkline({ values }: { values: number[] }) {
+  if (!values?.length) return null;
+  const w = 60;
+  const h = 16;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const step = w / Math.max(values.length - 1, 1);
+  const d = values
+    .map((v, i) => {
+      const x = i * step;
+      const y = h - ((v - min) / span) * h;
+      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return (
+    <svg width={w} height={h} className="text-pos">
+      <path d={d} fill="none" stroke="currentColor" strokeWidth="1" />
+    </svg>
+  );
+}
+
+function SignalCard({ item }: { item: Item }) {
+  const signal = item.signal ?? 0;
+  const buzz = item.buzz ?? 0;
+  const buzzPos = buzz >= 0;
+  return (
+    <li className="group bg-pos/[0.03] hover:bg-pos/[0.07] border-l-2 border-pos/40">
+      <a
+        href={item.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block px-3 py-2"
+      >
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Activity className="h-3 w-3 text-pos shrink-0" />
+            <span className="font-mono text-[11px] font-semibold text-pos truncate">
+              ${item.ticker}
+            </span>
+            <span className="font-mono text-[10px] text-muted-foreground truncate">
+              {item.author}
+            </span>
+          </div>
+          <SourceBadge source={item.source} />
+        </div>
+        <div className="flex items-center gap-3 mb-1.5">
+          <div className="flex items-center gap-1">
+            <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+              sig
+            </span>
+            <div className="h-1 w-16 bg-muted/30 rounded-sm overflow-hidden">
+              <div
+                className="h-full bg-pos"
+                style={{ width: `${Math.min(100, Math.max(0, signal))}%` }}
+              />
+            </div>
+            <span className="font-mono text-[10px] text-foreground">{signal}</span>
+          </div>
+          <div
+            className={cn(
+              "flex items-center gap-0.5 font-mono text-[10px]",
+              buzzPos ? "text-pos" : "text-neg",
+            )}
+          >
+            {buzzPos ? (
+              <TrendingUp className="h-3 w-3" />
+            ) : (
+              <TrendingDown className="h-3 w-3" />
+            )}
+            {Math.abs(buzz)}
+          </div>
+          {typeof item.mentions === "number" && (
+            <span className="font-mono text-[10px] text-muted-foreground">
+              {item.mentions} mentions
+            </span>
+          )}
+          <div className="ml-auto">
+            {item.spark && <Sparkline values={item.spark} />}
+          </div>
+        </div>
+        {item.headlines && item.headlines.length > 0 && (
+          <ul className="space-y-0.5">
+            {item.headlines.slice(0, 3).map((h, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-1.5 text-[11px] text-muted-foreground group-hover:text-foreground"
+              >
+                <Newspaper className="h-2.5 w-2.5 mt-0.5 shrink-0 opacity-50" />
+                <span className="font-mono text-[8px] uppercase tracking-wider opacity-60 shrink-0">
+                  {h.src}
+                </span>
+                <span className="line-clamp-1">{h.text}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </a>
+    </li>
+  );
+}
+
+function LaunchCard({ item }: { item: Item }) {
+  return (
+    <li className="group hover:bg-accent/20">
+      <a
+        href={item.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block px-3 py-2"
+      >
+        <div className="flex items-start gap-2">
+          {item.icon ? (
+            <img
+              src={item.icon}
+              alt=""
+              className="h-8 w-8 rounded-sm border border-border shrink-0 bg-muted/20"
+              loading="lazy"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded-sm bg-warn/20 grid place-items-center shrink-0">
+              <Rocket className="h-4 w-4 text-warn" />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2 mb-0.5">
+              <span className="font-mono text-[10px] text-info truncate">
+                {item.handle}
+              </span>
+              <span className="flex items-center gap-1.5 shrink-0">
+                <SourceBadge source={item.source} />
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  {timeAgo(item.publishedAt)}
+                </span>
+              </span>
+            </div>
+            <div className="text-[12px] leading-snug text-foreground group-hover:text-pos line-clamp-3">
+              {item.text}
+            </div>
+            {item.links && item.links.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {item.links.map((l, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-0.5 font-mono text-[9px] uppercase tracking-wider px-1 py-0.5 rounded-sm bg-muted/30 text-muted-foreground"
+                  >
+                    <LinkIcon className="h-2.5 w-2.5" />
+                    {l.type || l.label || "link"}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </a>
+    </li>
+  );
+}
+
+function PostCard({ item }: { item: Item }) {
+  return (
+    <li className="group hover:bg-accent/20">
+      <a
+        href={item.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block px-3 py-2"
+      >
+        <div className="flex items-center justify-between gap-2 mb-0.5">
+          <span className="flex items-center gap-1 min-w-0">
+            <MessageCircle className="h-3 w-3 text-info shrink-0" />
+            <span className="font-mono text-[10px] text-info truncate">
+              {item.handle || "—"}
+            </span>
+          </span>
+          <span className="flex items-center gap-1.5 shrink-0">
+            <SourceBadge source={item.source} />
+            <span className="font-mono text-[10px] text-muted-foreground">
+              {timeAgo(item.publishedAt)}
+            </span>
+          </span>
+        </div>
+        <div className="text-[12px] leading-snug text-foreground group-hover:text-pos line-clamp-4">
+          {item.text}
+        </div>
+      </a>
+    </li>
   );
 }
