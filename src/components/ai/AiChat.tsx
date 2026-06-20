@@ -52,7 +52,7 @@ export function AiChat() {
   }
 
   return (
-    <Panel className="flex flex-col h-[78vh]">
+    <Panel className="flex flex-col h-[calc(100vh-7rem)] md:h-[78vh]">
       <PanelHeader
         title="AI Desk · Chat"
         subtitle="Gemini 3 flash · live trending + PF context"

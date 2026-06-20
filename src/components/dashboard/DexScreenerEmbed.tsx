@@ -89,7 +89,7 @@ export function DexScreenerEmbed({
         }
       />
       <PanelBody className="p-0">
-        <div className="w-full overflow-x-auto" style={{ WebkitOverflowScrolling: "touch" }}>
+        <div className="w-full overflow-hidden">
           <iframe
             key={iframeSrc}
             src={iframeSrc}
@@ -99,7 +99,6 @@ export function DexScreenerEmbed({
             style={{
               height: typeof height === "number" ? `${height}px` : height,
               width: "100%",
-              minWidth: 640,
             }}
             allow="clipboard-write"
           />
