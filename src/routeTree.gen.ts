@@ -16,11 +16,13 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PulseRouteImport } from './routes/pulse'
 import { Route as NarrativesRouteImport } from './routes/narratives'
 import { Route as MemeOfTheDayRouteImport } from './routes/meme-of-the-day'
+import { Route as LaunchesRouteImport } from './routes/launches'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CoinsRouteImport } from './routes/coins'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiPumpfunLatestRouteImport } from './routes/api/pumpfun/latest'
 
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
@@ -57,6 +59,11 @@ const MemeOfTheDayRoute = MemeOfTheDayRouteImport.update({
   path: '/meme-of-the-day',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LaunchesRoute = LaunchesRouteImport.update({
+  id: '/launches',
+  path: '/launches',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -82,12 +89,18 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPumpfunLatestRoute = ApiPumpfunLatestRouteImport.update({
+  id: '/api/pumpfun/latest',
+  path: '/api/pumpfun/latest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
+  '/launches': typeof LaunchesRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
   '/pulse': typeof PulseRoute
@@ -96,12 +109,14 @@ export interface FileRoutesByFullPath {
   '/wallet-pnl': typeof WalletPnlRoute
   '/watchlist': typeof WatchlistRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/pumpfun/latest': typeof ApiPumpfunLatestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai': typeof AiRoute
   '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
+  '/launches': typeof LaunchesRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
   '/pulse': typeof PulseRoute
@@ -110,6 +125,7 @@ export interface FileRoutesByTo {
   '/wallet-pnl': typeof WalletPnlRoute
   '/watchlist': typeof WatchlistRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/pumpfun/latest': typeof ApiPumpfunLatestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -117,6 +133,7 @@ export interface FileRoutesById {
   '/ai': typeof AiRoute
   '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
+  '/launches': typeof LaunchesRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
   '/pulse': typeof PulseRoute
@@ -125,6 +142,7 @@ export interface FileRoutesById {
   '/wallet-pnl': typeof WalletPnlRoute
   '/watchlist': typeof WatchlistRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/pumpfun/latest': typeof ApiPumpfunLatestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -133,6 +151,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/coins'
     | '/dashboard'
+    | '/launches'
     | '/meme-of-the-day'
     | '/narratives'
     | '/pulse'
@@ -141,12 +160,14 @@ export interface FileRouteTypes {
     | '/wallet-pnl'
     | '/watchlist'
     | '/api/chat'
+    | '/api/pumpfun/latest'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/ai'
     | '/coins'
     | '/dashboard'
+    | '/launches'
     | '/meme-of-the-day'
     | '/narratives'
     | '/pulse'
@@ -155,12 +176,14 @@ export interface FileRouteTypes {
     | '/wallet-pnl'
     | '/watchlist'
     | '/api/chat'
+    | '/api/pumpfun/latest'
   id:
     | '__root__'
     | '/'
     | '/ai'
     | '/coins'
     | '/dashboard'
+    | '/launches'
     | '/meme-of-the-day'
     | '/narratives'
     | '/pulse'
@@ -169,6 +192,7 @@ export interface FileRouteTypes {
     | '/wallet-pnl'
     | '/watchlist'
     | '/api/chat'
+    | '/api/pumpfun/latest'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -176,6 +200,7 @@ export interface RootRouteChildren {
   AiRoute: typeof AiRoute
   CoinsRoute: typeof CoinsRoute
   DashboardRoute: typeof DashboardRoute
+  LaunchesRoute: typeof LaunchesRoute
   MemeOfTheDayRoute: typeof MemeOfTheDayRoute
   NarrativesRoute: typeof NarrativesRoute
   PulseRoute: typeof PulseRoute
@@ -184,6 +209,7 @@ export interface RootRouteChildren {
   WalletPnlRoute: typeof WalletPnlRoute
   WatchlistRoute: typeof WatchlistRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiPumpfunLatestRoute: typeof ApiPumpfunLatestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -237,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MemeOfTheDayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/launches': {
+      id: '/launches'
+      path: '/launches'
+      fullPath: '/launches'
+      preLoaderRoute: typeof LaunchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -272,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pumpfun/latest': {
+      id: '/api/pumpfun/latest'
+      path: '/api/pumpfun/latest'
+      fullPath: '/api/pumpfun/latest'
+      preLoaderRoute: typeof ApiPumpfunLatestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -280,6 +320,7 @@ const rootRouteChildren: RootRouteChildren = {
   AiRoute: AiRoute,
   CoinsRoute: CoinsRoute,
   DashboardRoute: DashboardRoute,
+  LaunchesRoute: LaunchesRoute,
   MemeOfTheDayRoute: MemeOfTheDayRoute,
   NarrativesRoute: NarrativesRoute,
   PulseRoute: PulseRoute,
@@ -288,6 +329,7 @@ const rootRouteChildren: RootRouteChildren = {
   WalletPnlRoute: WalletPnlRoute,
   WatchlistRoute: WatchlistRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiPumpfunLatestRoute: ApiPumpfunLatestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
