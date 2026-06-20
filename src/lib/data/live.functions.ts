@@ -215,21 +215,36 @@ export const getTokenWhaleTradesFn = createServerFn({ method: "GET" })
     minUsd: Number(d?.minUsd ?? 1000),
   }))
   .handler(async ({ data }): Promise<WhaleTradeRow[]> => {
-    if (!data.address || !process.env.BIRDEYE_API_KEY) return [];
+    if (!data.address) return [];
     const { withCache } = await import("./cache.server");
     const { trackProvider } = await import("./health.server");
-    const { fetchTokenTxs } = await import("./providers/birdeye.server");
-    try {
-      const rows = await withCache(`birdeye:txs:${data.address}`, 15, () =>
-        trackProvider("birdeye", () => fetchTokenTxs(data.address, 50)),
-      );
-      return rows
-        .filter((r) => r.valueUsd >= data.minUsd)
-        .slice(0, 50)
-        .map((r) => ({ ...r }));
-    } catch {
-      return [];
+    const filt = (rows: WhaleTradeRow[]) =>
+      rows.filter((r) => r.valueUsd >= data.minUsd).slice(0, 50);
+
+    // Try Birdeye first (richer fields), then Solana Tracker as fallback.
+    if (process.env.BIRDEYE_API_KEY) {
+      try {
+        const { fetchTokenTxs } = await import("./providers/birdeye.server");
+        const rows = await withCache(`birdeye:txs:${data.address}`, 15, () =>
+          trackProvider("birdeye", () => fetchTokenTxs(data.address, 50)),
+        );
+        if (rows.length > 0) return filt(rows.map((r) => ({ ...r })));
+      } catch {
+        // fall through to ST
+      }
     }
+    if (process.env.SOLANA_TRACKER_API_KEY) {
+      try {
+        const { fetchTokenTrades } = await import("./providers/solana-tracker.server");
+        const rows = await withCache(`st:trades:${data.address}`, 15, () =>
+          trackProvider("solana-tracker", () => fetchTokenTrades(data.address, 50)),
+        );
+        return filt(rows.map((r) => ({ ...r })));
+      } catch {
+        return [];
+      }
+    }
+    return [];
   });
 
 export const getTokenRiskFn = createServerFn({ method: "GET" })
