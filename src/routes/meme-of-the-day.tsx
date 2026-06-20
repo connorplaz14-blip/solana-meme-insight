@@ -4,9 +4,9 @@ import { TokenChartPanel } from "@/components/dashboard/TokenChartPanel";
 
 export const Route = createFileRoute("/meme-of-the-day")({
   head: () => ({ meta: [
-    { title: "Meme of the Day · MemeDesk" },
+    { title: "Meme of the Day · SCBOL" },
     { name: "description", content: "The day's top Solana memecoin with full liquidity, volume, transaction, risk, and AI-summary breakdown." },
-    { property: "og:title", content: "Meme of the Day · MemeDesk" },
+    { property: "og:title", content: "Meme of the Day · SCBOL" },
     { property: "og:description", content: "Today's top Solana memecoin with full breakdown." },
   ]}),
   component: () => (

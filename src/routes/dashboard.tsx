@@ -8,9 +8,9 @@ import { Coins, MessageSquare, TrendingUp } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [
-    { title: "MemeDesk · Solana Memecoin Terminal" },
+    { title: "SCBOL · Solana Memecoin Terminal" },
     { name: "description", content: "Real-time-style intelligence dashboard for Solana memecoins: trending tokens, daily AI narratives, market pulse, and watchlist." },
-    { property: "og:title", content: "MemeDesk · Solana Memecoin Terminal" },
+    { property: "og:title", content: "SCBOL · Solana Memecoin Terminal" },
     { property: "og:description", content: "Solana memecoin intelligence dashboard. Trending tokens, narratives, market pulse." },
   ]}),
   component: Dashboard,
@@ -44,7 +44,7 @@ function JumpInCards() {
       to: "/ai" as const,
       Icon: MessageSquare,
       title: "AI Desk",
-      desc: "Chat to MemeDesk AI about today's meta + daily brief.",
+      desc: "Chat to SCBOL AI about today's meta + daily brief.",
       accent: "pos" as const,
     },
     {

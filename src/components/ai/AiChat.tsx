@@ -146,7 +146,7 @@ function MessageBubble({ message }: { message: UIMessage }) {
   return (
     <div className={cn("flex flex-col gap-1", isUser ? "items-end" : "items-start")}>
       <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">
-        {isUser ? "You" : "MemeDesk AI"}
+        {isUser ? "You" : "SCBOL AI"}
       </div>
       <div
         className={cn(

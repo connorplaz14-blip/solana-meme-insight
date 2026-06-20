@@ -3,6 +3,7 @@ import { LayoutGrid, Flame, TrendingUp, Newspaper, Star, Wallet, Settings, Troph
 import { cn } from "@/lib/utils";
 import { useMobileNav } from "./MobileNavContext";
 import { useEffect } from "react";
+import { ScotlandFlag } from "@/components/ui/ScotlandFlag";
 
 const items = [
   { to: "/pulse", label: "Pulse", icon: Radio },
@@ -23,8 +24,11 @@ function NavBody({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       <div className="px-3 py-3 border-b border-border">
-        <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-          Solana · Memecoin Intel
+        <div className="flex items-center gap-1.5">
+          <ScotlandFlag className="h-3.5 w-3.5 rounded-sm" />
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            SCBOL
+          </span>
         </div>
         <div className="font-mono text-[10px] text-pos mt-0.5 flex items-center gap-1">
           <Flame className="h-3 w-3" /> Phase 2 · Live data
@@ -93,7 +97,9 @@ export function SideNav() {
         aria-hidden={!open}
       >
         <div className="flex items-center justify-between px-3 h-10 border-b border-border">
-          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos">◆ MemeDesk</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos flex items-center gap-1.5">
+            <ScotlandFlag className="h-3.5 w-3.5 rounded-sm" /> SCBOL
+          </span>
           <button
             onClick={() => setOpen(false)}
             className="p-1 text-muted-foreground hover:text-foreground"

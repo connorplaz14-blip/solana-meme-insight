@@ -89,7 +89,7 @@ export const getMemeOfTheDayFn = createServerFn({ method: "GET" }).handler(async
   return {
     ...top,
     aiSummary:
-      `${top.symbol} leads today's MemeDesk score with ${compactUsd(top.volume24hUsd)} in 24h volume ` +
+      `${top.symbol} leads today's SCBOL score with ${compactUsd(top.volume24hUsd)} in 24h volume ` +
       `against ${compactUsd(top.liquidityUsd)} of liquidity. ` +
       `Price moved ${top.changes.h24.toFixed(1)}% over 24h. ` +
       `Buy/sell ratio: ${(top.txns.buys24h / Math.max(top.txns.sells24h, 1)).toFixed(2)}.`,

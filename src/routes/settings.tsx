@@ -5,8 +5,8 @@ import { Panel, PanelHeader, PanelBody } from "@/components/terminal/Panel";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [
-    { title: "Settings · MemeDesk" },
-    { name: "description", content: "Provider status, integration matrix, and security rules for the MemeDesk dashboard." },
+    { title: "Settings · SCBOL" },
+    { name: "description", content: "Provider status, integration matrix, and security rules for the SCBOL dashboard." },
   ]}),
   component: SettingsPage,
 });

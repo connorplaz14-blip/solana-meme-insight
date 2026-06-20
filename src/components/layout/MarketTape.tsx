@@ -48,7 +48,7 @@ export function MarketTape() {
         <Menu className="h-4 w-4" />
       </button>
       <div className="hidden md:flex items-center px-3 border-r border-border min-w-[140px] shrink-0">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos">◆ MemeDesk</span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos">◆ SCBOL</span>
       </div>
 
       <div className="flex-1 min-w-0 overflow-hidden">
