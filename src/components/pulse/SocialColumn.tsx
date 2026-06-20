@@ -192,6 +192,11 @@ export function SocialColumn() {
           <span className="font-mono text-[10px] text-muted-foreground truncate">
             {active}
           </span>
+          <span className="ml-auto flex items-center gap-1.5 font-mono text-[9px] text-muted-foreground shrink-0">
+            <span className="text-pos">◆ {counts.signal}</span>
+            <span className="text-warn">▲ {counts.launch}</span>
+            <span className="text-info">● {counts.post}</span>
+          </span>
         </div>
       </div>
       <ul className="divide-y divide-border">
