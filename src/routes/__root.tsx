@@ -17,6 +17,7 @@ import { TokenDetailProvider } from "@/components/token/TokenDetailProvider";
 import { CommandPaletteProvider } from "@/components/layout/CommandPaletteContext";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import { MobileNavProvider } from "@/components/layout/MobileNavContext";
+import { OverflowGuard } from "@/components/layout/OverflowGuard";
 
 function NotFoundComponent() {
   return (
@@ -119,6 +120,7 @@ function RootComponent() {
             </div>
           </div>
           <CommandPalette />
+          <OverflowGuard />
         </CommandPaletteProvider>
         </MobileNavProvider>
       </TokenDetailProvider>
