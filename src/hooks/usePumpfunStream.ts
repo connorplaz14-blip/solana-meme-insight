@@ -6,7 +6,7 @@ const MAX_ROWS = 200;
 const RECONNECT_MIN = 1000;
 const RECONNECT_MAX = 30000;
 
-type WsCreate = {
+type WsMsg = {
   txType?: string;
   signature?: string;
   mint?: string;
@@ -18,12 +18,6 @@ type WsCreate = {
   symbol?: string;
   uri?: string;
   pool?: string;
-};
-
-type WsTrade = {
-  txType?: "buy" | "sell";
-  mint?: string;
-  marketCapSol?: number;
 };
 
 export type StreamStatus = "connecting" | "open" | "closed" | "offline";
@@ -88,7 +82,7 @@ export function usePumpfunStream(opts: {
     };
 
     ws.onmessage = (ev) => {
-      let msg: WsCreate & WsTrade;
+      let msg: WsMsg;
       try {
         msg = JSON.parse(typeof ev.data === "string" ? ev.data : "");
       } catch {
