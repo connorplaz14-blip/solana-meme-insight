@@ -42,6 +42,14 @@ type pollHandle = ReturnType<typeof setInterval>;
 export const useSolMarket = () => useAsync(() => adapter.getSolMarket(), []);
 export const useMacro = () => useAsync(() => adapter.getMacro(), []);
 export const useTrending = () => useAsync(() => adapter.getTrending(), []);
+export const useTokensByAddresses = (addresses: string[]) => {
+  const key = [...addresses].sort().join(",");
+  return useAsync(
+    () => addresses.length ? adapter.getTokensByAddresses(addresses) : Promise.resolve([]),
+    [key],
+    30_000,
+  );
+};
 export const useMemeOfTheDay = () => useAsync(() => adapter.getMemeOfTheDay(), []);
 export const useNarratives = () => useAsync(() => adapter.getNarratives(), []);
 export const useMarketPulse = () => useAsync(() => adapter.getMarketPulse(), []);
