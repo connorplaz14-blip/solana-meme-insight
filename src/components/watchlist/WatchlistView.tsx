@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Panel, PanelHeader, PanelBody } from "@/components/terminal/Panel";
 import { CopyAddress } from "@/components/terminal/CopyAddress";
 import { TokenAvatar } from "@/components/terminal/TokenAvatar";
-import { useTrending } from "@/lib/data";
+import { useTokensByAddresses } from "@/lib/data";
 import { addToWatchlist, getWatchlist, removeFromWatchlist, subscribeWatchlist } from "@/lib/watchlist-store";
 import { fmtUsd } from "@/lib/format";
 import { ChangeCell } from "@/components/terminal/ChangeCell";
@@ -17,21 +17,42 @@ export function WatchlistView() {
   const [addr, setAddr] = useState("");
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
-  const { data: trending } = useTrending();
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const addresses = items.map((e) => e.address);
+  const { data: liveTokens } = useTokensByAddresses(addresses);
 
   useEffect(() => {
     setItems(getWatchlist());
     return subscribeWatchlist(() => setItems(getWatchlist()));
   }, []);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!addr || !symbol) return;
-    addToWatchlist({ address: addr.trim(), name: name.trim() || symbol.trim(), symbol: symbol.trim().toUpperCase(), addedAt: new Date().toISOString() });
+    const address = addr.trim();
+    if (!address) return;
+    setAddError(null);
+    let sym = symbol.trim().toUpperCase();
+    let nm = name.trim();
+    if (!sym || !nm) {
+      setAdding(true);
+      try {
+        const res = await fetch(`https://api.dexscreener.com/tokens/v1/solana/${address}`);
+        const pairs = res.ok ? (await res.json()) as Array<{ baseToken?: { name?: string; symbol?: string; address?: string } }> : [];
+        const match = pairs.find((p) => p.baseToken?.address === address) ?? pairs[0];
+        if (match?.baseToken) {
+          sym = sym || (match.baseToken.symbol ?? "").toUpperCase();
+          nm = nm || match.baseToken.name || sym;
+        }
+      } catch { /* ignore — user can still add manually */ }
+      setAdding(false);
+    }
+    if (!sym) { setAddError("Could not resolve token. Enter symbol manually."); return; }
+    addToWatchlist({ address, name: nm || sym, symbol: sym, addedAt: new Date().toISOString() });
     setAddr(""); setName(""); setSymbol("");
   }
 
-  function findToken(address: string) { return trending?.find((t) => t.address === address); }
+  function findToken(address: string) { return liveTokens?.find((t) => t.address === address); }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
@@ -166,8 +187,12 @@ export function WatchlistView() {
               className="w-full mt-1 inline-flex items-center justify-center gap-1 border border-pos/40 bg-pos/10 hover:bg-pos/20 text-pos font-mono text-[11px] uppercase tracking-wider py-1.5">
               <Plus className="h-3 w-3" /> Add to watchlist
             </button>
+            <button type="submit" disabled={adding || !addr.trim()}
+              className="hidden">
+            </button>
+            {addError && <p className="text-[10px] text-neg mt-1">{addError}</p>}
             <p className="text-[10px] text-muted-foreground mt-2">
-              Mock mode — entries are saved to your browser only. Real price/volume joins via the trending feed.
+              Saved to your browser. Live price &amp; market cap pulled from DexScreener.
             </p>
           </form>
         </PanelBody>
