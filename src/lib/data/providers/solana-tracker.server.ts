@@ -17,6 +17,52 @@ export interface PumpLaunch {
 }
 
 const ENDPOINT = "https://data.solanatracker.io/tokens/latest";
+const HOLDERS_ENDPOINT = (mint: string) =>
+  `https://data.solanatracker.io/tokens/${mint}/holders/top`;
+
+export interface TopHolder {
+  rank: number;
+  address: string;
+  amount: number;
+  percentage: number;
+  valueUsd: number;
+  insider?: boolean;
+}
+
+type STHolder = {
+  address?: string;
+  wallet?: string;
+  amount?: number;
+  percentage?: number;
+  percent?: number;
+  value?: { usd?: number } | number;
+  insider?: boolean;
+};
+
+export async function fetchTopHolders(mint: string, limit = 20): Promise<TopHolder[]> {
+  const apiKey = process.env.SOLANA_TRACKER_API_KEY;
+  if (!apiKey) throw new Error("SOLANA_TRACKER_API_KEY not configured");
+  const res = await fetch(HOLDERS_ENDPOINT(mint), {
+    headers: { accept: "application/json", "x-api-key": apiKey },
+  });
+  if (!res.ok) throw new Error(`Solana Tracker holders ${res.status}`);
+  const json = (await res.json()) as STHolder[] | { holders?: STHolder[] };
+  const rows: STHolder[] = Array.isArray(json) ? json : (json.holders ?? []);
+  return rows.slice(0, limit).map((h, i) => {
+    const addr = h.address ?? h.wallet ?? "";
+    const value =
+      typeof h.value === "number" ? h.value : (h.value?.usd ?? 0);
+    const pct = h.percentage ?? h.percent ?? 0;
+    return {
+      rank: i + 1,
+      address: addr,
+      amount: h.amount ?? 0,
+      percentage: pct,
+      valueUsd: value,
+      insider: h.insider ?? false,
+    };
+  }).filter((h) => h.address);
+}
 
 type STToken = {
   token?: { name?: string; symbol?: string; mint?: string; image?: string; createdOn?: string };
