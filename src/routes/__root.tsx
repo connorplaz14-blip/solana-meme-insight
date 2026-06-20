@@ -28,8 +28,8 @@ function NotFoundComponent() {
         <h2 className="mt-3 text-base uppercase tracking-[0.18em] text-foreground">Route not found</h2>
         <p className="mt-2 text-xs text-muted-foreground">The terminal path you requested doesn't exist.</p>
         <div className="mt-5">
-          <Link to="/dashboard" className="inline-flex items-center justify-center border border-pos/40 bg-pos/10 text-pos px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-pos/20">
-            Go to dashboard
+          <Link to="/pulse" className="inline-flex items-center justify-center border border-pos/40 bg-pos/10 text-pos px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-pos/20">
+            Go to Pulse
           </Link>
         </div>
       </div>
@@ -54,8 +54,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             className="border border-info/40 bg-info/10 text-info px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-info/20">
             Retry
           </button>
-          <a href="/dashboard" className="border border-border bg-panel-2 text-foreground px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-accent">
-            Dashboard
+          <a href="/pulse" className="border border-border bg-panel-2 text-foreground px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-accent">
+            Pulse
           </a>
         </div>
       </div>
