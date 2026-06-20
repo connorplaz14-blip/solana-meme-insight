@@ -30,6 +30,12 @@ export type SocialItem = {
   spark?: number[];      // mention counts timeseries
   links?: { label?: string; type?: string; url: string }[];
   headlines?: { text: string; src: string; lean?: string }[];
+  // Engagement metrics (X posts via FxTwitter)
+  likes?: number;
+  replies?: number;
+  retweets?: number;
+  views?: number;
+  hasMedia?: boolean;
 };
 
 const NEWS_FEEDS: { source: string; url: string }[] = [
