@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { liveAdapter } from "./adapters/live";
 
-// Phase 2: real DexScreener + CoinGecko + Lovable AI behind a server-fn boundary.
-// Swap to `mockAdapter` from "./adapters/mock" if a provider goes down.
+// Live data adapter: DexScreener, CoinGecko, Solana Tracker, Birdeye,
+// Lovable AI Gateway (Gemini). `mockAdapter` from "./adapters/mock" is
+// dev-only and not used in any production path.
 const adapter = liveAdapter;
 
 export type DataState<T> = {

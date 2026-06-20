@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const statusMap = {
   live: { label: "Live", cls: "border-pos/40 bg-pos/10 text-pos" },
   mock: { label: "Mock", cls: "border-info/40 bg-info/10 text-info" },
-  missing: { label: "Missing", cls: "border-border bg-panel-2 text-muted-foreground" },
+  missing: { label: "Not configured", cls: "border-warn/40 bg-warn/10 text-warn" },
   error: { label: "Error", cls: "border-neg/40 bg-neg/10 text-neg" },
 } as const;
 
