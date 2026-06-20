@@ -23,6 +23,7 @@ import { fmtNum } from "@/lib/format";
 
 const KEY = "memedesk.pulse.social-queries.v2";
 const DEFAULTS = [
+  "KOLs",
   "$SOL",
   "$BONK",
   "$WIF",
@@ -32,14 +33,22 @@ const DEFAULTS = [
 ];
 
 const PRESETS = [
+  "KOLs",
   "$SOL",
   "$BONK",
   "$WIF",
   "$JUP",
   "@aeyakovenko",
+  "@rajgokal",
+  "@0xMert_",
   "@SolanaFloor",
   "@blknoiz06",
   "@gake_eth",
+  "@notthreadguy",
+  "@frankdegods",
+  "@MustStopMurad",
+  "@JupiterExchange",
+  "@pumpdotfun",
   "pump.fun",
   "solana memecoin",
   "rugpull",
@@ -48,6 +57,7 @@ const PRESETS = [
 
 function classify(q: string): { label: string; cls: string } {
   const t = q.trim();
+  if (/^kols$/i.test(t)) return { label: "KOLS", cls: "text-warn" };
   if (t.startsWith("@")) return { label: "USER", cls: "text-info" };
   if (t.startsWith("$")) return { label: "TAG", cls: "text-pos" };
   return { label: "TERM", cls: "text-muted-foreground" };

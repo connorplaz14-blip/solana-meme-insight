@@ -9,6 +9,30 @@ import { firecrawlSearch, firecrawlScrapeMarkdown } from "./firecrawl.server";
 import { fxSearch, fxUserTimeline, fxStatus, type XTweet } from "./fxtwitter.server";
 import type { SocialItem } from "./newsfeed.server";
 
+// Curated Solana KOL / big-account list. Used when query == "kols" / "@kols".
+// Mix of founders, traders, analysts, and culture accounts. Keep this small
+// (parallel fetch fans out to each handle on every refresh).
+export const SOLANA_KOLS = [
+  "aeyakovenko",      // Anatoly Yakovenko (Solana co-founder)
+  "rajgokal",         // Raj Gokal (Solana co-founder)
+  "SolanaFndn",
+  "SolanaFloor",
+  "blknoiz06",        // Ansem
+  "gake_eth",
+  "0xMert_",          // Mert Mumtaz (Helius)
+  "Cobratate_",
+  "trader1sz",
+  "0xRamonos",
+  "MoonOverlord",
+  "ZssBecker",
+  "frankdegods",
+  "MustStopMurad",
+  "notthreadguy",
+  "DefiIgnas",
+  "pumpdotfun",
+  "JupiterExchange",
+];
+
 const TTL_MS = 5 * 60 * 1000;
 type CacheEntry = { ts: number; items: SocialItem[] };
 const cache = new Map<string, CacheEntry>();
@@ -57,6 +81,48 @@ function xtweetToItem(t: XTweet): SocialItem {
   };
 }
 
+/**
+ * Fan-out fetch across a list of handles. Pulls a few tweets per account,
+ * merges, dedupes, and sorts by recency. Used for the "KOLs" preset and as
+ * a fallback when a $TICKER search returns nothing notable.
+ */
+export async function fetchHandlesTimeline(
+  handles: string[],
+  perHandle = 3,
+  limit = 30,
+): Promise<SocialItem[]> {
+  const key = `multi:${handles.join(",").toLowerCase()}:${perHandle}:${limit}`;
+  const hit = cached(key);
+  if (hit) return hit;
+
+  const results = await Promise.allSettled(
+    handles.map((h) => fxUserTimeline(h, perHandle)),
+  );
+  const seen = new Set<string>();
+  const out: SocialItem[] = [];
+  for (const r of results) {
+    if (r.status !== "fulfilled") continue;
+    for (const t of r.value) {
+      if (seen.has(t.id)) continue;
+      seen.add(t.id);
+      out.push(xtweetToItem(t));
+    }
+  }
+  // Prefer accounts with traction: weight by likes within last 24h, fallback recency.
+  const now = Date.now();
+  out.sort((a, b) => {
+    const ageA = now - +new Date(a.publishedAt);
+    const ageB = now - +new Date(b.publishedAt);
+    const recentA = ageA < 24 * 3600 * 1000;
+    const recentB = ageB < 24 * 3600 * 1000;
+    if (recentA && recentB) return (b.likes ?? 0) - (a.likes ?? 0);
+    return ageA - ageB;
+  });
+  const final = out.slice(0, limit);
+  store(key, final);
+  return final;
+}
+
 /** Enrich a list of (handle,id) tuples in parallel via FxTwitter /2/status. */
 async function enrichIds(
   ids: { handle: string; id: string }[],
@@ -81,7 +147,11 @@ export async function searchX(query: string, limit = 25): Promise<SocialItem[]> 
   if (!term) return [];
 
   // 1) Primary: FxTwitter search. Handles $TICK, #tag, "from:user", plain text.
-  const fxTerm = term.replace(/^#/, "#"); // pass through; FxTwitter handles ops
+  // For $TICKER / #tag / keyword searches we bias toward bigger accounts by
+  // requiring some traction — keeps the column free of bot spam. `from:` and
+  // explicit operator queries are passed through untouched.
+  const hasOperator = /\b(from|to|list|filter|min_faves|min_retweets):/i.test(term);
+  const fxTerm = hasOperator ? term : `${term} min_faves:25 -filter:replies`;
   const primary = await fxSearch(fxTerm, Math.min(limit, 30)).catch(() => []);
   if (primary.length >= 3) {
     const items = primary.slice(0, limit).map(xtweetToItem);
