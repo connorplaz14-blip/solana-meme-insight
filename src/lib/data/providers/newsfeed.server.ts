@@ -185,8 +185,14 @@ export async function fetchSocialFeed(query: string, limit = 30): Promise<Social
   const { mode, value } = detectMode(query);
   if (!value) return [];
 
-  // 1) Bluesky (public, no auth) — primary working source in 2026
-  const bsky = await fetchBlueskyFeed(mode, value, limit).catch(() => [] as SocialItem[]);
+  // Three live, no-auth sources fanned out in parallel. Each may fail; we
+  // merge whatever comes back. This is what makes the column never empty
+  // in 2026 when X mirrors are dead.
+  const [bsky, signals, launches] = await Promise.all([
+    fetchBlueskyFeed(mode, value, Math.ceil(limit / 2)).catch(() => [] as SocialItem[]),
+    fetchSocialSignals(mode, value, 8).catch(() => [] as SocialItem[]),
+    fetchDexLaunches(mode, value, 12).catch(() => [] as SocialItem[]),
+  ]);
 
   // 2) Try Nitter for any X mirrors that still respond
   let nitter: SocialItem[] = [];
@@ -204,8 +210,9 @@ export async function fetchSocialFeed(query: string, limit = 30): Promise<Social
     }
   }
 
-  // 3) RSSHub fallback for X
-  if (nitter.length === 0) {
+  // 3) RSSHub fallback for X — skip when we already have plenty from working
+  // sources to keep latency down.
+  if (nitter.length === 0 && bsky.length + signals.length + launches.length < 6) {
     for (const host of RSSHUB_HOSTS) {
       const url =
         mode === "user"
@@ -221,16 +228,22 @@ export async function fetchSocialFeed(query: string, limit = 30): Promise<Social
     }
   }
 
-  // Merge, dedupe by id, sort newest first
+  // Merge, dedupe by id. Signal cards float to the top, then mix posts +
+  // launches sorted by recency.
   const seen = new Set<string>();
-  const merged: SocialItem[] = [];
-  for (const it of [...bsky, ...nitter]) {
+  const all: SocialItem[] = [];
+  for (const it of [...signals, ...bsky, ...launches, ...nitter]) {
     if (seen.has(it.id)) continue;
     seen.add(it.id);
-    merged.push(it);
+    all.push(it);
   }
-  merged.sort((a, b) => +new Date(b.publishedAt) - +new Date(a.publishedAt));
-  return merged.slice(0, limit);
+  const rank = (k?: string) => (k === "signal" ? 0 : 1);
+  all.sort((a, b) => {
+    const r = rank(a.kind) - rank(b.kind);
+    if (r !== 0) return r;
+    return +new Date(b.publishedAt) - +new Date(a.publishedAt);
+  });
+  return all.slice(0, limit);
 }
 
 // ─── Bluesky ────────────────────────────────────────────────────────────────
