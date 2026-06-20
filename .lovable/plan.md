@@ -1,63 +1,47 @@
-# Cockpit Revamp — Tactical Mono, Bloomberg Density
+# Mobile breakpoint pass — no horizontal scrolling
 
-Pure black canvas, sharp white text, phosphor-green / red as the only chromatic accents, mono headings everywhere, 1px borders, ultra-dense panels. Full sweep across every page — no business logic, no data sources change.
+Every panel needs to fit a 360–414px portrait viewport. Today four things break that rule: the top market tape (scrolls horizontally on purpose), four wide data tables, the DexScreener iframes (forced 640px min), and a few panel headers whose right-hand controls overflow.
 
-## Visual system
+## Changes
 
-**Color tokens** (rewrite `src/styles.css` `.dark` block, force dark as the only theme):
-- `--background` `#000000` (pure black, not navy)
-- `--panel` `#0a0a0a`, `--panel-2` `#101010` (slightly lifted strata)
-- `--foreground` `#ffffff` (sharp), `--muted-foreground` `#8a8a8a`
-- `--border` `#1f1f1f` (1px hairlines)
-- `--pos` `#00ff88`, `--neg` `#ff3344`, `--warn` `#ffcc00`, `--info` `#ffffff`
-- `--accent` = `--pos` (phosphor green for active states, focus rings, key indicators)
-- Remove all blue/purple/oklch chart defaults; recolor chart-1..5 to green/red/white/amber/grey
+### 1. Top market tape — `src/components/layout/MarketTape.tsx`
+- Drop the `overflow-x-auto` strip on mobile. Show a condensed 3-cell row that fits 360px: **SOL** (price + Δ), **BTC** (price + Δ), **Fear & Greed** (value + label). Hide the other cells under `md:flex`.
+- Keep the hamburger and search buttons; the logo block stays `hidden md:flex`.
+- Cells: shrink min-width to ~84px on mobile, divider stays 1px. Height stays 40px.
 
-**Typography** (loaded via `<link>` in `__root.tsx` head):
-- Headings + numbers + tickers: **JetBrains Mono** (400/500/700)
-- Body + descriptions: **Work Sans** (400/500)
-- All prices, %, addresses, timestamps → mono, tabular-nums
-- Uppercase tracking-wide on panel headers, 10–11px
+### 2. Wide tables → card lists under md
 
-**Density rules**:
-- Base font 12px on panels, 11px on table rows, 10px on labels
-- Row height 24–28px in tables (was 36–48)
-- Panel padding 8px (was 12–16)
-- 1px borders only — no shadows, no rounded > 2px (rounded-none on panels)
-- Hover = 1px green left border + bg lift to `#0f0f0f`
+For each, render the existing `<table>` only at `md:block`, and render a stacked card list under `md:hidden`. Same data, fewer fields per row, no horizontal scroll.
 
-## Files touched
+- `src/components/dashboard/TrendingTable.tsx`
+  - Mobile card per token: avatar + name/symbol on top row; second row mcap · vol · 24h change; third row source badges + risk badge + star button.
+  - Header `right` block (search input + risk select) moves below the title on mobile (`flex-col gap-2 sm:flex-row`); search input becomes full-width.
+- `src/components/wallet/WalletView.tsx` (positions table)
+  - Mobile card per position: name/symbol + status pill; row of cost / value / P&L / 24h ROI as 2×2 grid; contract address row.
+  - Stat grid already `grid-cols-2 md:grid-cols-4` — leave alone.
+- `src/components/watchlist/WatchlistView.tsx`
+  - Mobile card per entry: avatar + name/symbol + remove (×); row of price · mcap · 24h; contract + added date underneath.
+  - "Add Token" panel: keep stacked; the symbol/name `grid-cols-2` stays.
 
-**Token + chrome (the multiplier — every page inherits):**
-- `src/styles.css` — rewrite color tokens, font tokens, force `.dark` on `<html>`, kill light mode, add `--pos/--neg/--warn` semantic colors, retune chart palette, add `.tabular-nums` defaults
-- `src/routes/__root.tsx` — JetBrains Mono + Work Sans `<link>` preconnect/stylesheet, force dark class
-- `src/components/terminal/Panel.tsx` — `rounded-none`, 1px borders, denser header (h-7, 10px uppercase)
-- `src/components/terminal/StatCell.tsx`, `ChangeCell.tsx`, `RiskBadge.tsx`, `SourceBadge.tsx` — mono numerals, green/red only, square corners
-- `src/components/layout/SideNav.tsx` — black bg, white text, green active rail, mono labels, denser (40px rows)
-- `src/components/layout/MarketTape.tsx` — black bg, mono tickers, green/red deltas, tighter spacing, 28px height
-- `src/components/layout/CommandPalette.tsx` — black sheet, green caret/active, mono input
+### 3. DexScreener / GeckoTerminal iframes — `src/components/dashboard/DexScreenerEmbed.tsx`
+- Remove the hard `minWidth: 640` on the iframe wrapper. Iframe becomes `width: 100%`, no horizontal scroll on the parent. The embedded site handles its own internal scroll inside the iframe — that's acceptable and doesn't push the page.
+- Reduce default `height` behaviour on mobile: when caller passes `"78vh"` it stays; numeric heights shrink with `min(<n>px, 70vh)` only on `< md`.
 
-**Page sweeps (visual only — no data changes):**
-- `src/routes/dashboard.tsx` — bento gaps to 1px (hairline grid), denser tiles
-- `src/routes/coins.tsx`, `trending.tsx`, `narratives.tsx`, `watchlist.tsx`, `wallet-pnl.tsx`, `ai.tsx`, `meme-of-the-day.tsx`, `settings.tsx` — panel paddings, table row heights, headline sizes
-- `src/components/dashboard/*` (TrendingTable, PumpfunLaunches, MarketPulse, MemeOfTheDayCard, NarrativeFeed, TokenChartPanel, MarketBar, DexScreenerEmbed) — restyle to mono/dense
-- `src/components/trending/AiTrendingTable.tsx`, `src/components/ai/AiChat.tsx`, `DailyBrief.tsx`, `src/components/wallet/WalletView.tsx`, `src/components/watchlist/WatchlistView.tsx`, `src/components/token/TokenDetailProvider.tsx`, `src/components/settings/ProviderStatusCard.tsx` — same treatment
+### 4. Panel header overflow — `src/components/terminal/Panel.tsx`
+- Make `PanelHeader` stack on mobile: `flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between`. The `right` slot wraps with `flex-wrap` so refresh + source badges don't squash titles. Title row keeps `truncate`.
 
-**shadcn primitives** lightly touched where they clash:
-- `button.tsx` — add `terminal` variant (square, mono, green hover)
-- `badge.tsx` — square variants for pos/neg/warn
-- `table.tsx` — denser row defaults
-- `input.tsx`, `dialog.tsx`, `command.tsx` — square corners, black surfaces
+### 5. AI Trending picks — `src/components/trending/AiTrendingTable.tsx`
+- Already card-style. Tighten: token button + "why" stack vertically under `sm:` (currently flex side-by-side), so the why text uses full row width on phones.
 
-## Out of scope (this pass)
+### 6. AI Chat — `src/components/ai/AiChat.tsx`
+- Reduce height from `h-[78vh]` to `h-[calc(100vh-7rem)]` on mobile so it fits under the tape without page scroll, full `78vh` from `md:`. Suggestion chips already wrap; leave alone.
 
-- No new panels, no data source changes, no new routes
-- No mobile bottom-nav rebuild (Phase 4 of the cockpit plan stays separate)
-- No draggable widgets, no chart library swap
-- No light mode — dark is the only theme
+## Out of scope
+- No new pages, no design-token changes, no replacing the iframe providers.
+- Tablet (md+) and desktop stay unchanged — all edits are guarded behind `md:` / `sm:` and additive.
+- `src/components/dashboard/MarketBar.tsx` is not mounted in the root shell; leave untouched.
 
-## Risk / verification
-
-- After token rewrite, sweep `rg "text-white|bg-black|bg-\[#"` to catch hardcoded colors that bypass tokens
-- Check every page in preview at 1338px to confirm density reads correctly
-- Watch for shadcn components that hardcode `rounded-md` and break the square aesthetic — patch the primitive, not the consumer
+## Verification
+- Resize preview to 375 × 812 and 414 × 896 portrait.
+- Walk every route: `/dashboard`, `/coins`, `/trending`, `/narratives`, `/watchlist`, `/wallet-pnl`, `/ai`, `/meme-of-the-day`, `/settings`.
+- Confirm `document.documentElement.scrollWidth === clientWidth` (no horizontal page scroll). Iframes may scroll *inside* their box — that's expected.

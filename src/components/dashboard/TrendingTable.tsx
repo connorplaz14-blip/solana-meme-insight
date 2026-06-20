@@ -63,17 +63,17 @@ export function TrendingTable({ limit, dense = false }: { limit?: number; dense?
         accent="info"
         right={
           !limit && (
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 border border-border bg-panel-2 px-2 h-6">
+            <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+              <div className="flex items-center gap-1 border border-border bg-panel-2 px-2 h-6 flex-1 sm:flex-none min-w-0">
                 <Search className="h-3 w-3 text-muted-foreground" />
                 <input
                   value={q} onChange={(e) => setQ(e.target.value)}
                   placeholder="Search symbol / address"
-                  className="bg-transparent outline-none font-mono text-[11px] w-44 placeholder:text-muted-foreground/60"
+                  className="bg-transparent outline-none font-mono text-[11px] w-full sm:w-44 min-w-0 placeholder:text-muted-foreground/60"
                 />
               </div>
               <select value={risk} onChange={(e) => setRisk(e.target.value as Risk | "all")}
-                className="bg-panel-2 border border-border px-2 h-6 font-mono text-[11px] uppercase">
+                className="bg-panel-2 border border-border px-2 h-6 font-mono text-[11px] uppercase shrink-0">
                 <option value="all">All risk</option>
                 <option value="low">Low</option>
                 <option value="medium">Med</option>
@@ -85,7 +85,67 @@ export function TrendingTable({ limit, dense = false }: { limit?: number; dense?
         }
       />
       <PanelBody className="p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile card list */}
+        <ul className="md:hidden divide-y divide-border">
+          {rows.map((t) => (
+            <li key={t.address} className="px-3 py-2.5 hover:bg-accent/20">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] text-muted-foreground w-5 shrink-0">{t.rank}</span>
+                <button
+                  type="button"
+                  onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl })}
+                  className="flex items-center gap-2 min-w-0 flex-1 text-left hover:text-pos transition-colors"
+                >
+                  <TokenAvatar symbol={t.symbol} size={22} logoUrl={t.logoUrl} />
+                  <div className="min-w-0">
+                    <div className="truncate text-[12px]">{t.name}</div>
+                    <div className="font-mono text-[10px] text-muted-foreground">${t.symbol}</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => {
+                    if (isWatched(t.address)) removeFromWatchlist(t.address);
+                    else addToWatchlist({ address: t.address, name: t.name, symbol: t.symbol, addedAt: new Date().toISOString() });
+                    force((x) => x + 1);
+                  }}
+                  className={cn("hover:text-warn transition-colors shrink-0 p-1", isWatched(t.address) ? "text-warn" : "text-muted-foreground")}
+                  title={isWatched(t.address) ? "Remove from watchlist" : "Add to watchlist"}
+                >
+                  <Star className={cn("h-3.5 w-3.5", isWatched(t.address) && "fill-current")} />
+                </button>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2 font-mono text-[11px]">
+                <div>
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Mcap</div>
+                  <div>{fmtUsd(t.marketCapUsd)}</div>
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Vol 24h</div>
+                  <div>{fmtUsd(t.volume24hUsd)}</div>
+                </div>
+                <div>
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">24h</div>
+                  <div><ChangeCell value={t.changes.h24} /></div>
+                </div>
+              </div>
+              <div className="mt-1.5 flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {t.sources.map((s) => <SourceBadge key={s} source={s} />)}
+                  <RiskBadge risk={t.risk} />
+                </div>
+                <CopyAddress address={t.address} />
+              </div>
+            </li>
+          ))}
+          {status === "loading" && (
+            <li className="px-3 py-4 text-center text-muted-foreground font-mono text-[11px]">Loading…</li>
+          )}
+          {status === "ready" && rows.length === 0 && (
+            <li className="px-3 py-4 text-center text-muted-foreground font-mono text-[11px]">No matches</li>
+          )}
+        </ul>
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-[12px]">
             <thead className="bg-panel-2/60 border-b border-border">
               <tr className="[&>th]:px-2 [&>th]:py-1.5 [&>th]:font-normal">

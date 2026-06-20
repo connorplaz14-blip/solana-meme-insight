@@ -82,7 +82,43 @@ export function WalletView() {
           <Panel>
             <PanelHeader title="Token-level P&L" subtitle={`${data.positions.length} positions`} />
             <PanelBody className="p-0">
-              <table className="w-full text-[12px]">
+              {/* Mobile card list */}
+              <ul className="md:hidden divide-y divide-border">
+                {data.positions.map((p) => (
+                  <li key={p.address || p.symbol} className="px-3 py-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate text-[12px]">{p.name}</div>
+                        <div className="font-mono text-[10px] text-muted-foreground">${p.symbol}</div>
+                      </div>
+                      <span className={`font-mono text-[10px] uppercase tracking-wider px-1.5 py-[1px] border shrink-0 ${p.status === "open" ? "border-info/40 text-info bg-info/10" : "border-border text-muted-foreground bg-panel-2"}`}>
+                        {p.status}
+                      </span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2 font-mono text-[11px]">
+                      <div>
+                        <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Cost</div>
+                        <div>{fmtUsd(p.costUsd)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Value</div>
+                        <div>{fmtUsd(p.valueUsd)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] uppercase tracking-wider text-muted-foreground">P&L</div>
+                        <div className={p.pnlUsd >= 0 ? "text-pos" : "text-neg"}>{fmtUsd(p.pnlUsd)}</div>
+                      </div>
+                      <div>
+                        <div className="text-[9px] uppercase tracking-wider text-muted-foreground">ROI 24h</div>
+                        <div><ChangeCell value={p.roiPct} /></div>
+                      </div>
+                    </div>
+                    <div className="mt-1.5"><CopyAddress address={p.address} /></div>
+                  </li>
+                ))}
+              </ul>
+              {/* Desktop table */}
+              <table className="hidden md:table w-full text-[12px]">
                 <thead className="bg-panel-2/60 border-b border-border">
                   <tr className="[&>th]:px-2 [&>th]:py-1.5 [&>th]:font-normal [&>th]:text-[10px] [&>th]:uppercase [&>th]:tracking-wider [&>th]:text-muted-foreground">
                     <th className="text-left">Token</th>
