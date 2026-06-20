@@ -23,7 +23,8 @@ export const liveAdapter = {
   getWalletPnL: (address: string) => getWalletPnLFn({ data: { address } }),
   getPumpfunLaunches: () => getPumpfunLaunchesFn(),
   getProviders: () => getProvidersFn(),
-  getTokenChart: (address: string, points = 96) => getTokenChartFn({ data: { address, points } }),
+  getTokenChart: (address: string, timeframe: "1H" | "4H" | "1D" | "1W" = "1D") =>
+    getTokenChartFn({ data: { address, timeframe } }),
 };
 
 export type LiveAdapter = typeof liveAdapter;

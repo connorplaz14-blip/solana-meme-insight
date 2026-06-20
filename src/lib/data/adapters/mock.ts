@@ -3,8 +3,8 @@ import { trendingTokens } from "@/mocks/trending-tokens";
 import { memeOfTheDay } from "@/mocks/meme-of-the-day";
 import { narrativeReport, marketPulse } from "@/mocks/narratives";
 import { providers } from "@/mocks/providers";
-import { generateCandleSeries } from "@/mocks/chart";
 import type { PumpLaunchesResult, WalletPnLResponse } from "@/types";
+import { buildSyntheticChart } from "../providers/birdeye-ohlcv.server";
 
 export const mockAdapter = {
   getSolMarket: async () => ({ ...solMarket, lastUpdated: new Date().toISOString() }),
@@ -24,7 +24,10 @@ export const mockAdapter = {
     message: "Mock adapter — no live data.",
   }),
   getProviders: async () => providers,
-  getTokenChart: async (_address: string, points = 96) => generateCandleSeries(points),
+  getTokenChart: async (
+    address: string,
+    timeframe: "1H" | "4H" | "1D" | "1W" = "1D",
+  ) => buildSyntheticChart(address, 0.000024, 0, timeframe),
 };
 
 export type DataAdapter = typeof mockAdapter;
