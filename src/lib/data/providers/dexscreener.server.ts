@@ -145,3 +145,30 @@ export async function fetchSolanaTrending(limit = 30): Promise<Token[]> {
     return { ...t, score: s.score, scoreBreakdown: s.breakdown };
   });
 }
+
+// Fetch live token data for an arbitrary list of mint addresses (watchlist, etc.).
+// De-dupes by mint, keeps deepest-liquidity pair per token. No liquidity floor —
+// users may track illiquid bags.
+export async function fetchTokensByAddresses(addresses: string[]): Promise<Token[]> {
+  const cleaned = Array.from(new Set(addresses.filter(Boolean)));
+  if (cleaned.length === 0) return [];
+  const pairs = await fetchPairsForTokens(cleaned);
+  const byToken = new Map<string, DsPair>();
+  for (const p of pairs) {
+    if (!p.baseToken?.address) continue;
+    const existing = byToken.get(p.baseToken.address);
+    if (!existing || num(p.liquidity?.usd) > num(existing.liquidity?.usd)) {
+      byToken.set(p.baseToken.address, p);
+    }
+  }
+  const out: Token[] = [];
+  let rank = 1;
+  for (const addr of cleaned) {
+    const p = byToken.get(addr);
+    if (!p) continue;
+    const t = toToken(p, rank++);
+    const s = scoreToken(t);
+    out.push({ ...t, score: s.score, scoreBreakdown: s.breakdown });
+  }
+  return out;
+}
