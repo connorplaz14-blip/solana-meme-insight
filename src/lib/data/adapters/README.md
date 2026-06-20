@@ -1,10 +1,12 @@
 # Data Adapters
 
-Phase 1 ships `mockAdapter`. To plug in a real provider:
+Production ships `liveAdapter` (see `live.ts`). All data flows through
+typed `createServerFn` handlers in `src/lib/data/live.functions.ts`, which
+call providers under `src/lib/data/providers/`.
 
-1. Create `src/lib/data/adapters/<provider>.ts` matching `DataAdapter`.
-2. The body should call a Supabase Edge Function — never call the
-   third-party API from the browser, never embed API keys in client code.
-3. Swap the import in `src/lib/data/index.ts` (or build a composite
-   adapter routing each method to the best provider).
-4. Components do not change — they only consume the hooks.
+`mockAdapter` is kept for local dev / offline work. It is NOT wired into
+`src/lib/data/index.ts`.
+
+When a provider is unconfigured, the server fn returns a typed
+"notice" / "missing-key" payload so the UI renders a real
+"needs configuration" state instead of silently going empty.

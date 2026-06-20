@@ -103,10 +103,33 @@ export interface PumpLaunch {
   source: Source;
 }
 
+/** Result envelope for live launches fetch — communicates "missing key"
+ *  or "error" honestly instead of returning an empty array. */
+export type LaunchesStatus = "ok" | "missing-key" | "error";
+export interface PumpLaunchesResult {
+  status: LaunchesStatus;
+  launches: PumpLaunch[];
+  message?: string;
+  provider: "solana-tracker";
+}
+
+export type WalletNoticeKind = "missing-key" | "invalid-address" | "error";
+export interface WalletNotice {
+  kind: WalletNoticeKind;
+  message: string;
+  provider: "birdeye";
+}
+
 export interface WalletPnLResult extends WalletPnL {
-  source: "birdeye" | "vybe" | "mock";
+  source: "birdeye" | "vybe";
   lastUpdatedIso: string;
 }
+
+/** Server fn return: either a live wallet result, or a typed notice
+ *  the UI can render as a "needs configuration" panel. */
+export type WalletPnLResponse =
+  | { kind: "ok"; data: WalletPnLResult }
+  | { kind: "notice"; address: string; notice: WalletNotice };
 
 export interface MacroAsset {
   priceUsd: number;

@@ -4,14 +4,13 @@ import type {
   MacroSnapshot,
   NarrativeReport,
   ProviderInfo,
-  PumpLaunch,
+  PumpLaunchesResult,
   SolMarket,
   Token,
   TokenSearchResult,
-  WalletPnLResult,
+  WalletPnLResponse,
 } from "@/types";
-import { providers as providerCatalog } from "@/mocks/providers";
-import { sampleWallet } from "@/mocks/wallet-pnl";
+import { buildProviderCatalog } from "./providers/catalog";
 
 export const getSolMarketFn = createServerFn({ method: "GET" }).handler(async (): Promise<SolMarket> => {
   const { withCache } = await import("./cache.server");
@@ -121,6 +120,7 @@ export const getProvidersFn = createServerFn({ method: "GET" }).handler(async ()
   const { readAllHealth } = await import("./health.server");
   const health = await readAllHealth();
   const byProvider = new Map(health.map((h) => [h.provider, h]));
+  const providerCatalog = buildProviderCatalog(process.env as Record<string, string | undefined>);
 
   return providerCatalog.map((p) => {
     const h = byProvider.get(p.id);
@@ -141,29 +141,63 @@ export const getProvidersFn = createServerFn({ method: "GET" }).handler(async ()
   });
 });
 
-export const getPumpfunLaunchesFn = createServerFn({ method: "GET" }).handler(async (): Promise<PumpLaunch[]> => {
-  if (!process.env.SOLANA_TRACKER_API_KEY) return [];
-  const { withCache } = await import("./cache.server");
-  const { trackProvider } = await import("./health.server");
-  const { fetchPumpfunLaunches } = await import("./providers/solana-tracker.server");
-  try {
-    return await withCache("solana-tracker:launches:25", 60, () =>
-      trackProvider("solana-tracker", () => fetchPumpfunLaunches(25)),
-    );
-  } catch {
-    return [];
-  }
-});
+export const getPumpfunLaunchesFn = createServerFn({ method: "GET" }).handler(
+  async (): Promise<PumpLaunchesResult> => {
+    if (!process.env.SOLANA_TRACKER_API_KEY) {
+      return {
+        status: "missing-key",
+        launches: [],
+        provider: "solana-tracker",
+        message: "Add SOLANA_TRACKER_API_KEY to enable the Pump.fun launches feed.",
+      };
+    }
+    const { withCache } = await import("./cache.server");
+    const { trackProvider } = await import("./health.server");
+    const { fetchPumpfunLaunches } = await import("./providers/solana-tracker.server");
+    try {
+      const launches = await withCache("solana-tracker:launches:25", 60, () =>
+        trackProvider("solana-tracker", () => fetchPumpfunLaunches(25)),
+      );
+      return { status: "ok", launches, provider: "solana-tracker" };
+    } catch (e) {
+      return {
+        status: "error",
+        launches: [],
+        provider: "solana-tracker",
+        message: e instanceof Error ? e.message : String(e),
+      };
+    }
+  },
+);
 
 export const getWalletPnLFn = createServerFn({ method: "POST" })
   .inputValidator((d: { address: string }) => ({ address: String(d?.address ?? "").trim() }))
-  .handler(async ({ data }): Promise<WalletPnLResult> => {
+  .handler(async ({ data }): Promise<WalletPnLResponse> => {
     const nowIso = new Date().toISOString();
     const addr = data.address;
     const looksLikeSolAddr = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
 
-    if (!looksLikeSolAddr || !process.env.BIRDEYE_API_KEY) {
-      return { ...sampleWallet, address: addr || sampleWallet.address, source: "mock", lastUpdatedIso: nowIso };
+    if (!looksLikeSolAddr) {
+      return {
+        kind: "notice",
+        address: addr,
+        notice: {
+          kind: "invalid-address",
+          provider: "birdeye",
+          message: "Enter a valid Solana address (32–44 base58 characters).",
+        },
+      };
+    }
+    if (!process.env.BIRDEYE_API_KEY) {
+      return {
+        kind: "notice",
+        address: addr,
+        notice: {
+          kind: "missing-key",
+          provider: "birdeye",
+          message: "Add BIRDEYE_API_KEY to enable live wallet P&L.",
+        },
+      };
     }
     const { withCache } = await import("./cache.server");
     const { trackProvider } = await import("./health.server");
@@ -172,8 +206,16 @@ export const getWalletPnLFn = createServerFn({ method: "POST" })
       const live = await withCache(`birdeye:wallet:${addr}`, 30, () =>
         trackProvider("birdeye", () => fetchWalletPortfolio(addr)),
       );
-      return { ...live, source: "birdeye", lastUpdatedIso: nowIso };
-    } catch {
-      return { ...sampleWallet, address: addr, source: "mock", lastUpdatedIso: nowIso };
+      return { kind: "ok", data: { ...live, source: "birdeye", lastUpdatedIso: nowIso } };
+    } catch (e) {
+      return {
+        kind: "notice",
+        address: addr,
+        notice: {
+          kind: "error",
+          provider: "birdeye",
+          message: e instanceof Error ? e.message : String(e),
+        },
+      };
     }
   });
