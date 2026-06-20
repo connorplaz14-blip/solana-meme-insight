@@ -147,7 +147,11 @@ export async function searchX(query: string, limit = 25): Promise<SocialItem[]> 
   if (!term) return [];
 
   // 1) Primary: FxTwitter search. Handles $TICK, #tag, "from:user", plain text.
-  const fxTerm = term.replace(/^#/, "#"); // pass through; FxTwitter handles ops
+  // For $TICKER / #tag / keyword searches we bias toward bigger accounts by
+  // requiring some traction — keeps the column free of bot spam. `from:` and
+  // explicit operator queries are passed through untouched.
+  const hasOperator = /\b(from|to|list|filter|min_faves|min_retweets):/i.test(term);
+  const fxTerm = hasOperator ? term : `${term} min_faves:25 -filter:replies`;
   const primary = await fxSearch(fxTerm, Math.min(limit, 30)).catch(() => []);
   if (primary.length >= 3) {
     const items = primary.slice(0, limit).map(xtweetToItem);
