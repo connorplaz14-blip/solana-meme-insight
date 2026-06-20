@@ -88,12 +88,12 @@ export function AiTrendingTable() {
                   key={p.address}
                   className="border-b border-border/50 last:border-b-0 px-3 py-2 hover:bg-accent/20"
                 >
-                  <div className="flex items-start gap-2.5">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-2.5">
                     <button
                       onClick={() =>
                         open({ address: p.address, symbol: p.symbol, name: p.name })
                       }
-                      className="flex items-center gap-2 min-w-0 hover:text-pos transition-colors"
+                      className="flex items-center gap-2 min-w-0 hover:text-pos transition-colors sm:shrink-0"
                     >
                       <TokenAvatar symbol={p.symbol} size={22} />
                       <div className="min-w-0">
