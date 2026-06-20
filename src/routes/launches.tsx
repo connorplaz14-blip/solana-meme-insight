@@ -10,6 +10,13 @@ import { useSolMarket } from "@/lib/data";
 const seedQueryOptions = queryOptions({
   queryKey: ["pumpfun", "latest"],
   queryFn: async (): Promise<Launch[]> => {
+    // On the server (SSR / loader), call the helper directly — relative-URL
+    // fetch isn't supported in the Worker runtime. On the client, hit the
+    // API route so we benefit from edge caching.
+    if (typeof window === "undefined") {
+      const { fetchPumpfunSeed } = await import("@/lib/pumpfun/seed.server");
+      return fetchPumpfunSeed();
+    }
     const r = await fetch("/api/pumpfun/latest");
     if (!r.ok) return [];
     return (await r.json()) as Launch[];
@@ -357,11 +364,16 @@ function LaunchRow({ launch }: { launch: Launch }) {
 }
 
 function useAge(createdAt: number): string {
+  // First render must match SSR (empty) to avoid Date.now() hydration drift.
+  // After mount, tick every second.
+  const [mounted, setMounted] = useState(false);
   const [, setTick] = useState(0);
   useEffect(() => {
+    setMounted(true);
     const t = setInterval(() => setTick((n) => n + 1), 1000);
     return () => clearInterval(t);
   }, []);
+  if (!mounted) return "";
   const diff = Math.max(0, Date.now() - createdAt);
   if (diff < 60_000) return `${Math.floor(diff / 1000)}s`;
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m`;

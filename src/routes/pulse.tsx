@@ -1,4 +1,5 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { NewsColumn } from "@/components/pulse/NewsColumn";
 import { SocialColumn } from "@/components/pulse/SocialColumn";
 import { TrendingColumn } from "@/components/pulse/TrendingColumn";
@@ -45,6 +46,14 @@ function PulsePage() {
   const showTrending = activeTab === "all" || activeTab === "trending";
   const showWhales = activeTab === "all" || activeTab === "whales";
 
+  // Defer locale-dependent clock to after mount to avoid SSR hydration drift.
+  const [now, setNow] = useState<string>("");
+  useEffect(() => {
+    setNow(new Date().toLocaleTimeString());
+    const t = setInterval(() => setNow(new Date().toLocaleTimeString()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   return (
     <div className="p-3">
       <header className="mb-3">
@@ -52,7 +61,7 @@ function PulsePage() {
           Pulse
         </h1>
         <p className="font-mono text-[10px] text-muted-foreground mt-0.5">
-          Fast-info terminal · auto-refresh · {new Date().toLocaleTimeString()}
+          Fast-info terminal · auto-refresh{now ? ` · ${now}` : ""}
         </p>
       </header>
 

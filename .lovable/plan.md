@@ -1,46 +1,28 @@
-# Plan: KOL-driven X feed (lists + curated handles)
+# Fix Launches page errors
 
-FxTwitter has no list endpoint (confirmed `/2/list/{id}` → 404), so X Lists can't be hit as a single source. Workaround: scrape the list page's "Members" via Firecrawl once, cache the handle set for a long TTL, and fan out per-handle through FxTwitter — same path we already use for `fetchHandlesTimeline`.
+Two real bugs in `/launches`, both shown by the runtime signals:
 
-## Changes
+## 1. Loader self-fetches a relative URL during SSR (the actual crash)
 
-### 1. Expand curated roster — `src/lib/data/providers/xfeed.server.ts`
-Replace `SOLANA_KOLS` with a tiered, deduped roster that includes the user's named accounts:
+`src/routes/launches.tsx` uses a query whose `queryFn` does `fetch("/api/pumpfun/latest")`. The route's `loader` runs on the server during SSR, where relative-URL `fetch` is not supported in the Worker runtime — it throws, h3 swallows it, and the page renders the route error boundary ("spitting errors").
 
-- **Traders / KOLs:** `blknoiz06` (Ansem), `MustStopMurad`, `Cupseyy`, `notthreadguy`, `frankdegods`, `trader1sz`, `MoonOverlord`, `0xRamonos`, `ZssBecker`, `gake_eth`
-- **Solana / infra founders:** `aeyakovenko`, `rajgokal`, `0xMert_`, `weremeow` (Jupiter), `a1lon9` (Pump.fun)
-- **Project / culture accounts:** `pumpdotfun`, `JupiterExchange`, `TheOnlyNom`, `bonk_inu`, `dogwifcoin`, `SolanaFndn`, `SolanaFloor`
-- **Risk / on-chain analysts:** `zachxbt`, `lookonchain`, `bubblemaps`, `Rugcheckxyz`, `DefiIgnas`
+**Fix:** stop self-fetching. Extract the existing `fetchPumpfunSeed()` logic out of `src/routes/api/pumpfun/latest.ts` into `src/lib/pumpfun/seed.server.ts` (a server-only module). Both the API route and the loader's `queryFn` call it directly server-side. Client refetches still hit `/api/pumpfun/latest` because the queryFn branches: server context → call `fetchPumpfunSeed()` directly, browser → use the existing relative `fetch`. Simplest split:
 
-Add an optional `KOL_TAGS` map (handle → tag like `trader`, `founder`, `risk`, `culture`) used later for column chips. No behavior change to existing callers.
+- `queryFn` checks `typeof window === 'undefined'` and dynamic-imports `seed.server.ts` on server; otherwise `fetch("/api/pumpfun/latest")`.
+- API route now imports the same helper instead of defining it inline.
 
-### 2. New X-list scraper — `src/lib/data/providers/xlist.server.ts` (new file)
-- `fetchListMembers(listId: string): Promise<string[]>` — scrapes `https://x.com/i/lists/{id}/members` via `firecrawlScrapeMarkdown`, regex-extracts `@handle` patterns / `/{handle}` profile links, dedupes, filters non-handles, caches in-memory for 6h. Empty array on failure (always fall back gracefully).
-- Constant `SOLANA_KOL_LISTS` with the four list IDs the user pasted (the 1777… duplicate is collapsed):
-  - `1777037601578287430`
-  - `1747955009617006656`
-  - `1726621096902807989`
-  - `1587987762908651520`
-- `fetchAllListMembers()` — Promise.allSettled over the four IDs, merged + deduped.
+## 2. Hydration mismatch on time-derived text
 
-### 3. Wire into KOL feed — `src/lib/data/providers/newsfeed.server.ts`
-When a query matches `@kols` / `kols`:
-1. `members = await fetchAllListMembers()` (cached).
-2. `roster = unique([...SOLANA_KOLS, ...members])`, capped at ~60 handles to keep the fan-out bounded.
-3. `fetchHandlesTimeline(roster, perHandle=2, limit)` (drop `perHandle` from 3→2 so the larger roster doesn't blow the 8s budget).
-4. If list scrape returned nothing, fall back to the hardcoded `SOLANA_KOLS` — same behavior as today.
+The reported hydration error already fires on `/pulse` (`new Date().toLocaleTimeString()` in the header), and the same class of bug exists in `/launches` via `useAge(createdAt)` — initial render computes `Date.now() - createdAt` which differs server vs client.
 
-### 4. UI polish — `src/components/pulse/SocialColumn.tsx`
-- Add the new handles to the presets dropdown: `@blknoiz06`, `@MustStopMurad`, `@Cupseyy`, `@a1lon9`, `@weremeow`, `@TheOnlyNom`, `@bonk_inu`, `@dogwifcoin`, `@zachxbt`, `@lookonchain`, `@bubblemaps`, `@Rugcheckxyz`.
-- Leave the existing "KOLs" preset; it now silently pulls list members + curated roster.
-
-## Notes / trade-offs
-- X Lists aren't directly fetchable without auth, so we rely on Firecrawl scraping the public list page. Twitter often gates `/members` behind auth — if Firecrawl returns no handles, we'll quietly fall back to the curated roster. Acceptable degradation, no user-facing error.
-- Per-handle fan-out cost: ~30-60 FxTwitter calls per KOL refresh, all parallel, cached 5min — same pattern as today, just wider.
-- No schema/API changes; SocialItem shape untouched.
+**Fixes:**
+- `src/routes/pulse.tsx`: render the clock only after mount. Gate the `toLocaleTimeString()` text behind a `useEffect` + `useState` initialized to `""` (or wrap in `<span suppressHydrationWarning>`).
+- `src/routes/launches.tsx` → `useAge`: return `""` until the first effect tick fires, then start ticking. Avoids first-paint mismatch.
 
 ## Files
-- edit `src/lib/data/providers/xfeed.server.ts`
-- new  `src/lib/data/providers/xlist.server.ts`
-- edit `src/lib/data/providers/newsfeed.server.ts`
-- edit `src/components/pulse/SocialColumn.tsx`
+- new  `src/lib/pumpfun/seed.server.ts` — exports `fetchPumpfunSeed()` + `Launch` type
+- edit `src/routes/api/pumpfun/latest.ts` — import shared helper
+- edit `src/routes/launches.tsx` — loader uses shared helper on server, fix `useAge` mount-gate
+- edit `src/routes/pulse.tsx` — gate clock behind `useEffect`
+
+No UI changes beyond the hydration gating.
