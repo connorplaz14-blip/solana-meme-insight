@@ -54,11 +54,13 @@ export const getMemeOfTheDayFn = createServerFn({ method: "GET" }).handler(async
     trackProvider("dexscreener", () => fetchSolanaTrending(30)),
   );
   const top = [...tokens].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))[0];
+  const compactUsd = (n: number) =>
+    "$" + new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 2 }).format(n);
   return {
     ...top,
     aiSummary:
-      `${top.symbol} leads today's MemeDesk score with $${Math.round(top.volume24hUsd / 1_000_000)}M in 24h volume ` +
-      `against $${Math.round(top.liquidityUsd / 1_000_000)}M of liquidity. ` +
+      `${top.symbol} leads today's MemeDesk score with ${compactUsd(top.volume24hUsd)} in 24h volume ` +
+      `against ${compactUsd(top.liquidityUsd)} of liquidity. ` +
       `Price moved ${top.changes.h24.toFixed(1)}% over 24h. ` +
       `Buy/sell ratio: ${(top.txns.buys24h / Math.max(top.txns.sells24h, 1)).toFixed(2)}.`,
   };
