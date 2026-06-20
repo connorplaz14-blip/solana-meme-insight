@@ -364,17 +364,12 @@ function LaunchRow({ launch }: { launch: Launch }) {
 }
 
 function useAge(createdAt: number): string {
-  // Gate on mount: first render must match server (empty) to avoid the
-  // Date.now() drift hydration mismatch.
+  // First render must match SSR (empty) to avoid Date.now() hydration drift.
+  // After mount, tick every second.
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-    const t = setInterval(() => setMounted((m) => m), 1000);
-    // force re-render every second
-    return () => clearInterval(t);
-  }, []);
   const [, setTick] = useState(0);
   useEffect(() => {
+    setMounted(true);
     const t = setInterval(() => setTick((n) => n + 1), 1000);
     return () => clearInterval(t);
   }, []);
