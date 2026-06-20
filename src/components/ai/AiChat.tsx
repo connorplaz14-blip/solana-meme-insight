@@ -142,20 +142,9 @@ function MessageBubble({ message }: { message: UIMessage }) {
   const text = message.parts
     .map((p) => (p.type === "text" ? p.text : ""))
     .join("");
-  const toolCalls = message.parts
-    .filter(
-      (p): p is { type: string; toolName?: string; state?: string } & Record<string, unknown> =>
-        typeof (p as { type?: unknown }).type === "string" &&
-        ((p as { type: string }).type.startsWith("tool-") ||
-          (p as { type: string }).type === "tool-call"),
-    )
-    .map((p) => {
-      const t = (p as { type: string }).type;
-      const name =
-        (p as { toolName?: string }).toolName ??
-        (t.startsWith("tool-") ? t.slice(5) : t);
-      return name;
-    })
+  const toolCalls = (message.parts as unknown as Array<{ type: string; toolName?: string }>)
+    .filter((p) => typeof p.type === "string" && p.type.startsWith("tool-"))
+    .map((p) => p.toolName ?? p.type.slice(5))
     .filter((n, i, a) => a.indexOf(n) === i);
   const isUser = message.role === "user";
   return (
