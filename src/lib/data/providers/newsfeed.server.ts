@@ -40,23 +40,6 @@ const NEWS_FEEDS: { source: string; url: string }[] = [
   { source: "CryptoSlate", url: "https://cryptoslate.com/feed/" },
 ];
 
-// Nitter mirrors rotate frequently. We try several in order.
-const NITTER_HOSTS = [
-  "https://nitter.privacydev.net",
-  "https://nitter.poast.org",
-  "https://nitter.net",
-  "https://nitter.cz",
-  "https://nitter.tiekoetter.com",
-  "https://nitter.kavin.rocks",
-];
-
-// RSSHub public instances fall back when Nitter is dead. They expose
-// /twitter/keyword/:keyword and /twitter/user/:username among other routes.
-const RSSHUB_HOSTS = [
-  "https://rsshub.app",
-  "https://rss.shab.fun",
-];
-
 function decodeEntities(s: string): string {
   return s
     .replace(/<!\[CDATA\[(.*?)\]\]>/gs, "$1")
@@ -152,97 +135,33 @@ function detectMode(query: string): { mode: "user" | "search"; value: string } {
   return { mode: "search", value: q };
 }
 
-function parseSocialXml(xml: string, fallbackHandle?: string): SocialItem[] {
-  const parsed = parseItems(xml);
-  const items: SocialItem[] = [];
-  for (const it of parsed) {
-    if (!it.title || !it.link) continue;
-    const ts = it.pubDate ? new Date(it.pubDate) : null;
-    const iso = ts && !isNaN(ts.getTime()) ? ts.toISOString() : new Date().toISOString();
-    const raw = stripHtml(it.title);
-    let handle = fallbackHandle ?? "";
-    let text = raw;
-    const colon = raw.indexOf(":");
-    if (colon > 0 && raw.slice(0, colon).length < 40) {
-      handle = raw.slice(0, colon).replace(/^R to /, "").trim();
-      text = raw.slice(colon + 1).trim();
-    }
-    const url = it.link.trim().replace(/https?:\/\/[^/]+/, "https://x.com");
-    items.push({
-      id: url,
-      author: handle,
-      handle,
-      text,
-      url,
-      publishedAt: iso,
-      source: "X",
-    });
-  }
-  return items;
-}
-
 export async function fetchSocialFeed(query: string, limit = 30): Promise<SocialItem[]> {
   const { mode, value } = detectMode(query);
   if (!value) return [];
 
-  // Three live, no-auth sources fanned out in parallel. Each may fail; we
-  // merge whatever comes back. This is what makes the column never empty
-  // in 2026 when X mirrors are dead.
-  const [bsky, signals, launches] = await Promise.all([
-    fetchBlueskyFeed(mode, value, Math.ceil(limit / 2)).catch(() => [] as SocialItem[]),
-    fetchSocialSignals(mode, value, 8).catch(() => [] as SocialItem[]),
-    fetchDexLaunches(mode, value, 12).catch(() => [] as SocialItem[]),
-  ]);
+  // Primary: live X data via Firecrawl. Bluesky stays as fallback so the
+  // column never goes blank when Firecrawl is rate-limited or out of credits.
+  const { searchX, userTimelineX } = await import("./xfeed.server");
+  const xPosts =
+    mode === "user"
+      ? await userTimelineX(value, limit).catch(() => [] as SocialItem[])
+      : await searchX(value, limit).catch(() => [] as SocialItem[]);
 
-  // 2) Try Nitter for any X mirrors that still respond
-  let nitter: SocialItem[] = [];
-  for (const host of NITTER_HOSTS) {
-    const url =
-      mode === "user"
-        ? `${host}/${value}/rss`
-        : `${host}/search/rss?f=tweets&q=${encodeURIComponent(value)}`;
-    const xml = await fetchFeed(url, 5000);
-    if (!xml) continue;
-    const items = parseSocialXml(xml, mode === "user" ? `@${value}` : undefined).slice(0, limit);
-    if (items.length > 0) {
-      nitter = items;
-      break;
-    }
+  let bsky: SocialItem[] = [];
+  if (xPosts.length < 4) {
+    bsky = await fetchBlueskyFeed(mode, value, Math.ceil(limit / 2)).catch(
+      () => [] as SocialItem[],
+    );
   }
 
-  // 3) RSSHub fallback for X — skip when we already have plenty from working
-  // sources to keep latency down.
-  if (nitter.length === 0 && bsky.length + signals.length + launches.length < 6) {
-    for (const host of RSSHUB_HOSTS) {
-      const url =
-        mode === "user"
-          ? `${host}/twitter/user/${value}`
-          : `${host}/twitter/keyword/${encodeURIComponent(value)}`;
-      const xml = await fetchFeed(url, 6000);
-      if (!xml) continue;
-      const items = parseSocialXml(xml, mode === "user" ? `@${value}` : undefined).slice(0, limit);
-      if (items.length > 0) {
-        nitter = items;
-        break;
-      }
-    }
-  }
-
-  // Merge, dedupe by id. Signal cards float to the top, then mix posts +
-  // launches sorted by recency.
   const seen = new Set<string>();
   const all: SocialItem[] = [];
-  for (const it of [...signals, ...bsky, ...launches, ...nitter]) {
+  for (const it of [...xPosts, ...bsky]) {
     if (seen.has(it.id)) continue;
     seen.add(it.id);
     all.push(it);
   }
-  const rank = (k?: string) => (k === "signal" ? 0 : 1);
-  all.sort((a, b) => {
-    const r = rank(a.kind) - rank(b.kind);
-    if (r !== 0) return r;
-    return +new Date(b.publishedAt) - +new Date(a.publishedAt);
-  });
+  all.sort((a, b) => +new Date(b.publishedAt) - +new Date(a.publishedAt));
   return all.slice(0, limit);
 }
 
