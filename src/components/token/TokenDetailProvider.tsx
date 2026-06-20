@@ -90,14 +90,19 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
               No DEX pool yet — token still on Pump.fun bonding curve.
             </div>
           ) : (
-            <iframe
-              key={`txns-${addr}`}
-              src={txnsSrc}
-              title={`${token.symbol} transactions`}
-              loading="lazy"
-              className="w-full h-[65vh] border-0 bg-background"
-              allow="clipboard-write"
-            />
+            <div
+              className="w-full overflow-x-auto overflow-y-hidden h-[65vh]"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              <iframe
+                key={`txns-${addr}`}
+                src={txnsSrc}
+                title={`${token.symbol} transactions`}
+                loading="lazy"
+                className="h-full border-0 bg-background w-full min-w-[720px] sm:min-w-0"
+                allow="clipboard-write"
+              />
+            </div>
           )}
         </TabsContent>
 

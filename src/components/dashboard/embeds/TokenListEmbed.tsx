@@ -68,17 +68,22 @@ export function TokenListEmbed({ kind, title, subtitle, height = "78vh" }: Props
         }
       />
       <PanelBody className="p-0">
-        <div className="w-full overflow-hidden">
+        <div
+          className="w-full overflow-x-auto overflow-y-hidden"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
           <iframe
             key={src}
             src={src}
             title={cfg.title}
             loading="lazy"
             onLoad={() => { loadedRef.current = true; }}
-            className="border-0 bg-background block"
+            className="border-0 bg-background block w-full min-w-[760px] sm:min-w-0"
             style={{
-              height: typeof height === "number" ? `${height}px` : height,
-              width: "100%",
+              height:
+                typeof height === "number"
+                  ? `min(${height}px, 70svh)`
+                  : `min(${height}, 70svh)`,
             }}
             allow="clipboard-write"
           />
