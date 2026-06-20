@@ -1,47 +1,60 @@
-# Mobile breakpoint pass — no horizontal scrolling
+# Unify embed providers — GMGN for lists, DEX/Pump.fun for charts
 
-Every panel needs to fit a 360–414px portrait viewport. Today four things break that rule: the top market tape (scrolls horizontally on purpose), four wide data tables, the DexScreener iframes (forced 640px min), and a few panel headers whose right-hand controls overflow.
+Today the embeds are inconsistent: `/coins` and `PumpfunLaunches` use GeckoTerminal; the dashboard token chart and the detail-modal "Chart" tab use DexScreener; the detail modal also has a separate GMGN "PF Chart" tab. Standardise on one provider per job.
+
+## Provider matrix
+
+- **Token lists** (trending pools, new pairs) → **GMGN**
+- **Charts for bonded tokens** (have a DEX pool) → **DexScreener**
+- **Charts for not-yet-bonded tokens** (Pump.fun only) → **Pump.fun chart** (via GMGN kline `gmgn.cc/kline/sol/<addr>`, since `pump.fun` itself blocks iframing)
+
+"Bonded" = `token.sources` includes `"dexscreener"`. No new server calls.
 
 ## Changes
 
-### 1. Top market tape — `src/components/layout/MarketTape.tsx`
-- Drop the `overflow-x-auto` strip on mobile. Show a condensed 3-cell row that fits 360px: **SOL** (price + Δ), **BTC** (price + Δ), **Fear & Greed** (value + label). Hide the other cells under `md:flex`.
-- Keep the hamburger and search buttons; the logo block stays `hidden md:flex`.
-- Cells: shrink min-width to ~84px on mobile, divider stays 1px. Height stays 40px.
+### 1. New unified components — `src/components/dashboard/embeds/`
 
-### 2. Wide tables → card lists under md
+- `TokenListEmbed.tsx` — single source of truth for multi-token list embeds. Props: `kind: "trending" | "new-pairs"`. Resolves to GMGN URLs:
+  - trending → `https://www.gmgn.cc/meme/sol`
+  - new-pairs → `https://www.gmgn.cc/new-pair/sol`
+  Renders inside an existing `Panel` with the GMGN `SourceBadge`. Keeps the responsive height behaviour we already use (`78vh`).
+- `TokenChartEmbed.tsx` — single chart component. Props: `address`, `symbol`, `bonded?: boolean`, `defaultProvider?: "dex" | "pf"`, `height`. Picks DexScreener when `bonded`, Pump.fun (GMGN kline) when not. Exposes a small two-button toggle (DEX / PF) so the user can override the auto-pick. Persists the override per session in `localStorage` under `chart-provider:<addr>`.
 
-For each, render the existing `<table>` only at `md:block`, and render a stacked card list under `md:hidden`. Same data, fewer fields per row, no horizontal scroll.
+Both components reuse the existing `Panel`/`PanelHeader`/`PanelBody` chrome, no new design tokens.
 
-- `src/components/dashboard/TrendingTable.tsx`
-  - Mobile card per token: avatar + name/symbol on top row; second row mcap · vol · 24h change; third row source badges + risk badge + star button.
-  - Header `right` block (search input + risk select) moves below the title on mobile (`flex-col gap-2 sm:flex-row`); search input becomes full-width.
-- `src/components/wallet/WalletView.tsx` (positions table)
-  - Mobile card per position: name/symbol + status pill; row of cost / value / P&L / 24h ROI as 2×2 grid; contract address row.
-  - Stat grid already `grid-cols-2 md:grid-cols-4` — leave alone.
-- `src/components/watchlist/WatchlistView.tsx`
-  - Mobile card per entry: avatar + name/symbol + remove (×); row of price · mcap · 24h; contract + added date underneath.
-  - "Add Token" panel: keep stacked; the symbol/name `grid-cols-2` stays.
+### 2. Helper — `src/lib/token-bonded.ts`
 
-### 3. DexScreener / GeckoTerminal iframes — `src/components/dashboard/DexScreenerEmbed.tsx`
-- Remove the hard `minWidth: 640` on the iframe wrapper. Iframe becomes `width: 100%`, no horizontal scroll on the parent. The embedded site handles its own internal scroll inside the iframe — that's acceptable and doesn't push the page.
-- Reduce default `height` behaviour on mobile: when caller passes `"78vh"` it stays; numeric heights shrink with `min(<n>px, 70vh)` only on `< md`.
+Tiny pure function `isBonded(token: { sources: Source[] }): boolean` → returns `token.sources.includes("dexscreener")`. Used by callers that know the token; the modal accepts an explicit `bonded` prop so callers can pass it through.
 
-### 4. Panel header overflow — `src/components/terminal/Panel.tsx`
-- Make `PanelHeader` stack on mobile: `flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between`. The `right` slot wraps with `flex-wrap` so refresh + source badges don't squash titles. Title row keeps `truncate`.
+### 3. Update callers
 
-### 5. AI Trending picks — `src/components/trending/AiTrendingTable.tsx`
-- Already card-style. Tighten: token button + "why" stack vertically under `sm:` (currently flex side-by-side), so the why text uses full row width on phones.
+- `src/routes/coins.tsx` → replace both `DexScreenerEmbed` instances with `<TokenListEmbed kind="trending" />` and `<TokenListEmbed kind="new-pairs" />`. Titles/subtitles updated to mention GMGN.
+- `src/components/dashboard/PumpfunLaunches.tsx` → use `<TokenListEmbed kind="new-pairs" />`.
+- `src/components/dashboard/TokenChartPanel.tsx` → use `<TokenChartEmbed address={mod.address} symbol={mod.symbol} bonded={isBonded(mod)} />`. Drops the hand-rolled DexScreener iframe.
+- `src/components/token/TokenDetailProvider.tsx`:
+  - Extend `TokenRef` with optional `bonded?: boolean`. `useTokenDetail().open(...)` accepts it.
+  - Update every call site that opens the modal (`TrendingTable`, `MemeOfTheDayCard`, `WatchlistView`) to pass `bonded: isBonded(token)`. Watchlist looks up the matching `trending` row first; falls back to `undefined`.
+  - Collapse the `Chart` / `PF Chart` tabs into a single `Chart` tab that renders `<TokenChartEmbed bonded={token.bonded} />` with the built-in DEX/PF toggle. Keep the `Transactions` tab on DexScreener (it's always pool-based — only useful when bonded; if not bonded, render a small "No DEX pool yet" empty state).
 
-### 6. AI Chat — `src/components/ai/AiChat.tsx`
-- Reduce height from `h-[78vh]` to `h-[calc(100vh-7rem)]` on mobile so it fits under the tape without page scroll, full `78vh` from `md:`. Suggestion chips already wrap; leave alone.
+### 4. Keep `DexScreenerEmbed` for now
+
+Don't delete `src/components/dashboard/DexScreenerEmbed.tsx` — `TokenChartEmbed` reuses it internally for the DEX iframe (already handles responsive height + source badge). Just stop using it as a list-embed wrapper.
+
+## Risks / caveats
+
+- GMGN pages (`/meme/sol`, `/new-pair/sol`) are full SPA pages, not an `?embed=1` widget. They may set `X-Frame-Options` / CSP `frame-ancestors` that block embedding. **Fallback plan**: if GMGN refuses to frame, `TokenListEmbed` falls back to GeckoTerminal with a visible "GMGN unreachable — showing GeckoTerminal" notice and the corresponding `SourceBadge`. Detection is best-effort (an iframe `onLoad` that never fires within 4s → assume blocked); this stays inside `TokenListEmbed` so callers don't care.
+- `pump.fun` itself does not allow iframe embedding, so the "PF" provider is the GMGN kline URL we already use. Source badge labelled `PF` to keep the user-facing language consistent.
 
 ## Out of scope
-- No new pages, no design-token changes, no replacing the iframe providers.
-- Tablet (md+) and desktop stay unchanged — all edits are guarded behind `md:` / `sm:` and additive.
-- `src/components/dashboard/MarketBar.tsx` is not mounted in the root shell; leave untouched.
+
+- No data-layer changes (`live.functions.ts`, `dexscreener.server.ts`, mocks, narratives all keep their existing sources).
+- No new API integrations, no AI prompt changes.
+- `DexScreenerEmbed` keeps its current API; only its callers change.
 
 ## Verification
-- Resize preview to 375 × 812 and 414 × 896 portrait.
-- Walk every route: `/dashboard`, `/coins`, `/trending`, `/narratives`, `/watchlist`, `/wallet-pnl`, `/ai`, `/meme-of-the-day`, `/settings`.
-- Confirm `document.documentElement.scrollWidth === clientWidth` (no horizontal page scroll). Iframes may scroll *inside* their box — that's expected.
+
+- `/coins`: both panels load via GMGN, fallback message appears only if GMGN blocks.
+- `/dashboard`: Token Chart shows DexScreener for the meme-of-the-day (which has a DEX pool).
+- Open a trending token from the table → modal shows single `Chart` tab on DexScreener with a `DEX | PF` toggle.
+- Manually pass a `bonded: false` token (e.g. via a Pump.fun-only mock) → modal Chart defaults to PF and Transactions shows the empty state.
+- Mobile (375px portrait) still has no horizontal overflow — the responsive iframe rules from the last pass still apply.
