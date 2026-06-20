@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSocialFeed } from "@/lib/data";
 import { PulseColumn } from "./PulseColumn";
+import { AiSocialPulse } from "./AiSocialPulse";
 import { timeAgo } from "./timeAgo";
 import { cn } from "@/lib/utils";
 import {
@@ -161,6 +162,7 @@ export function SocialColumn() {
         </span>
       }
     >
+      <AiSocialPulse />
       <div className="border-b border-border px-2 py-1.5 space-y-1.5">
         <form
           onSubmit={(e) => {
