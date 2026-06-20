@@ -19,6 +19,17 @@ export type SocialItem = {
   url: string;
   publishedAt: string;
   source: string;
+  // Optional fields for rich card kinds. UI degrades gracefully when absent.
+  kind?: "post" | "signal" | "launch";
+  ticker?: string;
+  icon?: string;
+  signal?: number;       // 0-100
+  buzz?: number;         // -100..100
+  mentions?: number;
+  priceChg?: number;     // percent
+  spark?: number[];      // mention counts timeseries
+  links?: { label?: string; type?: string; url: string }[];
+  headlines?: { text: string; src: string; lean?: string }[];
 };
 
 const NEWS_FEEDS: { source: string; url: string }[] = [
