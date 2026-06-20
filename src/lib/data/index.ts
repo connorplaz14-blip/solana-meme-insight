@@ -61,3 +61,7 @@ export const useTokenWhaleTrades = (address: string | null, minUsd = 1000) =>
   );
 export const useTokenRisk = (address: string | null) =>
   useAsync(() => address ? adapter.getTokenRisk(address) : Promise.resolve(null), [address]);
+
+export const useNewsFeed = () => useAsync(() => adapter.getNewsFeed(), [], 60_000);
+export const useSocialFeed = (query: string) =>
+  useAsync(() => adapter.getSocialFeed(query), [query], 90_000);
