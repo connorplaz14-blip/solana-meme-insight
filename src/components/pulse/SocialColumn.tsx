@@ -4,6 +4,13 @@ import { PulseColumn } from "./PulseColumn";
 import { timeAgo } from "./timeAgo";
 import { cn } from "@/lib/utils";
 import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import {
   Search,
   X,
   TrendingUp,
@@ -18,6 +25,7 @@ import {
   Reply,
   Eye,
   Image as ImageIcon,
+  ExternalLink,
 } from "lucide-react";
 import { fmtNum } from "@/lib/format";
 
@@ -417,19 +425,22 @@ function LaunchCard({ item }: { item: Item }) {
 }
 
 function PostCard({ item }: { item: Item }) {
+  const [open, setOpen] = useState(false);
   const hasMetrics =
     (item.likes ?? 0) > 0 ||
     (item.replies ?? 0) > 0 ||
     (item.retweets ?? 0) > 0 ||
     (item.views ?? 0) > 0 ||
     item.hasMedia;
+  const photos = item.photos ?? [];
+  const videos = item.videos ?? [];
+  const previewPhoto = photos[0]?.url ?? videos[0]?.thumb;
   return (
     <li className="group hover:bg-accent/20">
-      <a
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block px-3 py-2"
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="block w-full text-left px-3 py-2"
       >
         <div className="flex items-center justify-between gap-2 mb-0.5">
           <span className="flex items-center gap-1 min-w-0">
@@ -448,6 +459,14 @@ function PostCard({ item }: { item: Item }) {
         <div className="text-[12px] leading-snug text-foreground group-hover:text-pos line-clamp-4">
           {item.text}
         </div>
+        {previewPhoto && (
+          <img
+            src={previewPhoto}
+            alt=""
+            loading="lazy"
+            className="mt-1.5 w-full max-h-48 object-cover rounded-sm border border-border bg-muted/20"
+          />
+        )}
         {hasMetrics && (
           <div className="flex items-center gap-2.5 mt-1 font-mono text-[9px] text-muted-foreground">
             {(item.likes ?? 0) > 0 && (
@@ -474,7 +493,7 @@ function PostCard({ item }: { item: Item }) {
                 {fmtNum(item.views!)}
               </span>
             )}
-            {item.hasMedia && (
+            {item.hasMedia && !previewPhoto && (
               <span className="flex items-center gap-0.5 text-info">
                 <ImageIcon className="h-2.5 w-2.5" />
                 media
@@ -482,7 +501,126 @@ function PostCard({ item }: { item: Item }) {
             )}
           </div>
         )}
-      </a>
+      </button>
+      <TweetDialog open={open} onOpenChange={setOpen} item={item} />
     </li>
+  );
+}
+
+function TweetDialog({
+  open,
+  onOpenChange,
+  item,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  item: Item;
+}) {
+  const photos = item.photos ?? [];
+  const videos = item.videos ?? [];
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl bg-card border-border p-0 overflow-hidden">
+        <VisuallyHidden>
+          <DialogTitle>Tweet by {item.handle}</DialogTitle>
+          <DialogDescription>{item.text}</DialogDescription>
+        </VisuallyHidden>
+        <div className="border-b border-border px-4 py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <SourceBadge source={item.source} />
+            <span className="font-mono text-[11px] text-foreground truncate">
+              {item.author}
+            </span>
+            <span className="font-mono text-[10px] text-info truncate">
+              {item.handle}
+            </span>
+          </div>
+          <span className="font-mono text-[10px] text-muted-foreground shrink-0">
+            {timeAgo(item.publishedAt)}
+          </span>
+        </div>
+        <div className="px-4 py-3 max-h-[70vh] overflow-y-auto">
+          <p className="text-[13px] leading-relaxed text-foreground whitespace-pre-wrap">
+            {item.text}
+          </p>
+          {photos.length > 0 && (
+            <div
+              className={cn(
+                "mt-3 grid gap-1.5",
+                photos.length === 1 ? "grid-cols-1" : "grid-cols-2",
+              )}
+            >
+              {photos.map((p, i) => (
+                <a
+                  key={i}
+                  href={p.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <img
+                    src={p.url}
+                    alt=""
+                    loading="lazy"
+                    className="w-full max-h-[60vh] object-contain rounded-sm border border-border bg-muted/20"
+                  />
+                </a>
+              ))}
+            </div>
+          )}
+          {videos.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {videos.map((v, i) => (
+                <video
+                  key={i}
+                  src={v.url}
+                  poster={v.thumb}
+                  controls
+                  playsInline
+                  className="w-full max-h-[60vh] rounded-sm border border-border bg-black"
+                />
+              ))}
+            </div>
+          )}
+          <div className="mt-3 flex items-center gap-3 font-mono text-[10px] text-muted-foreground">
+            {(item.likes ?? 0) > 0 && (
+              <span className="flex items-center gap-0.5">
+                <Heart className="h-3 w-3" />
+                {fmtNum(item.likes!)}
+              </span>
+            )}
+            {(item.retweets ?? 0) > 0 && (
+              <span className="flex items-center gap-0.5">
+                <Repeat2 className="h-3 w-3" />
+                {fmtNum(item.retweets!)}
+              </span>
+            )}
+            {(item.replies ?? 0) > 0 && (
+              <span className="flex items-center gap-0.5">
+                <Reply className="h-3 w-3" />
+                {fmtNum(item.replies!)}
+              </span>
+            )}
+            {(item.views ?? 0) > 0 && (
+              <span className="flex items-center gap-0.5">
+                <Eye className="h-3 w-3" />
+                {fmtNum(item.views!)}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="border-t border-border px-4 py-2 flex items-center justify-end">
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-info hover:text-pos"
+          >
+            Open on X
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
