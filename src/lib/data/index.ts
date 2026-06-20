@@ -1,9 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { liveAdapter } from "./adapters/live";
 
-// Live data adapter: DexScreener, CoinGecko, Solana Tracker, Birdeye,
-// Lovable AI Gateway (Gemini). `mockAdapter` from "./adapters/mock" is
-// dev-only and not used in any production path.
+// Phase 2: real DexScreener + CoinGecko + Lovable AI behind a server-fn boundary.
+// Swap to `mockAdapter` from "./adapters/mock" if a provider goes down.
 const adapter = liveAdapter;
 
 export type DataState<T> = {
@@ -41,6 +40,6 @@ export const useMarketPulse = () => useAsync(() => adapter.getMarketPulse(), [])
 export const useWalletPnL = (address: string | null) =>
   useAsync(() => address ? adapter.getWalletPnL(address) : Promise.resolve(null as never), [address]);
 export const useProviders = () => useAsync(() => adapter.getProviders(), []);
-export const useTokenChart = (address: string, timeframe: "1H" | "4H" | "1D" | "1W" = "1D") =>
-  useAsync(() => adapter.getTokenChart(address, timeframe), [address, timeframe]);
+export const useTokenChart = (address: string, points = 96) =>
+  useAsync(() => adapter.getTokenChart(address, points), [address, points]);
 export const usePumpfunLaunches = () => useAsync(() => adapter.getPumpfunLaunches(), []);

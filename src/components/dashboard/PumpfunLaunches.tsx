@@ -7,8 +7,6 @@ import { CopyAddress } from "@/components/terminal/CopyAddress";
 import { TokenAvatar } from "@/components/terminal/TokenAvatar";
 import { fmtUsd, fmtNum, fmtAge } from "@/lib/format";
 import { useTokenDetail } from "@/components/token/TokenDetailProvider";
-import { Link } from "@tanstack/react-router";
-import { KeyRound } from "lucide-react";
 
 /**
  * Native Pump.fun launches table. Replaces the previous iframe approach
@@ -19,48 +17,17 @@ import { KeyRound } from "lucide-react";
 export function PumpfunLaunches() {
   const { data, status } = usePumpfunLaunches();
   const { open } = useTokenDetail();
-  const result = data && "status" in data ? data : null;
-  const rows = result?.launches ?? [];
-  const needsKey = result?.status === "missing-key";
-  const errored = result?.status === "error";
+  const rows = data ?? [];
 
   return (
     <Panel>
       <PanelHeader
         title="New Pairs · Pump.fun"
-        subtitle={
-          needsKey
-            ? "Not configured · solana-tracker"
-            : errored
-              ? "Upstream error · solana-tracker"
-              : `${rows.length} live · solana-tracker`
-        }
+        subtitle={`${rows.length} live · solana-tracker`}
         accent="warn"
         right={<SourceBadge source="solana-tracker" />}
       />
       <PanelBody className="p-0">
-        {needsKey && (
-          <div className="p-4 flex flex-col items-start gap-2 border-b border-border bg-warn/5">
-            <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-warn">
-              <KeyRound className="h-3.5 w-3.5" /> Not configured
-            </div>
-            <p className="text-[12px] text-foreground/80">
-              The Pump.fun launches feed needs a Solana Tracker API key. Add{" "}
-              <code className="font-mono text-warn">SOLANA_TRACKER_API_KEY</code> to enable it.
-            </p>
-            <Link
-              to="/settings"
-              className="font-mono text-[10px] uppercase tracking-wider border border-warn/40 bg-warn/10 hover:bg-warn/20 text-warn px-2 py-[3px]"
-            >
-              Open settings →
-            </Link>
-          </div>
-        )}
-        {errored && (
-          <div className="p-3 font-mono text-[11px] text-neg border-b border-border bg-neg/5">
-            {result?.message ?? "Solana Tracker call failed."}
-          </div>
-        )}
         {/* Mobile cards */}
         <ul className="md:hidden divide-y divide-border">
           {rows.map((t) => (
@@ -151,10 +118,10 @@ export function PumpfunLaunches() {
           </table>
         </div>
         {/* Mobile empty / loading state */}
-        {status === "loading" && rows.length === 0 && !needsKey && (
+        {status === "loading" && rows.length === 0 && (
           <div className="md:hidden px-3 py-6 text-center text-muted-foreground font-mono text-[11px]">Scanning Pump.fun launchpad…</div>
         )}
-        {status === "ready" && rows.length === 0 && !needsKey && !errored && (
+        {status === "ready" && rows.length === 0 && (
           <div className="md:hidden px-3 py-6 text-center text-muted-foreground font-mono text-[11px]">No fresh launches right now.</div>
         )}
       </PanelBody>

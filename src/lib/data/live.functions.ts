@@ -4,13 +4,14 @@ import type {
   MacroSnapshot,
   NarrativeReport,
   ProviderInfo,
-  PumpLaunchesResult,
+  PumpLaunch,
   SolMarket,
   Token,
   TokenSearchResult,
-  WalletPnLResponse,
+  WalletPnLResult,
 } from "@/types";
-import { buildProviderCatalog } from "./providers/catalog";
+import { providers as providerCatalog } from "@/mocks/providers";
+import { sampleWallet } from "@/mocks/wallet-pnl";
 
 export const getSolMarketFn = createServerFn({ method: "GET" }).handler(async (): Promise<SolMarket> => {
   const { withCache } = await import("./cache.server");
@@ -87,42 +88,22 @@ export const getMarketPulseFn = createServerFn({ method: "GET" }).handler(async 
 });
 
 export const getTokenChartFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { address: string; timeframe?: string }) => {
-    const tf = String(d?.timeframe ?? "1D");
-    const safe: "1H" | "4H" | "1D" | "1W" =
-      tf === "1H" || tf === "4H" || tf === "1W" ? tf : "1D";
-    return { address: String(d?.address ?? ""), timeframe: safe };
-  })
+  .inputValidator((d: { address: string; points?: number }) => ({
+    address: String(d?.address ?? ""),
+    points: Number(d?.points ?? 96),
+  }))
   .handler(async ({ data }) => {
+    if (!data.address) return [];
     const { withCache } = await import("./cache.server");
     const { trackProvider } = await import("./health.server");
-    const { fetchBirdeyeHistory, buildSyntheticChart } = await import(
-      "./providers/birdeye-ohlcv.server"
-    );
-    if (!data.address) {
-      return buildSyntheticChart("empty", 1, 0, data.timeframe);
-    }
-    // Birdeye primary — works on free tier with 1m/5m/15m/1H intervals.
-    if (process.env.BIRDEYE_API_KEY) {
-      try {
-        return await withCache(
-          `birdeye:hist:${data.address}:${data.timeframe}`,
-          45,
-          () => trackProvider("birdeye", () => fetchBirdeyeHistory(data.address, data.timeframe)),
-        );
-      } catch {
-        // fall through to synth
-      }
-    }
-    // Synthetic fallback — anchored to DexScreener current price + 24h change.
     const { fetchSolanaTrending } = await import("./providers/dexscreener.server");
+    const { buildSyntheticSeries } = await import("./providers/chart.server");
     const tokens = await withCache("dexscreener:trending:30", 60, () =>
       trackProvider("dexscreener", () => fetchSolanaTrending(30)),
     );
     const token = tokens.find((t) => t.address === data.address) ?? tokens[0];
-    const price = token?.priceUsd ?? 0;
-    const change = token?.changes.h24 ?? 0;
-    return buildSyntheticChart(data.address, price, change, data.timeframe);
+    if (!token) return [];
+    return buildSyntheticSeries(token, data.points);
   });
 
 export const getNarrativesFn = createServerFn({ method: "GET" }).handler(async (): Promise<NarrativeReport> => {
@@ -140,7 +121,6 @@ export const getProvidersFn = createServerFn({ method: "GET" }).handler(async ()
   const { readAllHealth } = await import("./health.server");
   const health = await readAllHealth();
   const byProvider = new Map(health.map((h) => [h.provider, h]));
-  const providerCatalog = buildProviderCatalog(process.env as Record<string, string | undefined>);
 
   return providerCatalog.map((p) => {
     const h = byProvider.get(p.id);
@@ -161,63 +141,29 @@ export const getProvidersFn = createServerFn({ method: "GET" }).handler(async ()
   });
 });
 
-export const getPumpfunLaunchesFn = createServerFn({ method: "GET" }).handler(
-  async (): Promise<PumpLaunchesResult> => {
-    if (!process.env.SOLANA_TRACKER_API_KEY) {
-      return {
-        status: "missing-key",
-        launches: [],
-        provider: "solana-tracker",
-        message: "Add SOLANA_TRACKER_API_KEY to enable the Pump.fun launches feed.",
-      };
-    }
-    const { withCache } = await import("./cache.server");
-    const { trackProvider } = await import("./health.server");
-    const { fetchPumpfunLaunches } = await import("./providers/solana-tracker.server");
-    try {
-      const launches = await withCache("solana-tracker:launches:25", 60, () =>
-        trackProvider("solana-tracker", () => fetchPumpfunLaunches(25)),
-      );
-      return { status: "ok", launches, provider: "solana-tracker" };
-    } catch (e) {
-      return {
-        status: "error",
-        launches: [],
-        provider: "solana-tracker",
-        message: e instanceof Error ? e.message : String(e),
-      };
-    }
-  },
-);
+export const getPumpfunLaunchesFn = createServerFn({ method: "GET" }).handler(async (): Promise<PumpLaunch[]> => {
+  if (!process.env.SOLANA_TRACKER_API_KEY) return [];
+  const { withCache } = await import("./cache.server");
+  const { trackProvider } = await import("./health.server");
+  const { fetchPumpfunLaunches } = await import("./providers/solana-tracker.server");
+  try {
+    return await withCache("solana-tracker:launches:25", 60, () =>
+      trackProvider("solana-tracker", () => fetchPumpfunLaunches(25)),
+    );
+  } catch {
+    return [];
+  }
+});
 
 export const getWalletPnLFn = createServerFn({ method: "POST" })
   .inputValidator((d: { address: string }) => ({ address: String(d?.address ?? "").trim() }))
-  .handler(async ({ data }): Promise<WalletPnLResponse> => {
+  .handler(async ({ data }): Promise<WalletPnLResult> => {
     const nowIso = new Date().toISOString();
     const addr = data.address;
     const looksLikeSolAddr = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
 
-    if (!looksLikeSolAddr) {
-      return {
-        kind: "notice",
-        address: addr,
-        notice: {
-          kind: "invalid-address",
-          provider: "birdeye",
-          message: "Enter a valid Solana address (32–44 base58 characters).",
-        },
-      };
-    }
-    if (!process.env.BIRDEYE_API_KEY) {
-      return {
-        kind: "notice",
-        address: addr,
-        notice: {
-          kind: "missing-key",
-          provider: "birdeye",
-          message: "Add BIRDEYE_API_KEY to enable live wallet P&L.",
-        },
-      };
+    if (!looksLikeSolAddr || !process.env.BIRDEYE_API_KEY) {
+      return { ...sampleWallet, address: addr || sampleWallet.address, source: "mock", lastUpdatedIso: nowIso };
     }
     const { withCache } = await import("./cache.server");
     const { trackProvider } = await import("./health.server");
@@ -226,16 +172,8 @@ export const getWalletPnLFn = createServerFn({ method: "POST" })
       const live = await withCache(`birdeye:wallet:${addr}`, 30, () =>
         trackProvider("birdeye", () => fetchWalletPortfolio(addr)),
       );
-      return { kind: "ok", data: { ...live, source: "birdeye", lastUpdatedIso: nowIso } };
-    } catch (e) {
-      return {
-        kind: "notice",
-        address: addr,
-        notice: {
-          kind: "error",
-          provider: "birdeye",
-          message: e instanceof Error ? e.message : String(e),
-        },
-      };
+      return { ...live, source: "birdeye", lastUpdatedIso: nowIso };
+    } catch {
+      return { ...sampleWallet, address: addr, source: "mock", lastUpdatedIso: nowIso };
     }
   });
