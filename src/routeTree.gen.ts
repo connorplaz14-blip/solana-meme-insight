@@ -21,6 +21,7 @@ import { Route as CoinsRouteImport } from './routes/coins'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiPumpfunLatestRouteImport } from './routes/api/pumpfun/latest'
 
 const WatchlistRoute = WatchlistRouteImport.update({
   id: '/watchlist',
@@ -82,6 +83,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPumpfunLatestRoute = ApiPumpfunLatestRouteImport.update({
+  id: '/api/pumpfun/latest',
+  path: '/api/pumpfun/latest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/wallet-pnl': typeof WalletPnlRoute
   '/watchlist': typeof WatchlistRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/pumpfun/latest': typeof ApiPumpfunLatestRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/wallet-pnl': typeof WalletPnlRoute
   '/watchlist': typeof WatchlistRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/pumpfun/latest': typeof ApiPumpfunLatestRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/wallet-pnl': typeof WalletPnlRoute
   '/watchlist': typeof WatchlistRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/pumpfun/latest': typeof ApiPumpfunLatestRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/wallet-pnl'
     | '/watchlist'
     | '/api/chat'
+    | '/api/pumpfun/latest'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
     | '/wallet-pnl'
     | '/watchlist'
     | '/api/chat'
+    | '/api/pumpfun/latest'
   id:
     | '__root__'
     | '/'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/wallet-pnl'
     | '/watchlist'
     | '/api/chat'
+    | '/api/pumpfun/latest'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +196,7 @@ export interface RootRouteChildren {
   WalletPnlRoute: typeof WalletPnlRoute
   WatchlistRoute: typeof WatchlistRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiPumpfunLatestRoute: typeof ApiPumpfunLatestRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pumpfun/latest': {
+      id: '/api/pumpfun/latest'
+      path: '/api/pumpfun/latest'
+      fullPath: '/api/pumpfun/latest'
+      preLoaderRoute: typeof ApiPumpfunLatestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -288,6 +308,7 @@ const rootRouteChildren: RootRouteChildren = {
   WalletPnlRoute: WalletPnlRoute,
   WatchlistRoute: WatchlistRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiPumpfunLatestRoute: ApiPumpfunLatestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
