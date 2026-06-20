@@ -31,10 +31,19 @@ const NEWS_FEEDS: { source: string; url: string }[] = [
 
 // Nitter mirrors rotate frequently. We try several in order.
 const NITTER_HOSTS = [
-  "https://nitter.net",
   "https://nitter.privacydev.net",
   "https://nitter.poast.org",
+  "https://nitter.net",
   "https://nitter.cz",
+  "https://nitter.tiekoetter.com",
+  "https://nitter.kavin.rocks",
+];
+
+// RSSHub public instances fall back when Nitter is dead. They expose
+// /twitter/keyword/:keyword and /twitter/user/:username among other routes.
+const RSSHUB_HOSTS = [
+  "https://rsshub.app",
+  "https://rss.shab.fun",
 ];
 
 function decodeEntities(s: string): string {
@@ -124,38 +133,70 @@ export async function fetchAggregatedNews(limit = 40): Promise<NewsItem[]> {
   return items.slice(0, limit);
 }
 
+function detectMode(query: string): { mode: "user" | "search"; value: string } {
+  const q = query.trim();
+  if (q.startsWith("@")) {
+    return { mode: "user", value: q.slice(1).replace(/[^A-Za-z0-9_]/g, "") };
+  }
+  return { mode: "search", value: q };
+}
+
+function parseSocialXml(xml: string, fallbackHandle?: string): SocialItem[] {
+  const parsed = parseItems(xml);
+  const items: SocialItem[] = [];
+  for (const it of parsed) {
+    if (!it.title || !it.link) continue;
+    const ts = it.pubDate ? new Date(it.pubDate) : null;
+    const iso = ts && !isNaN(ts.getTime()) ? ts.toISOString() : new Date().toISOString();
+    const raw = stripHtml(it.title);
+    let handle = fallbackHandle ?? "";
+    let text = raw;
+    const colon = raw.indexOf(":");
+    if (colon > 0 && raw.slice(0, colon).length < 40) {
+      handle = raw.slice(0, colon).replace(/^R to /, "").trim();
+      text = raw.slice(colon + 1).trim();
+    }
+    const url = it.link.trim().replace(/https?:\/\/[^/]+/, "https://x.com");
+    items.push({
+      id: url,
+      author: handle,
+      handle,
+      text,
+      url,
+      publishedAt: iso,
+      source: "X",
+    });
+  }
+  return items;
+}
+
 export async function fetchSocialFeed(query: string, limit = 30): Promise<SocialItem[]> {
-  // Try each Nitter host until one responds.
-  const q = encodeURIComponent(query);
+  const { mode, value } = detectMode(query);
+  if (!value) return [];
+
+  // 1) Try Nitter
   for (const host of NITTER_HOSTS) {
-    const url = `${host}/search/rss?f=tweets&q=${q}`;
+    const url =
+      mode === "user"
+        ? `${host}/${value}/rss`
+        : `${host}/search/rss?f=tweets&q=${encodeURIComponent(value)}`;
     const xml = await fetchFeed(url, 5000);
     if (!xml) continue;
-    const parsed = parseItems(xml).slice(0, limit);
-    if (parsed.length === 0) continue;
-    const items: SocialItem[] = [];
-    for (const it of parsed) {
-      if (!it.title || !it.link) continue;
-      const ts = it.pubDate ? new Date(it.pubDate) : null;
-      const iso = ts && !isNaN(ts.getTime()) ? ts.toISOString() : new Date().toISOString();
-      // Nitter title is "@handle: tweet text"
-      const raw = stripHtml(it.title);
-      const colon = raw.indexOf(":");
-      const handle = colon > 0 ? raw.slice(0, colon).replace(/^R to /, "").trim() : "";
-      const text = colon > 0 ? raw.slice(colon + 1).trim() : raw;
-      // Rewrite link from Nitter back to x.com
-      const url = it.link.replace(/https?:\/\/[^/]+/, "https://x.com");
-      items.push({
-        id: url,
-        author: handle,
-        handle,
-        text,
-        url,
-        publishedAt: iso,
-        source: "X",
-      });
-    }
+    const items = parseSocialXml(xml, mode === "user" ? `@${value}` : undefined).slice(0, limit);
     if (items.length > 0) return items;
   }
+
+  // 2) RSSHub fallback
+  for (const host of RSSHUB_HOSTS) {
+    const url =
+      mode === "user"
+        ? `${host}/twitter/user/${value}`
+        : `${host}/twitter/keyword/${encodeURIComponent(value)}`;
+    const xml = await fetchFeed(url, 6000);
+    if (!xml) continue;
+    const items = parseSocialXml(xml, mode === "user" ? `@${value}` : undefined).slice(0, limit);
+    if (items.length > 0) return items;
+  }
+
   return [];
 }
