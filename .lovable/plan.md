@@ -1,45 +1,39 @@
-# Plan: Holder Analytics + Whale Feed
+# Plan: Next 3 features
 
-Two focused features, both wired into the existing **token detail dialog** (`TokenDetailProvider`) as new tabs alongside the current chart + transactions. No third-party code is copied — implementations are clean-room against public APIs we already pay for (Birdeye, Solana Tracker, DexScreener).
+Building on the Holders + Whales tabs we just shipped. All real-data, native components, terminal styling, no vendored code.
 
-## Licensing note
+## 1. Smart-money panel inside Whale tab
 
-I reviewed several popular memecoin dashboards on GitHub (pump-fun-trackers, dexscreener clones, solana-whale-bots). Most are MIT or unlicensed-by-default (= all rights reserved). Rather than vendor any of it, I'll build the two requested features fresh against the same public data sources they use. This is faster, avoids attribution liabilities, and matches your existing terminal style.
+Right now the Whale feed lists raw trades. Aggregate them into a **"Smart Money"** sub-tab:
 
-## Feature 1 — Top Holders / Smart-Money Panel
+- Group last 50 trades by wallet, compute net USD flow per wallet (buys − sells).
+- Show top 10 wallets by absolute net flow: wallet, side (net accumulating / distributing), net USD, trade count, link to Solscan + a "track" button that pushes to a new `/wallet-pnl?address=…` deep link (route already exists).
+- Toggle pill at top of Whales tab: `Trades | Smart Money`.
 
-New tab "Holders" in the token detail dialog.
+No new server function — all derived client-side from the existing `useTokenWhaleTrades` data.
 
-Data source: **Solana Tracker** `/tokens/{address}/holders/top` (you already have `SOLANA_TRACKER_API_KEY`).
+## 2. Token risk / security panel
 
-Server function: `getTokenHoldersFn({ address })` in `src/lib/data/live.functions.ts`, backed by a new `solana-tracker.server.ts` helper. Returns top 20 holders with: rank, wallet (truncated + copy), % supply, USD value, optional "smart money" tag (if Solana Tracker flags it) and a link to Solscan.
+New **"Risk"** tab in token detail. Pulls from Solana Tracker `/tokens/{mint}` which already returns `risk.score`, `risk.risks[]` (mintable, freezable, top10 concentration, LP burned, etc.) plus deployer wallet.
 
-UI: native table component `src/components/token/HoldersTable.tsx` — terminal styling, mono numbers, color-coded % bar, mobile = card list.
+- New server fn `getTokenRiskFn` + `solana-tracker.server.ts` `fetchTokenRisk(mint)`.
+- UI: large risk score (0-10) with color, list of risk factors with severity dots, deployer wallet (linked), "top 10 holders own X%" headline derived from existing holders data.
+- Empty state if Solana Tracker has no risk record.
 
-## Feature 2 — Whale / Large-Trade Feed
+## 3. Watchlist price alerts (lightweight)
 
-New tab "Whales" in the token detail dialog.
+The watchlist already exists (`/watchlist`). Add:
 
-Data source: **DexScreener** trades endpoint (already wired) + **Birdeye** `/defi/txs/token` as fallback (you have `BIRDEYE_API_KEY`). Filter client-side for USD value ≥ $1k (configurable threshold chip: $1k / $5k / $25k).
+- Per-row **target price** input (above / below). Stored in `localStorage` (extending `src/lib/watchlist-store.ts`) — no DB, no backend.
+- Background poll on `/watchlist`: every 60s refetch trending + prices, compare against targets, fire a `sonner` toast + browser notification (if permission granted) when crossed. Mark the alert as "triggered" so it doesn't re-fire.
+- Small bell icon on each row, filled when an alert is set.
 
-Server function: `getTokenWhaleTradesFn({ address, minUsd })` returning last 50 large swaps: timestamp (relative), side (buy/sell tinted pos/neg), amount USD, token amount, wallet (truncated + Solscan link), tx signature link.
-
-UI: `src/components/token/WhaleFeed.tsx` — virtualized list isn't needed at 50 rows; auto-refresh every 15s using TanStack Query `refetchInterval`. Threshold chips at top.
-
-## Integration points
-
-- `src/components/token/TokenDetailProvider.tsx` — extend the `Tabs` from 2 → 4 tabs (Chart, Transactions, **Holders**, **Whales**). Mobile already collapses tabs to scroll; keep that.
-- `src/lib/data/providers/solana-tracker.server.ts` — add `fetchTopHolders(address)`.
-- `src/lib/data/providers/birdeye.server.ts` — add `fetchTokenTxs(address)` for whale fallback.
-- `src/lib/data/live.functions.ts` — export the two new `createServerFn` wrappers, both unauthenticated (public read), 30s cache via existing `cache.server.ts`.
-- Real-data only; if both providers fail, render an empty-state with the error, never mocks.
-
-## Out of scope
-
-- No new routes — both features live inside the existing token detail dialog (accessed by clicking any token in trending/coins).
-- No watchlist or wallet PnL leaderboard changes (those already exist on `/wallet-pnl`).
-- No social/narrative work.
+Out of scope: persisting alerts across devices (requires auth + DB — separate task), SMS/email alerts.
 
 ## Verification
 
-After build I'll: (1) open token detail for a known token (e.g. WIF), confirm holders load with real %s, (2) confirm whale feed shows real trades > $1k with working Solscan links, (3) test mobile width.
+After build I'll: open WIF token detail → confirm Smart Money tab aggregates the same Birdeye trades; open Risk tab → confirm score + factors render; on /watchlist set a target above current price → wait or simulate → confirm toast fires.
+
+## Not in scope this round
+
+Social feeds, narrative AI, mobile-specific tweaks beyond what these components inherit. Say which of the three you want first if you don't want all three at once — otherwise I'll ship them in order 1 → 2 → 3.

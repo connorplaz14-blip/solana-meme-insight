@@ -59,3 +59,5 @@ export const useTokenWhaleTrades = (address: string | null, minUsd = 1000) =>
     [address, minUsd],
     15_000,
   );
+export const useTokenRisk = (address: string | null) =>
+  useAsync(() => address ? adapter.getTokenRisk(address) : Promise.resolve(null), [address]);

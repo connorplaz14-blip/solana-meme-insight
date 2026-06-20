@@ -31,6 +31,18 @@ export type WhaleTradeRow = {
   blockUnixTime: number;
 };
 
+export type TokenRiskInfo = {
+  score: number;
+  rugged: boolean;
+  jupiterVerified: boolean;
+  top10Pct: number;
+  devPct: number;
+  sniperCount: number;
+  insiderCount: number;
+  factors: { name: string; description: string; level: "warn" | "danger" | "info"; score: number }[];
+  creator?: string;
+} | null;
+
 export const getSolMarketFn = createServerFn({ method: "GET" }).handler(async (): Promise<SolMarket> => {
   const { withCache } = await import("./cache.server");
   const { trackProvider } = await import("./health.server");
@@ -217,6 +229,22 @@ export const getTokenWhaleTradesFn = createServerFn({ method: "GET" })
         .map((r) => ({ ...r }));
     } catch {
       return [];
+    }
+  });
+
+export const getTokenRiskFn = createServerFn({ method: "GET" })
+  .inputValidator((d: { address: string }) => ({ address: String(d?.address ?? "").trim() }))
+  .handler(async ({ data }): Promise<TokenRiskInfo> => {
+    if (!data.address || !process.env.SOLANA_TRACKER_API_KEY) return null;
+    const { withCache } = await import("./cache.server");
+    const { trackProvider } = await import("./health.server");
+    const { fetchTokenRisk } = await import("./providers/solana-tracker.server");
+    try {
+      return await withCache(`solana-tracker:risk:${data.address}`, 120, () =>
+        trackProvider("solana-tracker", () => fetchTokenRisk(data.address)),
+      );
+    } catch {
+      return null;
     }
   });
 
