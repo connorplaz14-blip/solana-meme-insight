@@ -11,9 +11,9 @@ function Tone({ pct }: { pct: number }) {
   return <span className={cn("font-mono", tone)}>{fmtPct(pct)}</span>;
 }
 
-function Cell({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
+function Cell({ label, value, sub, className }: { label: string; value: ReactNode; sub?: ReactNode; className?: string }) {
   return (
-    <div className="flex flex-col justify-center px-3 h-full border-r border-border shrink-0 min-w-[112px]">
+    <div className={cn("flex flex-col justify-center px-2 md:px-3 h-full border-r border-border shrink-0 min-w-[84px] md:min-w-[112px]", className)}>
       <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
       <div className="flex items-baseline gap-1.5 font-mono text-xs leading-tight">
         {value}
@@ -51,8 +51,8 @@ export function MarketTape() {
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos">◆ MemeDesk</span>
       </div>
 
-      <div className="flex-1 min-w-0 overflow-x-auto md:overflow-hidden">
-        <div className="flex items-stretch h-full min-w-max md:min-w-0">
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <div className="flex items-stretch h-full">
           <Cell
             label="SOL"
             value={<span>{macro ? fmtUsd(macro.sol.priceUsd, { compact: false, digits: 2 }) : "…"}</span>}
@@ -64,20 +64,24 @@ export function MarketTape() {
             sub={macro ? <Tone pct={macro.btc.change24hPct} /> : null}
           />
           <Cell
+            className="hidden md:flex"
             label="ETH"
             value={<span>{macro ? fmtUsd(macro.eth.priceUsd, { compact: false, digits: 0 }) : "…"}</span>}
             sub={macro ? <Tone pct={macro.eth.change24hPct} /> : null}
           />
           <Cell
+            className="hidden md:flex"
             label="Total Mcap"
             value={<span>{macro ? fmtUsd(macro.totalMarketCapUsd) : "…"}</span>}
             sub={macro ? <Tone pct={macro.totalMcapChange24hPct} /> : null}
           />
           <Cell
+            className="hidden md:flex"
             label="24h Vol"
             value={<span>{macro ? fmtUsd(macro.totalVolume24hUsd) : "…"}</span>}
           />
           <Cell
+            className="hidden md:flex"
             label="SOL 24h Vol"
             value={<span>{macro ? fmtUsd(macro.sol.volume24hUsd) : "…"}</span>}
           />
@@ -87,7 +91,7 @@ export function MarketTape() {
               macro?.fearGreed ? (
                 <span className={cn(fngTone(macro.fearGreed.value))}>
                   {macro.fearGreed.value}
-                  <span className="text-muted-foreground"> · {macro.fearGreed.label}</span>
+                  <span className="text-muted-foreground hidden md:inline"> · {macro.fearGreed.label}</span>
                 </span>
               ) : (
                 "…"
@@ -95,6 +99,7 @@ export function MarketTape() {
             }
           />
           <Cell
+            className="hidden md:flex"
             label="Solana TPS"
             value={
               <span className="flex items-center gap-1">
@@ -104,6 +109,7 @@ export function MarketTape() {
             }
           />
           <Cell
+            className="hidden md:flex"
             label="Top Meme"
             value={
               meme ? (
@@ -115,6 +121,7 @@ export function MarketTape() {
             sub={meme ? <Tone pct={meme.changes.h24} /> : null}
           />
           <Cell
+            className="hidden md:flex"
             label="Narrative"
             value={
               <span className="flex items-center gap-1 text-warn truncate max-w-[160px]">
