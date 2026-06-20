@@ -1,63 +1,66 @@
-## Real-time pump.fun launch stream (`/launches`)
+## Goal
 
-A new top-level page that streams brand-new Solana token launches the moment they hit pump.fun, with filters and a sticky stats bar. No paid APIs, no keys.
+Replace flaky X mirrors (Nitter / RSSHub) and Dexscreener-derived social signals with **Firecrawl-scraped X data**. No third-party API key needed — Firecrawl is wired through Lovable's connector gateway. Used for:
 
-### Data source
+1. Pulse → **X / Social** column (primary)
+2. AI snapshot context (`/ai`, chat)
+3. Narrative chatter signals
 
-**PumpPortal public WebSocket** (`wss://pumpportal.fun/api/data`) — free, no auth, used by every open-source pump.fun bot/tracker on GitHub (pumpfun-volume-bot, pump-portal-python-client, pumpswap-trade-bot, etc.). Three subscriptions:
+Dexscreener stays for price, launches, charts, token detail. Only the **social/news signal layer** swaps to X.
 
-- `subscribeNewToken` → `txType: "create"` payloads: mint, name, symbol, uri (IPFS metadata), traderPublicKey (dev), initialBuy (tokens), solAmount, marketCapSol, bondingCurveKey, pool, timestamp.
-- `subscribeTokenTrade` (filtered to mints we already render) → live mcap + last-trade ticker per row.
-- Optional later: `subscribeMigration` for pump→Raydium graduations.
+## Provider: Firecrawl (Lovable connector)
 
-A 5 s static REST fallback (`https://frontend-api.pump.fun/coins?sort=created_timestamp&order=DESC&limit=50` via a server function proxy) seeds the list if the WS hasn't fired yet, so the page is never empty on first paint.
+You connect Firecrawl once via the Connectors panel — I'll surface the connect button. After that, `LOVABLE_API_KEY` + `FIRECRAWL_API_KEY` are available server-side and we call the gateway at `https://connector-gateway.lovable.dev/firecrawl/...`.
 
-### Architecture
+How we use it:
+- **Search mode** (`$SOL`, `solana memecoin`, etc.): Firecrawl `/v2/search` with `query: "site:x.com <term>"`, `tbs: "qdr:d"` (last day), `limit: 20`. Returns titles + URLs + snippets directly — no scrape needed for the feed.
+- **User mode** (`@aeyakovenko`): Firecrawl `/v2/scrape` on `https://x.com/<handle>` with `formats: ['markdown']`, `onlyMainContent: true`, then a small markdown parser extracts the tweet list. Heavier; cached aggressively.
+- **News-style discovery** for narratives: same `/v2/search` with broader Solana queries, dedup by URL.
 
-- **Server route** `src/routes/api/pumpfun/latest.ts` — GET handler that fetches the REST seed list (proxied to dodge browser CORS) and normalizes to the same shape the WS produces. Cached 5 s. Graceful empty array on upstream failure.
-- **Hook** `src/hooks/usePumpfunStream.ts` — opens the WS once, auto-reconnects with exponential backoff (1s→30s cap), keeps a ring buffer of the last 200 launches in a `useSyncExternalStore`-backed store, merges live trade updates into the matching row. Tears down on unmount.
-- **Route** `src/routes/launches.tsx` — uses TanStack Query to seed from the server route, then subscribes to the hook. Renders header, filter bar, stats strip, and the live feed table.
+Trade-off vs Apify: Firecrawl search returns tweet *summaries* (text snippet + url + timestamp from Google), not full engagement metrics. Cards still render fine — they just drop the like/retweet counts. If you later want full engagement, we can layer a paid actor on top.
 
-### UI (matches existing Pulse aesthetic)
+## Architecture
 
 ```text
-┌─ LAUNCHES · live pump.fun stream ─────── ● connected · 142/min ┐
-│ [search name/symbol] [min mcap $___] [min dev buy ◯1 ◯5 ◯10 SOL] │
-│ stats: 24h count · avg mcap · top dev · graduated count          │
-├──────────────────────────────────────────────────────────────────┤
-│ ▲ NEW  PEPE2  Pepe Two       2s   $4.2k   dev 1.2◎   pump.fun ↗ │
-│        BONKER Bonker Inu     8s   $1.8k   dev 0.5◎   pump.fun ↗ │
-│ …                                                                │
-└──────────────────────────────────────────────────────────────────┘
+src/lib/data/providers/
+  firecrawl.server.ts    NEW  gateway wrapper (search + scrape), reads
+                                LOVABLE_API_KEY + FIRECRAWL_API_KEY from
+                                process.env inside the handler
+  xfeed.server.ts        NEW  · searchX(query)        → /v2/search
+                                · userTimelineX(handle) → /v2/scrape + parse
+                                · normalize to SocialItem (source: "X")
+                                · in-memory cache, 5-min TTL
+  newsfeed.server.ts     EDIT remove Nitter / RSSHub blocks; fetchSocialFeed
+                                calls xfeed first, Bluesky as fallback when
+                                Firecrawl returns empty / 402
+  narrative.server.ts    EDIT topic chatter sourced from xfeed
+src/lib/ai/snapshot.server.ts
+                         EDIT recent-social slice from xfeed
+src/components/pulse/SocialColumn.tsx
+                         EDIT empty-state + SourceBadge colors; drop
+                                SocialTickers / DexScreener badge mappings
+                                from the social column UI
 ```
 
-Row flashes pos-green for 1.5 s when first inserted, dims as it ages out of the viewport. Click row → opens `https://pump.fun/coin/{mint}` in a new tab. Hover reveals copy-mint button and a "chart" link to DexScreener.
+## Failure / cost handling
 
-Compact mode for narrow viewports drops the dev address column.
+- 5-min in-memory cache per query (and per handle) — Firecrawl billed per call.
+- On Firecrawl 402 (out of credits): fall back to Bluesky search; show a small `fallback` pill in the column header.
+- 8s `AbortController` timeout, same pattern as existing `fetchFeed`.
 
-### Navigation wiring
+## What's removed from the social path
 
-- `src/components/layout/SideNav.tsx` — new "Launches" entry with a Rocket icon, placed between Pulse and Trending.
-- `src/components/layout/CommandPalette.tsx` — new command "Open Launches" → navigates to `/launches`.
+- `NITTER_HOSTS`, `RSSHUB_HOSTS`, `parseSocialXml`, the nitter/rsshub loops.
+- `fetchSocialSignals` (SocialTickers) and `fetchDexLaunches` calls **from the social feed only** — those helpers stay exported for other surfaces that still use Dexscreener launches.
 
-### Files
+## Out of scope
 
-New:
-- `src/routes/launches.tsx`
-- `src/routes/api/pumpfun/latest.ts`
-- `src/hooks/usePumpfunStream.ts`
-- `src/components/launches/LaunchRow.tsx`
-- `src/components/launches/LaunchFilters.tsx`
-- `src/components/launches/LaunchStats.tsx`
+- Price, chart, market cap, token detail — still Dexscreener.
+- News RSS column — unchanged.
+- Whales — unchanged.
 
-Edited:
-- `src/components/layout/SideNav.tsx`
-- `src/components/layout/CommandPalette.tsx`
+## Next step after approval
 
-### Out of scope
-
-No buy/sell actions, no wallet connect, no backend persistence, no notifications. Migration/graduation column can be added in a follow-up. No new npm dependencies — uses the browser's native `WebSocket`.
-
-### Risk / fallback
-
-If PumpPortal's WS rate-limits or goes down, the REST seed (refetched every 10 s) keeps the page populated with the latest 50 launches. A small "stream offline · polling" badge replaces the connected indicator so the degraded state is obvious.
+1. I'll surface a Connect button for Firecrawl.
+2. Once connected, implement the files above.
+3. Verify `/pulse` Social column shows real X results for `$SOL`, `@aeyakovenko`, `solana memecoin`.
