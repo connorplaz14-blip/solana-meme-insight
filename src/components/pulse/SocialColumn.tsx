@@ -178,17 +178,32 @@ export function SocialColumn() {
       <ul className="divide-y divide-border">
         {(data?.length ?? 0) === 0 && status !== "loading" && (
           <li className="p-3 font-mono text-[11px] text-muted-foreground">
-            No posts found. X mirrors (Nitter / RSSHub) may be rate-limited —
-            try refreshing, switching tag, or picking a preset.
+            No posts for <span className="text-foreground">{active}</span>.
+            Sources: Bluesky search · X mirrors (Nitter/RSSHub, often blocked
+            in 2026). Try a different tag or a preset.
           </li>
         )}
         {data?.map((p) => (
           <li key={p.id} className="group hover:bg-accent/20">
             <a href={p.url} target="_blank" rel="noopener noreferrer" className="block px-3 py-2">
               <div className="flex items-center justify-between gap-2 mb-0.5">
-                <span className="font-mono text-[10px] text-info">{p.handle || "—"}</span>
-                <span className="font-mono text-[10px] text-muted-foreground">
-                  {timeAgo(p.publishedAt)}
+                <span className="font-mono text-[10px] text-info truncate">
+                  {p.handle || "—"}
+                </span>
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <span
+                    className={cn(
+                      "font-mono text-[9px] uppercase tracking-wider px-1 rounded-sm",
+                      p.source === "Bluesky"
+                        ? "bg-info/15 text-info"
+                        : "bg-muted/30 text-muted-foreground",
+                    )}
+                  >
+                    {p.source}
+                  </span>
+                  <span className="font-mono text-[10px] text-muted-foreground">
+                    {timeAgo(p.publishedAt)}
+                  </span>
                 </span>
               </div>
               <div className="text-[12px] leading-snug text-foreground group-hover:text-pos line-clamp-4">
