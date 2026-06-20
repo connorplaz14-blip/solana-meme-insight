@@ -13,6 +13,24 @@ import type {
 import { providers as providerCatalog } from "@/mocks/providers";
 import { sampleWallet } from "@/mocks/wallet-pnl";
 
+export type TokenHolderRow = {
+  rank: number;
+  address: string;
+  amount: number;
+  percentage: number;
+  valueUsd: number;
+  insider: boolean;
+};
+
+export type WhaleTradeRow = {
+  signature: string;
+  owner: string;
+  side: "buy" | "sell";
+  tokenAmount: number;
+  valueUsd: number;
+  blockUnixTime: number;
+};
+
 export const getSolMarketFn = createServerFn({ method: "GET" }).handler(async (): Promise<SolMarket> => {
   const { withCache } = await import("./cache.server");
   const { trackProvider } = await import("./health.server");
