@@ -24,6 +24,7 @@ import {
   Settings,
   Clock,
   Search,
+  Rocket,
 } from "lucide-react";
 import { searchTokensFn } from "@/lib/data/live.functions";
 import type { TokenSearchResult } from "@/types";
@@ -33,6 +34,7 @@ import { cn } from "@/lib/utils";
 
 const ROUTES = [
   { to: "/pulse", label: "Pulse", icon: Radio },
+  { to: "/launches", label: "Launches", icon: Rocket },
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
   { to: "/coins", label: "Coins", icon: Coins },
   { to: "/ai", label: "AI Desk", icon: MessageSquare },
