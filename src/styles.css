@@ -135,6 +135,21 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Runtime guard: prevent horizontal page scroll on mobile.
+     Iframes/embeds may still scroll internally — that's intentional. */
+  html, body {
+    max-width: 100vw;
+  }
+  @media (max-width: 767px) {
+    html, body {
+      overflow-x: hidden;
+    }
+    /* Catch elements that try to exceed their container on small screens. */
+    img, svg, video, canvas, iframe, table, pre {
+      max-width: 100%;
+    }
+  }
+
   /* Tabular numerals everywhere by default — terminal feel. */
   .font-mono,
   code,
