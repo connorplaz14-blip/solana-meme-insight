@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { TokenListEmbed } from "@/components/dashboard/embeds/TokenListEmbed";
+import { TrendingTable } from "@/components/dashboard/TrendingTable";
+import { PumpfunLaunches } from "@/components/dashboard/PumpfunLaunches";
 
 export const Route = createFileRoute("/coins")({
   head: () => ({
@@ -23,8 +24,8 @@ export const Route = createFileRoute("/coins")({
 function CoinsPage() {
   return (
     <div className="p-3 space-y-3">
-      <TokenListEmbed kind="trending" height="78vh" />
-      <TokenListEmbed kind="new-pairs" height="78vh" />
+      <TrendingTable />
+      <PumpfunLaunches />
     </div>
   );
 }
