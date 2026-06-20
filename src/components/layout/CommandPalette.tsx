@@ -18,6 +18,7 @@ import {
   Trophy,
   TrendingUp,
   Newspaper,
+  Radio,
   Star,
   Wallet,
   Settings,
@@ -32,6 +33,7 @@ import { cn } from "@/lib/utils";
 
 const ROUTES = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
+  { to: "/pulse", label: "Pulse", icon: Radio },
   { to: "/coins", label: "Coins", icon: Coins },
   { to: "/ai", label: "AI Desk", icon: MessageSquare },
   { to: "/meme-of-the-day", label: "Meme of the Day", icon: Trophy },
