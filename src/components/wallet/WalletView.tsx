@@ -6,14 +6,15 @@ import { fmtUsd, fmtPct } from "@/lib/format";
 import { ChangeCell } from "@/components/terminal/ChangeCell";
 import { CopyAddress } from "@/components/terminal/CopyAddress";
 import { SourceBadge } from "@/components/terminal/SourceBadge";
-import { Info } from "lucide-react";
+import { Info, KeyRound, AlertTriangle } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 export function WalletView() {
   const [addr, setAddr] = useState("");
   const [submitted, setSubmitted] = useState<string | null>(null);
-  const { data, status } = useWalletPnL(submitted);
-  const source = (data && (data as { source?: string }).source) ?? "mock";
-  const isLive = source === "birdeye";
+  const { data: response, status } = useWalletPnL(submitted);
+  const data = response && response.kind === "ok" ? response.data : null;
+  const notice = response && response.kind === "notice" ? response.notice : null;
 
   return (
     <div className="space-y-3">
@@ -24,7 +25,7 @@ export function WalletView() {
             className="flex gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              setSubmitted(addr.trim() || "demo-wallet");
+              setSubmitted(addr.trim());
             }}
           >
             <input
@@ -35,6 +36,7 @@ export function WalletView() {
             />
             <button
               type="submit"
+              disabled={!addr.trim()}
               className="border border-info/40 bg-info/10 hover:bg-info/20 text-info font-mono text-[11px] uppercase tracking-wider px-4"
             >
               Analyse
@@ -51,6 +53,39 @@ export function WalletView() {
         <Panel><PanelBody><p className="text-[12px] text-muted-foreground text-center py-6 font-mono">Loading wallet…</p></PanelBody></Panel>
       )}
 
+      {notice && (
+        <Panel>
+          <PanelHeader
+            title={
+              notice.kind === "missing-key"
+                ? "Wallet P&L not configured"
+                : notice.kind === "invalid-address"
+                  ? "Invalid Solana address"
+                  : "Birdeye request failed"
+            }
+            accent={notice.kind === "error" ? "neg" : "warn"}
+            right={<SourceBadge source="birdeye" />}
+          />
+          <PanelBody>
+            <div className="flex flex-col items-start gap-3">
+              <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-warn">
+                {notice.kind === "error" ? <AlertTriangle className="h-3.5 w-3.5 text-neg" /> : <KeyRound className="h-3.5 w-3.5" />}
+                {notice.kind === "missing-key" ? "Needs API key" : notice.kind === "invalid-address" ? "Bad input" : "Upstream error"}
+              </div>
+              <p className="text-[12px] text-foreground/80">{notice.message}</p>
+              {notice.kind === "missing-key" && (
+                <Link
+                  to="/settings"
+                  className="font-mono text-[10px] uppercase tracking-wider border border-warn/40 bg-warn/10 hover:bg-warn/20 text-warn px-2 py-[3px]"
+                >
+                  Open settings →
+                </Link>
+              )}
+            </div>
+          </PanelBody>
+        </Panel>
+      )}
+
       {data && (
         <>
           <Panel>
@@ -60,7 +95,7 @@ export function WalletView() {
               accent="pos"
               right={
                 <div className="flex items-center gap-2">
-                  <SourceBadge source={isLive ? "birdeye" : "mock"} />
+                  <SourceBadge source="birdeye" />
                   <span className="font-mono text-pos text-base">{data.score}/100</span>
                 </div>
               }
