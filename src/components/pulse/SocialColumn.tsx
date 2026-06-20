@@ -13,7 +13,13 @@ import {
   Rocket,
   MessageCircle,
   Newspaper,
+  Heart,
+  Repeat2,
+  Reply,
+  Eye,
+  Image as ImageIcon,
 } from "lucide-react";
+import { fmtNum } from "@/lib/format";
 
 const KEY = "memedesk.pulse.social-queries.v2";
 const DEFAULTS = [
@@ -401,6 +407,12 @@ function LaunchCard({ item }: { item: Item }) {
 }
 
 function PostCard({ item }: { item: Item }) {
+  const hasMetrics =
+    (item.likes ?? 0) > 0 ||
+    (item.replies ?? 0) > 0 ||
+    (item.retweets ?? 0) > 0 ||
+    (item.views ?? 0) > 0 ||
+    item.hasMedia;
   return (
     <li className="group hover:bg-accent/20">
       <a
@@ -426,6 +438,40 @@ function PostCard({ item }: { item: Item }) {
         <div className="text-[12px] leading-snug text-foreground group-hover:text-pos line-clamp-4">
           {item.text}
         </div>
+        {hasMetrics && (
+          <div className="flex items-center gap-2.5 mt-1 font-mono text-[9px] text-muted-foreground">
+            {(item.likes ?? 0) > 0 && (
+              <span className="flex items-center gap-0.5">
+                <Heart className="h-2.5 w-2.5" />
+                {fmtNum(item.likes!)}
+              </span>
+            )}
+            {(item.retweets ?? 0) > 0 && (
+              <span className="flex items-center gap-0.5">
+                <Repeat2 className="h-2.5 w-2.5" />
+                {fmtNum(item.retweets!)}
+              </span>
+            )}
+            {(item.replies ?? 0) > 0 && (
+              <span className="flex items-center gap-0.5">
+                <Reply className="h-2.5 w-2.5" />
+                {fmtNum(item.replies!)}
+              </span>
+            )}
+            {(item.views ?? 0) > 0 && (
+              <span className="flex items-center gap-0.5">
+                <Eye className="h-2.5 w-2.5" />
+                {fmtNum(item.views!)}
+              </span>
+            )}
+            {item.hasMedia && (
+              <span className="flex items-center gap-0.5 text-info">
+                <ImageIcon className="h-2.5 w-2.5" />
+                media
+              </span>
+            )}
+          </div>
+        )}
       </a>
     </li>
   );
