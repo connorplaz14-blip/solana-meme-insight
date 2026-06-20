@@ -1,12 +1,41 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSocialFeed } from "@/lib/data";
 import { PulseColumn } from "./PulseColumn";
 import { timeAgo } from "./timeAgo";
 import { cn } from "@/lib/utils";
 import { Search, X } from "lucide-react";
 
-const KEY = "memedesk.pulse.social-queries.v1";
-const DEFAULTS = ["$SOL", "$BONK", "$WIF"];
+const KEY = "memedesk.pulse.social-queries.v2";
+const DEFAULTS = [
+  "$SOL",
+  "$BONK",
+  "$WIF",
+  "@aeyakovenko",
+  "@SolanaFloor",
+  "solana memecoin",
+];
+
+const PRESETS = [
+  "$SOL",
+  "$BONK",
+  "$WIF",
+  "$JUP",
+  "@aeyakovenko",
+  "@SolanaFloor",
+  "@blknoiz06",
+  "@gake_eth",
+  "pump.fun",
+  "solana memecoin",
+  "rugpull",
+  "airdrop",
+];
+
+function classify(q: string): { label: string; cls: string } {
+  const t = q.trim();
+  if (t.startsWith("@")) return { label: "USER", cls: "text-info" };
+  if (t.startsWith("$")) return { label: "TAG", cls: "text-pos" };
+  return { label: "TERM", cls: "text-muted-foreground" };
+}
 
 function read(): string[] {
   if (typeof window === "undefined") return DEFAULTS;
@@ -26,6 +55,7 @@ export function SocialColumn() {
   const [queries, setQueries] = useState<string[]>(DEFAULTS);
   const [active, setActive] = useState<string>(DEFAULTS[0]);
   const [draft, setDraft] = useState("");
+  const [showPresets, setShowPresets] = useState(false);
 
   useEffect(() => {
     const q = read();
@@ -34,6 +64,7 @@ export function SocialColumn() {
   }, []);
 
   const { data, status, refresh } = useSocialFeed(active);
+  const meta = useMemo(() => classify(active), [active]);
 
   function addQuery() {
     const q = draft.trim();
@@ -43,7 +74,7 @@ export function SocialColumn() {
       setDraft("");
       return;
     }
-    const next = [q, ...queries].slice(0, 8);
+    const next = [q, ...queries].slice(0, 12);
     setQueries(next);
     write(next);
     setActive(q);
@@ -55,6 +86,15 @@ export function SocialColumn() {
     setQueries(next);
     write(next);
     if (active === q) setActive(next[0] ?? "$SOL");
+  }
+
+  function addPreset(p: string) {
+    if (!queries.includes(p)) {
+      const next = [p, ...queries].slice(0, 12);
+      setQueries(next);
+      write(next);
+    }
+    setActive(p);
   }
 
   return (
@@ -80,10 +120,30 @@ export function SocialColumn() {
           <input
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Add cashtag ($SOL) or term"
+            placeholder="@user, $TAG, or keyword"
             className="flex-1 bg-transparent font-mono text-[11px] outline-none placeholder:text-muted-foreground/60"
           />
+          <button
+            type="button"
+            onClick={() => setShowPresets((v) => !v)}
+            className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground hover:text-foreground px-1"
+          >
+            {showPresets ? "hide" : "presets"}
+          </button>
         </form>
+        {showPresets && (
+          <div className="flex flex-wrap gap-1 pt-0.5">
+            {PRESETS.map((p) => (
+              <button
+                key={p}
+                onClick={() => addPreset(p)}
+                className="font-mono text-[10px] px-1.5 py-0.5 rounded-sm bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex flex-wrap gap-1">
           {queries.map((q) => (
             <span
@@ -106,11 +166,20 @@ export function SocialColumn() {
             </span>
           ))}
         </div>
+        <div className="flex items-center gap-2 pt-0.5">
+          <span className={cn("font-mono text-[9px] uppercase tracking-wider", meta.cls)}>
+            {meta.label}
+          </span>
+          <span className="font-mono text-[10px] text-muted-foreground truncate">
+            {active}
+          </span>
+        </div>
       </div>
       <ul className="divide-y divide-border">
         {(data?.length ?? 0) === 0 && status !== "loading" && (
           <li className="p-3 font-mono text-[11px] text-muted-foreground">
-            No posts. Nitter mirrors may be rate-limited; try refreshing.
+            No posts found. X mirrors (Nitter / RSSHub) may be rate-limited —
+            try refreshing, switching tag, or picking a preset.
           </li>
         )}
         {data?.map((p) => (
