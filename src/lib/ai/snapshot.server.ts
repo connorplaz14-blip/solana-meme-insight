@@ -38,6 +38,22 @@ export type MarketSnapshot = {
     keywords: string[];
     items: { theme: string; growthPct: number; tokens: string[] }[];
   } | null;
+  topTweets: Array<{
+    handle: string;
+    author: string;
+    text: string;
+    ts: string;
+    likes: number;
+    url: string;
+  }>;
+  topNews: Array<{
+    source: string;
+    title: string;
+    summary?: string;
+    ts: string;
+    url: string;
+  }>;
+  xBuzz: Array<{ ticker: string; mentions: number }>;
 };
 
 export async function buildMarketSnapshot(): Promise<MarketSnapshot> {
@@ -72,6 +88,13 @@ export async function buildMarketSnapshot(): Promise<MarketSnapshot> {
   } catch {
     narrative = null;
   }
+
+  // Social + news layer (in-memory cached, 90s)
+  const [tweets, news] = await Promise.all([
+    getCachedTopTweets().catch(() => []),
+    getCachedTopNews().catch(() => []),
+  ]);
+  const xBuzz = computeBuzz(tweets);
 
   return {
     generatedAtIso: new Date().toISOString(),
@@ -113,5 +136,77 @@ export async function buildMarketSnapshot(): Promise<MarketSnapshot> {
           })),
         }
       : null,
+    topTweets: tweets,
+    topNews: news,
+    xBuzz,
   };
 }
+
+// ─── Cached social + news helpers ───────────────────────────────────────────
+
+type CachedTweet = MarketSnapshot["topTweets"][number];
+type CachedNews = MarketSnapshot["topNews"][number];
+
+let _tweetCache: { ts: number; data: CachedTweet[] } | null = null;
+let _newsCache: { ts: number; data: CachedNews[] } | null = null;
+const SOCIAL_TTL_MS = 90_000;
+
+async function getCachedTopTweets(): Promise<CachedTweet[]> {
+  if (_tweetCache && Date.now() - _tweetCache.ts < SOCIAL_TTL_MS) return _tweetCache.data;
+  const { fetchHandlesTimeline, SOLANA_KOLS } = await import(
+    "@/lib/data/providers/xfeed.server"
+  );
+  const items = await fetchHandlesTimeline(SOLANA_KOLS.slice(0, 25), 2, 60).catch(
+    () => [],
+  );
+  const cutoff = Date.now() - 6 * 3600 * 1000;
+  const recent = items
+    .filter((i) => +new Date(i.publishedAt) > cutoff)
+    .sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0))
+    .slice(0, 14)
+    .map((i) => ({
+      handle: i.handle.replace(/^@/, ""),
+      author: i.author,
+      text: i.text.slice(0, 240),
+      ts: i.publishedAt,
+      likes: i.likes ?? 0,
+      url: i.url,
+    }));
+  _tweetCache = { ts: Date.now(), data: recent };
+  return recent;
+}
+
+async function getCachedTopNews(): Promise<CachedNews[]> {
+  if (_newsCache && Date.now() - _newsCache.ts < SOCIAL_TTL_MS) return _newsCache.data;
+  const { fetchAggregatedNews } = await import(
+    "@/lib/data/providers/newsfeed.server"
+  );
+  const items = await fetchAggregatedNews(20).catch(() => []);
+  const trimmed = items.slice(0, 10).map((n) => ({
+    source: n.source,
+    title: n.title.slice(0, 180),
+    summary: n.summary?.slice(0, 200),
+    ts: n.publishedAt,
+    url: n.url,
+  }));
+  _newsCache = { ts: Date.now(), data: trimmed };
+  return trimmed;
+}
+
+function computeBuzz(tweets: CachedTweet[]): Array<{ ticker: string; mentions: number }> {
+  const counts = new Map<string, number>();
+  for (const t of tweets) {
+    const matches = t.text.match(/\$[A-Za-z][A-Za-z0-9]{1,9}\b/g);
+    if (!matches) continue;
+    for (const m of matches) {
+      const tk = m.slice(1).toUpperCase();
+      counts.set(tk, (counts.get(tk) ?? 0) + 1);
+    }
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([ticker, mentions]) => ({ ticker, mentions }));
+}
+
+export { getCachedTopTweets, getCachedTopNews };
