@@ -76,6 +76,23 @@ export const getTrendingFn = createServerFn({ method: "GET" }).handler(async ():
   return withCache("dexscreener:trending:30", 60, () => trackProvider("dexscreener", () => fetchSolanaTrending(30)));
 });
 
+export const getTokensByAddressesFn = createServerFn({ method: "GET" })
+  .inputValidator((d: { addresses: string[] }) => ({
+    addresses: Array.isArray(d?.addresses)
+      ? d.addresses.map((a) => String(a ?? "").trim()).filter(Boolean).slice(0, 50)
+      : [],
+  }))
+  .handler(async ({ data }): Promise<Token[]> => {
+    if (data.addresses.length === 0) return [];
+    const key = `dexscreener:tokens:${[...data.addresses].sort().join(",")}`;
+    const { withCache } = await import("./cache.server");
+    const { trackProvider } = await import("./health.server");
+    const { fetchTokensByAddresses } = await import("./providers/dexscreener.server");
+    return withCache(key, 30, () =>
+      trackProvider("dexscreener", () => fetchTokensByAddresses(data.addresses)),
+    );
+  });
+
 export const getMemeOfTheDayFn = createServerFn({ method: "GET" }).handler(async (): Promise<Token> => {
   const { withCache } = await import("./cache.server");
   const { trackProvider } = await import("./health.server");

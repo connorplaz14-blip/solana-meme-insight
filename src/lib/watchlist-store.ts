@@ -9,10 +9,7 @@ const alertListeners = new Set<() => void>();
 function read(): WatchlistEntry[] {
   if (typeof window === "undefined") return seedWatchlist;
   const raw = window.localStorage.getItem(KEY);
-  if (!raw) {
-    window.localStorage.setItem(KEY, JSON.stringify(seedWatchlist));
-    return seedWatchlist;
-  }
+  if (!raw) return seedWatchlist;
   try { return JSON.parse(raw) as WatchlistEntry[]; } catch { return seedWatchlist; }
 }
 function write(v: WatchlistEntry[]) {
