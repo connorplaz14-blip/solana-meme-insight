@@ -1,26 +1,45 @@
-# Restore the two embedded feeds on /coins
+# Plan: Holder Analytics + Whale Feed
 
-## Problem
-Last turn I swapped the `/coins` page from the two `TokenListEmbed` iframes (GMGN → GeckoTerminal fallback) to native `TrendingTable` + `PumpfunLaunches`. That caps the view to ~12 tokens from our own trending feed instead of the full live lists you wanted.
+Two focused features, both wired into the existing **token detail dialog** (`TokenDetailProvider`) as new tabs alongside the current chart + transactions. No third-party code is copied — implementations are clean-room against public APIs we already pay for (Birdeye, Solana Tracker, DexScreener).
 
-## Fix
-Put the embeds back as the primary view, and keep the native tables as a secondary fallback panel below — so even if both GMGN and GeckoTerminal refuse to frame, you still see real data.
+## Licensing note
 
-### `src/routes/coins.tsx`
-- Render two `TokenListEmbed` panels side-by-side on desktop, stacked on mobile:
-  - `<TokenListEmbed kind="trending" height="82vh" />`
-  - `<TokenListEmbed kind="new-pairs" height="82vh" />`
-- Layout: `grid grid-cols-1 xl:grid-cols-2 gap-3`.
-- Below the embeds, keep a collapsed "Native fallback" section containing `<TrendingTable />` and `<PumpfunLaunches />` so the page is still useful if both providers block iframing.
+I reviewed several popular memecoin dashboards on GitHub (pump-fun-trackers, dexscreener clones, solana-whale-bots). Most are MIT or unlicensed-by-default (= all rights reserved). Rather than vendor any of it, I'll build the two requested features fresh against the same public data sources they use. This is faster, avoids attribution liabilities, and matches your existing terminal style.
 
-### `src/components/dashboard/embeds/TokenListEmbed.tsx`
-- Verify the GMGN→GeckoTerminal fallback timer still works (already 4s).
-- Make sure the iframe gets full height on the route (currently clamped to `70svh` for mobile — keep that clamp; on desktop the `82vh` request will win).
+## Feature 1 — Top Holders / Smart-Money Panel
 
-## No other changes
-- Don't touch data providers, native tables, or the dashboard route.
-- Don't reintroduce mock data.
+New tab "Holders" in the token detail dialog.
+
+Data source: **Solana Tracker** `/tokens/{address}/holders/top` (you already have `SOLANA_TRACKER_API_KEY`).
+
+Server function: `getTokenHoldersFn({ address })` in `src/lib/data/live.functions.ts`, backed by a new `solana-tracker.server.ts` helper. Returns top 20 holders with: rank, wallet (truncated + copy), % supply, USD value, optional "smart money" tag (if Solana Tracker flags it) and a link to Solscan.
+
+UI: native table component `src/components/token/HoldersTable.tsx` — terminal styling, mono numbers, color-coded % bar, mobile = card list.
+
+## Feature 2 — Whale / Large-Trade Feed
+
+New tab "Whales" in the token detail dialog.
+
+Data source: **DexScreener** trades endpoint (already wired) + **Birdeye** `/defi/txs/token` as fallback (you have `BIRDEYE_API_KEY`). Filter client-side for USD value ≥ $1k (configurable threshold chip: $1k / $5k / $25k).
+
+Server function: `getTokenWhaleTradesFn({ address, minUsd })` returning last 50 large swaps: timestamp (relative), side (buy/sell tinted pos/neg), amount USD, token amount, wallet (truncated + Solscan link), tx signature link.
+
+UI: `src/components/token/WhaleFeed.tsx` — virtualized list isn't needed at 50 rows; auto-refresh every 15s using TanStack Query `refetchInterval`. Threshold chips at top.
+
+## Integration points
+
+- `src/components/token/TokenDetailProvider.tsx` — extend the `Tabs` from 2 → 4 tabs (Chart, Transactions, **Holders**, **Whales**). Mobile already collapses tabs to scroll; keep that.
+- `src/lib/data/providers/solana-tracker.server.ts` — add `fetchTopHolders(address)`.
+- `src/lib/data/providers/birdeye.server.ts` — add `fetchTokenTxs(address)` for whale fallback.
+- `src/lib/data/live.functions.ts` — export the two new `createServerFn` wrappers, both unauthenticated (public read), 30s cache via existing `cache.server.ts`.
+- Real-data only; if both providers fail, render an empty-state with the error, never mocks.
+
+## Out of scope
+
+- No new routes — both features live inside the existing token detail dialog (accessed by clicking any token in trending/coins).
+- No watchlist or wallet PnL leaderboard changes (those already exist on `/wallet-pnl`).
+- No social/narrative work.
 
 ## Verification
-- Open `/coins` at desktop width: two tall embeds visible, scrollable internally, each showing the full GMGN list (or GeckoTerminal if blocked).
-- Open `/coins` at 430px (current preview): embeds stack, each horizontally scrollable, native fallback still reachable below.
+
+After build I'll: (1) open token detail for a known token (e.g. WIF), confirm holders load with real %s, (2) confirm whale feed shows real trades > $1k with working Solscan links, (3) test mobile width.
