@@ -54,8 +54,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             className="border border-info/40 bg-info/10 text-info px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-info/20">
             Retry
           </button>
-          <a href="/dashboard" className="border border-border bg-panel-2 text-foreground px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-accent">
-            Dashboard
+          <a href="/pulse" className="border border-border bg-panel-2 text-foreground px-3 py-1.5 text-xs uppercase tracking-wider hover:bg-accent">
+            Pulse
           </a>
         </div>
       </div>
