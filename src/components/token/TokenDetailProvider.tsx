@@ -4,6 +4,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TokenAvatar } from "@/components/terminal/TokenAvatar";
 import { CopyAddress } from "@/components/terminal/CopyAddress";
 import { TokenChartEmbed } from "@/components/dashboard/embeds/TokenChartEmbed";
+import { HoldersTable } from "@/components/token/HoldersTable";
+import { WhaleFeed } from "@/components/token/WhaleFeed";
 
 export type TokenRef = {
   address: string;
@@ -69,9 +71,11 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
       </DialogHeader>
 
       <Tabs defaultValue="chart" className="flex-1 min-h-0 flex flex-col">
-        <TabsList className="mx-4 mt-3 self-start bg-panel-2 border border-border h-8">
+        <TabsList className="mx-4 mt-3 self-start bg-panel-2 border border-border h-8 overflow-x-auto max-w-[calc(100%-2rem)]">
           <TabsTrigger value="chart" className="font-mono text-[11px] uppercase tracking-wider">Chart</TabsTrigger>
           <TabsTrigger value="txns" className="font-mono text-[11px] uppercase tracking-wider">Transactions</TabsTrigger>
+          <TabsTrigger value="holders" className="font-mono text-[11px] uppercase tracking-wider">Holders</TabsTrigger>
+          <TabsTrigger value="whales" className="font-mono text-[11px] uppercase tracking-wider">Whales</TabsTrigger>
         </TabsList>
 
         <TabsContent value="chart" className="flex-1 min-h-0 m-0 p-3 pt-2">
@@ -103,6 +107,20 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
                 allow="clipboard-write"
               />
             </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="holders" className="flex-1 min-h-0 m-0 p-3 pt-2">
+          <HoldersTable address={addr} />
+        </TabsContent>
+
+        <TabsContent value="whales" className="flex-1 min-h-0 m-0 p-3 pt-2">
+          {bonded === false ? (
+            <div className="h-[65vh] flex items-center justify-center text-muted-foreground font-mono text-[11px]">
+              No whale data yet — token still on Pump.fun bonding curve.
+            </div>
+          ) : (
+            <WhaleFeed address={addr} />
           )}
         </TabsContent>
 
