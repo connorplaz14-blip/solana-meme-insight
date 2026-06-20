@@ -174,7 +174,11 @@ export async function fetchSocialFeed(query: string, limit = 30): Promise<Social
   const { mode, value } = detectMode(query);
   if (!value) return [];
 
-  // 1) Try Nitter
+  // 1) Bluesky (public, no auth) — primary working source in 2026
+  const bsky = await fetchBlueskyFeed(mode, value, limit).catch(() => [] as SocialItem[]);
+
+  // 2) Try Nitter for any X mirrors that still respond
+  let nitter: SocialItem[] = [];
   for (const host of NITTER_HOSTS) {
     const url =
       mode === "user"
@@ -183,20 +187,129 @@ export async function fetchSocialFeed(query: string, limit = 30): Promise<Social
     const xml = await fetchFeed(url, 5000);
     if (!xml) continue;
     const items = parseSocialXml(xml, mode === "user" ? `@${value}` : undefined).slice(0, limit);
-    if (items.length > 0) return items;
+    if (items.length > 0) {
+      nitter = items;
+      break;
+    }
   }
 
-  // 2) RSSHub fallback
-  for (const host of RSSHUB_HOSTS) {
-    const url =
-      mode === "user"
-        ? `${host}/twitter/user/${value}`
-        : `${host}/twitter/keyword/${encodeURIComponent(value)}`;
-    const xml = await fetchFeed(url, 6000);
-    if (!xml) continue;
-    const items = parseSocialXml(xml, mode === "user" ? `@${value}` : undefined).slice(0, limit);
-    if (items.length > 0) return items;
+  // 3) RSSHub fallback for X
+  if (nitter.length === 0) {
+    for (const host of RSSHUB_HOSTS) {
+      const url =
+        mode === "user"
+          ? `${host}/twitter/user/${value}`
+          : `${host}/twitter/keyword/${encodeURIComponent(value)}`;
+      const xml = await fetchFeed(url, 6000);
+      if (!xml) continue;
+      const items = parseSocialXml(xml, mode === "user" ? `@${value}` : undefined).slice(0, limit);
+      if (items.length > 0) {
+        nitter = items;
+        break;
+      }
+    }
   }
 
-  return [];
+  // Merge, dedupe by id, sort newest first
+  const seen = new Set<string>();
+  const merged: SocialItem[] = [];
+  for (const it of [...bsky, ...nitter]) {
+    if (seen.has(it.id)) continue;
+    seen.add(it.id);
+    merged.push(it);
+  }
+  merged.sort((a, b) => +new Date(b.publishedAt) - +new Date(a.publishedAt));
+  return merged.slice(0, limit);
+}
+
+// ─── Bluesky ────────────────────────────────────────────────────────────────
+// Public AppView endpoints: no auth, generous rate limits.
+// Docs: https://docs.bsky.app/docs/category/http-reference
+
+const BSKY_BASE = "https://public.api.bsky.app/xrpc";
+
+type BskyAuthor = { handle?: string; displayName?: string; did?: string };
+type BskyPost = {
+  uri?: string;
+  cid?: string;
+  author?: BskyAuthor;
+  record?: { text?: string; createdAt?: string };
+  indexedAt?: string;
+};
+type BskyFeedItem = { post?: BskyPost };
+
+function postUrl(p: BskyPost): string {
+  // uri shape: at://did:plc:xxx/app.bsky.feed.post/rkey
+  const uri = p.uri ?? "";
+  const m = uri.match(/\/app\.bsky\.feed\.post\/([^/]+)$/);
+  const rkey = m?.[1];
+  const handle = p.author?.handle ?? p.author?.did ?? "";
+  if (!rkey || !handle) return uri || "https://bsky.app";
+  return `https://bsky.app/profile/${handle}/post/${rkey}`;
+}
+
+function normalizePost(p?: BskyPost): SocialItem | null {
+  if (!p?.uri || !p.author?.handle) return null;
+  const text = (p.record?.text ?? "").trim();
+  if (!text) return null;
+  const iso = p.record?.createdAt ?? p.indexedAt ?? new Date().toISOString();
+  return {
+    id: p.uri,
+    author: p.author.displayName ?? p.author.handle,
+    handle: `@${p.author.handle}`,
+    text,
+    url: postUrl(p),
+    publishedAt: iso,
+    source: "Bluesky",
+  };
+}
+
+async function bskyJson<T>(path: string, timeoutMs = 6000): Promise<T | null> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    const r = await fetch(`${BSKY_BASE}${path}`, {
+      signal: ctrl.signal,
+      headers: {
+        accept: "application/json",
+        "user-agent": "MemeDeskBot/1.0 (+https://memedesk.app)",
+      },
+    });
+    clearTimeout(t);
+    if (!r.ok) return null;
+    return (await r.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchBlueskyFeed(
+  mode: "user" | "search",
+  value: string,
+  limit: number,
+): Promise<SocialItem[]> {
+  if (mode === "user") {
+    // Accept bare handles ("aeyakovenko"), bsky-style ("name.bsky.social"),
+    // and plain X-style handles. Try as-is, then ".bsky.social", then fall
+    // back to search-as-keyword if the actor doesn't resolve.
+    const candidates = value.includes(".") ? [value] : [value, `${value}.bsky.social`];
+    for (const actor of candidates) {
+      const json = await bskyJson<{ feed?: BskyFeedItem[] }>(
+        `/app.bsky.feed.getAuthorFeed?actor=${encodeURIComponent(actor)}&limit=${limit}`,
+      );
+      const items = (json?.feed ?? [])
+        .map((f) => normalizePost(f.post))
+        .filter((x): x is SocialItem => !!x);
+      if (items.length > 0) return items;
+    }
+    // Author not found — degrade to keyword search using the handle text.
+    return fetchBlueskyFeed("search", value, limit);
+  }
+
+  const json = await bskyJson<{ posts?: BskyPost[] }>(
+    `/app.bsky.feed.searchPosts?q=${encodeURIComponent(value)}&limit=${limit}&sort=latest`,
+  );
+  return (json?.posts ?? [])
+    .map((p) => normalizePost(p))
+    .filter((x): x is SocialItem => !!x);
 }
