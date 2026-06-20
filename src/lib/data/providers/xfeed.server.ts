@@ -13,25 +13,70 @@ import type { SocialItem } from "./newsfeed.server";
 // Mix of founders, traders, analysts, and culture accounts. Keep this small
 // (parallel fetch fans out to each handle on every refresh).
 export const SOLANA_KOLS = [
+  // Traders / KOLs
+  "blknoiz06",        // Ansem
+  "MustStopMurad",
+  "Cupseyy",
+  "notthreadguy",
+  "frankdegods",
+  "trader1sz",
+  "MoonOverlord",
+  "0xRamonos",
+  "ZssBecker",
+  "gake_eth",
+  // Solana / infra founders
   "aeyakovenko",      // Anatoly Yakovenko (Solana co-founder)
   "rajgokal",         // Raj Gokal (Solana co-founder)
-  "SolanaFndn",
-  "SolanaFloor",
-  "blknoiz06",        // Ansem
-  "gake_eth",
   "0xMert_",          // Mert Mumtaz (Helius)
-  "Cobratate_",
-  "trader1sz",
-  "0xRamonos",
-  "MoonOverlord",
-  "ZssBecker",
-  "frankdegods",
-  "MustStopMurad",
-  "notthreadguy",
-  "DefiIgnas",
+  "weremeow",         // Meow — Jupiter founder
+  "a1lon9",           // Alon — Pump.fun co-founder
+  // Project / culture accounts
   "pumpdotfun",
   "JupiterExchange",
+  "TheOnlyNom",       // BONK core contributor
+  "bonk_inu",
+  "dogwifcoin",
+  "SolanaFndn",
+  "SolanaFloor",
+  // Risk / on-chain analysts
+  "zachxbt",
+  "lookonchain",
+  "bubblemaps",
+  "Rugcheckxyz",
+  "DefiIgnas",
 ];
+
+// Optional tag map for UI chips / future filtering. Unused entries default
+// to "kol" at the call site.
+export const KOL_TAGS: Record<string, "trader" | "founder" | "culture" | "risk" | "kol"> = {
+  blknoiz06: "trader",
+  MustStopMurad: "trader",
+  Cupseyy: "trader",
+  notthreadguy: "trader",
+  frankdegods: "trader",
+  trader1sz: "trader",
+  MoonOverlord: "trader",
+  "0xRamonos": "trader",
+  ZssBecker: "trader",
+  gake_eth: "trader",
+  aeyakovenko: "founder",
+  rajgokal: "founder",
+  "0xMert_": "founder",
+  weremeow: "founder",
+  a1lon9: "founder",
+  pumpdotfun: "culture",
+  JupiterExchange: "culture",
+  TheOnlyNom: "culture",
+  bonk_inu: "culture",
+  dogwifcoin: "culture",
+  SolanaFndn: "culture",
+  SolanaFloor: "culture",
+  zachxbt: "risk",
+  lookonchain: "risk",
+  bubblemaps: "risk",
+  Rugcheckxyz: "risk",
+  DefiIgnas: "risk",
+};
 
 const TTL_MS = 5 * 60 * 1000;
 type CacheEntry = { ts: number; items: SocialItem[] };

@@ -157,7 +157,21 @@ export async function fetchSocialFeed(query: string, limit = 30): Promise<Social
   const isKols = /^@?kols$/i.test(value) || /^solana\s+kols$/i.test(value);
   let xPosts: SocialItem[];
   if (isKols) {
-    xPosts = await fetchHandlesTimeline(SOLANA_KOLS, 3, limit).catch(
+    // Merge curated roster with scraped X-list members. Lists are
+    // best-effort (scraped via Firecrawl), so the curated roster acts as
+    // a guaranteed fallback.
+    const { fetchAllListMembers } = await import("./xlist.server");
+    const members = await fetchAllListMembers().catch(() => [] as string[]);
+    const seenH = new Set<string>();
+    const roster: string[] = [];
+    for (const h of [...SOLANA_KOLS, ...members]) {
+      const key = h.toLowerCase();
+      if (seenH.has(key)) continue;
+      seenH.add(key);
+      roster.push(h);
+      if (roster.length >= 60) break;
+    }
+    xPosts = await fetchHandlesTimeline(roster, 2, limit).catch(
       () => [] as SocialItem[],
     );
   } else if (mode === "user") {
