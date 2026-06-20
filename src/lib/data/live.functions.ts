@@ -173,6 +173,53 @@ export const getPumpfunLaunchesFn = createServerFn({ method: "GET" }).handler(as
   }
 });
 
+export const getTokenHoldersFn = createServerFn({ method: "GET" })
+  .inputValidator((d: { address: string }) => ({ address: String(d?.address ?? "").trim() }))
+  .handler(async ({ data }): Promise<TokenHolderRow[]> => {
+    if (!data.address || !process.env.SOLANA_TRACKER_API_KEY) return [];
+    const { withCache } = await import("./cache.server");
+    const { trackProvider } = await import("./health.server");
+    const { fetchTopHolders } = await import("./providers/solana-tracker.server");
+    try {
+      const rows = await withCache(`solana-tracker:holders:${data.address}`, 60, () =>
+        trackProvider("solana-tracker", () => fetchTopHolders(data.address, 20)),
+      );
+      return rows.map((r) => ({
+        rank: r.rank,
+        address: r.address,
+        amount: r.amount,
+        percentage: r.percentage,
+        valueUsd: r.valueUsd,
+        insider: !!r.insider,
+      }));
+    } catch {
+      return [];
+    }
+  });
+
+export const getTokenWhaleTradesFn = createServerFn({ method: "GET" })
+  .inputValidator((d: { address: string; minUsd?: number }) => ({
+    address: String(d?.address ?? "").trim(),
+    minUsd: Number(d?.minUsd ?? 1000),
+  }))
+  .handler(async ({ data }): Promise<WhaleTradeRow[]> => {
+    if (!data.address || !process.env.BIRDEYE_API_KEY) return [];
+    const { withCache } = await import("./cache.server");
+    const { trackProvider } = await import("./health.server");
+    const { fetchTokenTxs } = await import("./providers/birdeye.server");
+    try {
+      const rows = await withCache(`birdeye:txs:${data.address}`, 15, () =>
+        trackProvider("birdeye", () => fetchTokenTxs(data.address, 50)),
+      );
+      return rows
+        .filter((r) => r.valueUsd >= data.minUsd)
+        .slice(0, 50)
+        .map((r) => ({ ...r }));
+    } catch {
+      return [];
+    }
+  });
+
 export const getWalletPnLFn = createServerFn({ method: "POST" })
   .inputValidator((d: { address: string }) => ({ address: String(d?.address ?? "").trim() }))
   .handler(async ({ data }): Promise<WalletPnLResult> => {

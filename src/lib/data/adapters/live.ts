@@ -10,6 +10,8 @@ import {
   getProvidersFn,
   getPumpfunLaunchesFn,
   getWalletPnLFn,
+  getTokenHoldersFn,
+  getTokenWhaleTradesFn,
 } from "../live.functions";
 
 export const liveAdapter = {
@@ -24,6 +26,9 @@ export const liveAdapter = {
   getPumpfunLaunches: () => getPumpfunLaunchesFn(),
   getProviders: () => getProvidersFn(),
   getTokenChart: (address: string, points = 96) => getTokenChartFn({ data: { address, points } }),
+  getTokenHolders: (address: string) => getTokenHoldersFn({ data: { address } }),
+  getTokenWhaleTrades: (address: string, minUsd = 1000) =>
+    getTokenWhaleTradesFn({ data: { address, minUsd } }),
 };
 
 export type LiveAdapter = typeof liveAdapter;
