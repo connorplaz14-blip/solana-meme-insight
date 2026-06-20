@@ -203,8 +203,8 @@ export function SocialColumn() {
         {(data?.length ?? 0) === 0 && status !== "loading" && (
           <li className="p-3 font-mono text-[11px] text-muted-foreground">
             No posts for <span className="text-foreground">{active}</span>.
-            Sources: SocialTickers signal · DexScreener launches · Bluesky.
-            Try a different tag or a preset.
+            Source: X via Firecrawl · Bluesky fallback. Try a different
+            cashtag, handle, or preset.
           </li>
         )}
         {data?.map((p) => {
@@ -224,13 +224,11 @@ type Item = NonNullable<ReturnType<typeof useSocialFeed>["data"]>[number];
 
 function SourceBadge({ source }: { source: string }) {
   const cls =
-    source === "Bluesky"
-      ? "bg-info/15 text-info"
-      : source === "SocialTickers"
-        ? "bg-pos/15 text-pos"
-        : source === "DexScreener"
-          ? "bg-warn/15 text-warn"
-          : "bg-muted/30 text-muted-foreground";
+    source === "X"
+      ? "bg-pos/15 text-pos"
+      : source === "Bluesky"
+        ? "bg-info/15 text-info"
+        : "bg-muted/30 text-muted-foreground";
   return (
     <span
       className={cn(

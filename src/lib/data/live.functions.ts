@@ -301,7 +301,7 @@ export const getSocialFeedFn = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { withCache } = await import("./cache.server");
     const { fetchSocialFeed } = await import("./providers/newsfeed.server");
-    const key = `social:nitter:${data.q}`;
+    const key = `social:x:${data.q}`;
     try {
       return await withCache(key, 90, () => fetchSocialFeed(data.q, 30));
     } catch {
