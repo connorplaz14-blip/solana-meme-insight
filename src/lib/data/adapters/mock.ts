@@ -2,9 +2,9 @@ import { solMarket } from "@/mocks/sol-market";
 import { trendingTokens } from "@/mocks/trending-tokens";
 import { memeOfTheDay } from "@/mocks/meme-of-the-day";
 import { narrativeReport, marketPulse } from "@/mocks/narratives";
-import { sampleWallet } from "@/mocks/wallet-pnl";
 import { providers } from "@/mocks/providers";
 import { generateCandleSeries } from "@/mocks/chart";
+import type { PumpLaunchesResult, WalletPnLResponse } from "@/types";
 
 export const mockAdapter = {
   getSolMarket: async () => ({ ...solMarket, lastUpdated: new Date().toISOString() }),
@@ -12,13 +12,17 @@ export const mockAdapter = {
   getMemeOfTheDay: async () => memeOfTheDay,
   getNarratives: async () => narrativeReport,
   getMarketPulse: async () => marketPulse,
-  getWalletPnL: async (address: string) => ({
-    ...sampleWallet,
-    address: address || sampleWallet.address,
-    source: "mock" as const,
-    lastUpdatedIso: new Date().toISOString(),
+  getWalletPnL: async (address: string): Promise<WalletPnLResponse> => ({
+    kind: "notice",
+    address,
+    notice: { kind: "missing-key", provider: "birdeye", message: "Mock adapter — no live data." },
   }),
-  getPumpfunLaunches: async () => [] as never[],
+  getPumpfunLaunches: async (): Promise<PumpLaunchesResult> => ({
+    status: "missing-key",
+    launches: [],
+    provider: "solana-tracker",
+    message: "Mock adapter — no live data.",
+  }),
   getProviders: async () => providers,
   getTokenChart: async (_address: string, points = 96) => generateCandleSeries(points),
 };
