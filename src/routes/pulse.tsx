@@ -4,7 +4,7 @@ import { SocialColumn } from "@/components/pulse/SocialColumn";
 import { TrendingColumn } from "@/components/pulse/TrendingColumn";
 import { WhalePingsColumn } from "@/components/pulse/WhalePingsColumn";
 import { Link } from "@tanstack/react-router";
-import { MessageSquare, Newspaper, TrendingUp, Whale, LayoutGrid } from "lucide-react";
+import { MessageSquare, Newspaper, TrendingUp, Fish, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/pulse")({
