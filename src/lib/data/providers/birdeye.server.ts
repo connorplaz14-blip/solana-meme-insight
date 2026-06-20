@@ -12,6 +12,12 @@ export interface WhaleTrade {
   blockUnixTime: number;
 }
 
+type BirdeyeLeg = {
+  address?: string;
+  uiAmount?: number;
+  ui_amount?: number;
+  price?: number;
+};
 type BirdeyeTxItem = {
   tx_hash?: string;
   txHash?: string;
@@ -19,12 +25,9 @@ type BirdeyeTxItem = {
   owner?: string;
   side?: string;
   type?: string;
-  ui_amount?: number;
-  uiAmount?: number;
-  base?: { ui_amount?: number; uiAmount?: number };
-  volume_usd?: number;
-  volumeUSD?: number;
-  value_usd?: number;
+  txType?: string;
+  quote?: BirdeyeLeg;
+  base?: BirdeyeLeg;
   block_unix_time?: number;
   blockUnixTime?: number;
 };
@@ -51,10 +54,19 @@ export async function fetchTokenTxs(address: string, limit = 50): Promise<WhaleT
   if (!json.success || !json.data) throw new Error(json.message ?? "Birdeye empty txs");
   const items = json.data.items ?? json.data.tx ?? [];
   return items.map((it): WhaleTrade => {
-    const sideRaw = (it.side ?? it.type ?? "").toString().toLowerCase();
+    const sideRaw = (it.side ?? it.type ?? it.txType ?? "").toString().toLowerCase();
     const side: "buy" | "sell" = sideRaw.includes("buy") ? "buy" : "sell";
-    const valueUsd = it.volume_usd ?? it.volumeUSD ?? it.value_usd ?? 0;
-    const tokenAmount = it.ui_amount ?? it.uiAmount ?? it.base?.ui_amount ?? it.base?.uiAmount ?? 0;
+    // Token leg: whichever leg matches the requested address (case-insensitive).
+    const want = address.toLowerCase();
+    const quoteAddr = (it.quote?.address ?? "").toLowerCase();
+    const tokenLeg = quoteAddr === want ? it.quote : it.base;
+    const otherLeg = quoteAddr === want ? it.base : it.quote;
+    const tokenAmount = tokenLeg?.uiAmount ?? tokenLeg?.ui_amount ?? 0;
+    // Prefer the non-token leg's USD value (SOL/USDC side is more reliable).
+    const otherAmount = otherLeg?.uiAmount ?? otherLeg?.ui_amount ?? 0;
+    const valueUsd =
+      (otherLeg?.price ?? 0) * otherAmount ||
+      (tokenLeg?.price ?? 0) * tokenAmount;
     return {
       signature: it.tx_hash ?? it.txHash ?? it.signature ?? "",
       owner: it.owner ?? "",
