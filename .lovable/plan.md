@@ -1,101 +1,46 @@
-# Refine X crawling — FxTwitter primary + Firecrawl fallback
+# Plan: KOL-driven X feed (lists + curated handles)
 
-## Why change what we just built
+FxTwitter has no list endpoint (confirmed `/2/list/{id}` → 404), so X Lists can't be hit as a single source. Workaround: scrape the list page's "Members" via Firecrawl once, cache the handle set for a long TTL, and fan out per-handle through FxTwitter — same path we already use for `fetchHandlesTimeline`.
 
-Firecrawl alone has two weaknesses for X content:
-- **Profile scrapes are noisy**: x.com gates most timeline HTML behind auth, so the markdown often yields only nav links and zero tweets — we then fall back to a Google `from:` search, which returns whatever Google has indexed (often days old).
-- **No engagement metrics**: search snippets give us text + URL only — no likes, replies, timestamp, author display name, or media.
+## Changes
 
-The GitHub research found a better primary source:
+### 1. Expand curated roster — `src/lib/data/providers/xfeed.server.ts`
+Replace `SOLANA_KOLS` with a tiered, deduped roster that includes the user's named accounts:
 
-- **FxTwitter v2** (`api.fxtwitter.com`) — same project as the well-known `fxtwitter.com` embed fixer. Free, unauthenticated, JSON, generous rate limits, actively maintained. Endpoints we need:
-  - `GET /2/search?q=<term>&count=30` — full text search (handles cashtags, hashtags, `from:` operator)
-  - `GET /2/profile/{handle}/statuses?count=30` — user timeline with replies flag
-  - `GET /2/status/{id}` — single tweet enrichment (text, author, likes/replies/retweets/views, media, created_at)
+- **Traders / KOLs:** `blknoiz06` (Ansem), `MustStopMurad`, `Cupseyy`, `notthreadguy`, `frankdegods`, `trader1sz`, `MoonOverlord`, `0xRamonos`, `ZssBecker`, `gake_eth`
+- **Solana / infra founders:** `aeyakovenko`, `rajgokal`, `0xMert_`, `weremeow` (Jupiter), `a1lon9` (Pump.fun)
+- **Project / culture accounts:** `pumpdotfun`, `JupiterExchange`, `TheOnlyNom`, `bonk_inu`, `dogwifcoin`, `SolanaFndn`, `SolanaFloor`
+- **Risk / on-chain analysts:** `zachxbt`, `lookonchain`, `bubblemaps`, `Rugcheckxyz`, `DefiIgnas`
 
-Firecrawl stays wired as a fallback so the column never blanks if FxTwitter is down or rate-limits us.
+Add an optional `KOL_TAGS` map (handle → tag like `trader`, `founder`, `risk`, `culture`) used later for column chips. No behavior change to existing callers.
 
-## Scope
+### 2. New X-list scraper — `src/lib/data/providers/xlist.server.ts` (new file)
+- `fetchListMembers(listId: string): Promise<string[]>` — scrapes `https://x.com/i/lists/{id}/members` via `firecrawlScrapeMarkdown`, regex-extracts `@handle` patterns / `/{handle}` profile links, dedupes, filters non-handles, caches in-memory for 6h. Empty array on failure (always fall back gracefully).
+- Constant `SOLANA_KOL_LISTS` with the four list IDs the user pasted (the 1777… duplicate is collapsed):
+  - `1777037601578287430`
+  - `1747955009617006656`
+  - `1726621096902807989`
+  - `1587987762908651520`
+- `fetchAllListMembers()` — Promise.allSettled over the four IDs, merged + deduped.
 
-Only X-data fetching and the small UI bits that display engagement. Bluesky, Dexscreener, news, whales, narratives — untouched.
+### 3. Wire into KOL feed — `src/lib/data/providers/newsfeed.server.ts`
+When a query matches `@kols` / `kols`:
+1. `members = await fetchAllListMembers()` (cached).
+2. `roster = unique([...SOLANA_KOLS, ...members])`, capped at ~60 handles to keep the fan-out bounded.
+3. `fetchHandlesTimeline(roster, perHandle=2, limit)` (drop `perHandle` from 3→2 so the larger roster doesn't blow the 8s budget).
+4. If list scrape returned nothing, fall back to the hardcoded `SOLANA_KOLS` — same behavior as today.
 
-## New / edited files
+### 4. UI polish — `src/components/pulse/SocialColumn.tsx`
+- Add the new handles to the presets dropdown: `@blknoiz06`, `@MustStopMurad`, `@Cupseyy`, `@a1lon9`, `@weremeow`, `@TheOnlyNom`, `@bonk_inu`, `@dogwifcoin`, `@zachxbt`, `@lookonchain`, `@bubblemaps`, `@Rugcheckxyz`.
+- Leave the existing "KOLs" preset; it now silently pulls list members + curated roster.
 
-### New: `src/lib/data/providers/fxtwitter.server.ts`
+## Notes / trade-offs
+- X Lists aren't directly fetchable without auth, so we rely on Firecrawl scraping the public list page. Twitter often gates `/members` behind auth — if Firecrawl returns no handles, we'll quietly fall back to the curated roster. Acceptable degradation, no user-facing error.
+- Per-handle fan-out cost: ~30-60 FxTwitter calls per KOL refresh, all parallel, cached 5min — same pattern as today, just wider.
+- No schema/API changes; SocialItem shape untouched.
 
-Thin wrapper around FxTwitter v2:
-- `fxSearch(query, count)` → calls `/2/search`, returns normalized `XTweet[]`
-- `fxUserTimeline(handle, count, withReplies)` → calls `/2/profile/{handle}/statuses`
-- `fxStatus(id)` → calls `/2/status/{id}` for enrichment
-- 8s `AbortController` timeout, `User-Agent: memedesk/1.0`, 5-min in-memory cache keyed by endpoint+params.
-- Normalized `XTweet` type carries: `id, url, handle, author, text, createdAt (ISO), likes, replies, retweets, views, hasMedia`.
-
-### Edited: `src/lib/data/providers/xfeed.server.ts`
-
-Rewrite both modes to prefer FxTwitter, fall back to Firecrawl, then merge:
-
-- `searchX(query, limit)`:
-  1. Detect mode: `@handle` → route to `userTimelineX`; `$TICKER` or `#tag` → strip prefix, search; plain term → search.
-  2. Call `fxSearch` (primary). If results ≥ 3, return.
-  3. On empty/error, call existing `firecrawlSearch` path, then enrich each Firecrawl hit by calling `fxStatus(id)` in parallel (capped at 10, `Promise.allSettled`) so we still get engagement + clean text.
-- `userTimelineX(handle, limit)`:
-  1. `fxUserTimeline(h)` (primary).
-  2. Fallback to Firecrawl scrape of `https://x.com/<h>`, then enrich via `fxStatus`.
-- Dedup by tweet id across both sources.
-- Keep the 5-min cache + the existing `SocialItem` output shape, but extend it (next section).
-
-### Edited: `src/lib/data/providers/newsfeed.server.ts`
-
-`SocialItem` gains optional engagement fields (all nullable, additive — no breakage):
-
-```ts
-likes?: number;
-replies?: number;
-retweets?: number;
-views?: number;
-hasMedia?: boolean;
-```
-
-`publishedAt` populated from `created_at` (real timestamp) instead of "now" when FxTwitter provides it. `fetchSocialFeed` wiring unchanged — it already routes through `xfeed`.
-
-### Edited: `src/components/pulse/SocialColumn.tsx` (`PostCard` only)
-
-Below the tweet text, render a one-line metrics strip when any metric is present:
-
-`♥ 1.2k   ↩ 34   ⟲ 88   ◉ 12k`
-
-- Mono, `text-[9px]`, `text-muted-foreground`, formatted via existing `compact` helper.
-- Hide individually if a metric is missing or zero.
-- Show a tiny `MEDIA` chip when `hasMedia`.
-- No other layout changes; `SignalCard` / `LaunchCard` untouched.
-
-### Edited: `src/lib/ai/snapshot.server.ts`
-
-`recent-social` slice already pulls from `xfeed`; just include `likes/retweets` per post so AI context is richer. No behavior change beyond extra fields.
-
-## Failure modes & guardrails
-
-- FxTwitter 404 on unknown handle → fall through to Firecrawl, then return `[]` cleanly.
-- FxTwitter 429 → cached value if present, else Firecrawl path.
-- Enrichment errors are per-tweet `allSettled` — one bad id never breaks the page.
-- All network calls behind 8s timeout + try/catch returning `[]`.
-- No new secrets, no new connectors, no schema changes.
-
-## Out of scope
-
-- KOL curation, narrative tagging from tweets, sentiment scoring — separate follow-up.
-- Replacing Bluesky fallback — it stays as final safety net.
-- Anything outside the Social column / AI snapshot social slice.
-
-## Technical notes
-
-```text
-SocialColumn → useSocialFeed(active) → live.functions.ts (cache key social:x:${q})
-  → newsfeed.server.fetchSocialFeed
-      → xfeed.searchX OR xfeed.userTimelineX
-          ├─ fxtwitter.server (PRIMARY, JSON)
-          └─ firecrawl.server (FALLBACK, markdown) → enrich via fxStatus
-      → bluesky (final fallback, unchanged)
-```
-
-FxTwitter is a Cloudflare Worker app, so requests are fast (<300ms typical) and Worker-runtime-safe — no Node-only deps, plain `fetch`.
+## Files
+- edit `src/lib/data/providers/xfeed.server.ts`
+- new  `src/lib/data/providers/xlist.server.ts`
+- edit `src/lib/data/providers/newsfeed.server.ts`
+- edit `src/components/pulse/SocialColumn.tsx`
