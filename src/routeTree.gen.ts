@@ -13,6 +13,7 @@ import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as WalletPnlRouteImport } from './routes/wallet-pnl'
 import { Route as TrendingRouteImport } from './routes/trending'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as PulseRouteImport } from './routes/pulse'
 import { Route as NarrativesRouteImport } from './routes/narratives'
 import { Route as MemeOfTheDayRouteImport } from './routes/meme-of-the-day'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -39,6 +40,11 @@ const TrendingRoute = TrendingRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PulseRoute = PulseRouteImport.update({
+  id: '/pulse',
+  path: '/pulse',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NarrativesRoute = NarrativesRouteImport.update({
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
+  '/pulse': typeof PulseRoute
   '/settings': typeof SettingsRoute
   '/trending': typeof TrendingRoute
   '/wallet-pnl': typeof WalletPnlRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
+  '/pulse': typeof PulseRoute
   '/settings': typeof SettingsRoute
   '/trending': typeof TrendingRoute
   '/wallet-pnl': typeof WalletPnlRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
+  '/pulse': typeof PulseRoute
   '/settings': typeof SettingsRoute
   '/trending': typeof TrendingRoute
   '/wallet-pnl': typeof WalletPnlRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/meme-of-the-day'
     | '/narratives'
+    | '/pulse'
     | '/settings'
     | '/trending'
     | '/wallet-pnl'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/meme-of-the-day'
     | '/narratives'
+    | '/pulse'
     | '/settings'
     | '/trending'
     | '/wallet-pnl'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/meme-of-the-day'
     | '/narratives'
+    | '/pulse'
     | '/settings'
     | '/trending'
     | '/wallet-pnl'
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   MemeOfTheDayRoute: typeof MemeOfTheDayRoute
   NarrativesRoute: typeof NarrativesRoute
+  PulseRoute: typeof PulseRoute
   SettingsRoute: typeof SettingsRoute
   TrendingRoute: typeof TrendingRoute
   WalletPnlRoute: typeof WalletPnlRoute
@@ -201,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pulse': {
+      id: '/pulse'
+      path: '/pulse'
+      fullPath: '/pulse'
+      preLoaderRoute: typeof PulseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/narratives': {
@@ -262,6 +282,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   MemeOfTheDayRoute: MemeOfTheDayRoute,
   NarrativesRoute: NarrativesRoute,
+  PulseRoute: PulseRoute,
   SettingsRoute: SettingsRoute,
   TrendingRoute: TrendingRoute,
   WalletPnlRoute: WalletPnlRoute,

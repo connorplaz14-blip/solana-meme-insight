@@ -1,39 +1,75 @@
-# Plan: Next 3 features
+# News-First Fast Info Dashboard
 
-Building on the Holders + Whales tabs we just shipped. All real-data, native components, terminal styling, no vendored code.
+Pivot the dashboard toward real-time information flow: X (Twitter) posts, news headlines, and on-chain signals — optimized for at-a-glance scanning, terminal-style.
 
-## 1. Smart-money panel inside Whale tab
+## 1. New `/pulse` route — the fast-info homepage
 
-Right now the Whale feed lists raw trades. Aggregate them into a **"Smart Money"** sub-tab:
+A dense, multi-column terminal layout (think Bloomberg/TweetDeck) showing live streams side-by-side. Auto-refreshes every 30s. Columns:
 
-- Group last 50 trades by wallet, compute net USD flow per wallet (buys − sells).
-- Show top 10 wallets by absolute net flow: wallet, side (net accumulating / distributing), net USD, trade count, link to Solscan + a "track" button that pushes to a new `/wallet-pnl?address=…` deep link (route already exists).
-- Toggle pill at top of Whales tab: `Trades | Smart Money`.
+```text
+┌──────────────┬──────────────┬──────────────┬──────────────┐
+│ X / Twitter  │ News         │ Trending     │ Whale Pings  │
+│ (cashtag     │ (CryptoPanic │ Tokens       │ (large txs   │
+│  stream)     │  headlines)  │ (24h movers) │  across      │
+│              │              │              │  watchlist)  │
+└──────────────┴──────────────┴──────────────┴──────────────┘
+```
 
-No new server function — all derived client-side from the existing `useTokenWhaleTrades` data.
+Each column is independently scrollable, color-coded by sentiment/severity, with relative timestamps ("2m ago") and one-click filters.
 
-## 2. Token risk / security panel
+## 2. X / Twitter integration
 
-New **"Risk"** tab in token detail. Pulls from Solana Tracker `/tokens/{mint}` which already returns `risk.score`, `risk.risks[]` (mintable, freezable, top10 concentration, LP burned, etc.) plus deployer wallet.
+Use **Nitter RSS** (free, no API key) as primary source, with fallback to scraping via existing data layer. New server function `getTwitterFeedFn(query)` that:
+- Pulls posts mentioning a cashtag (e.g. `$WIF`, `$BONK`) or watchlist tokens
+- Parses author, text, timestamp, engagement (if available)
+- Caches 60s server-side
+- Auto-detects token mentions and links them to `/coin/[mint]`
 
-- New server fn `getTokenRiskFn` + `solana-tracker.server.ts` `fetchTokenRisk(mint)`.
-- UI: large risk score (0-10) with color, list of risk factors with severity dots, deployer wallet (linked), "top 10 holders own X%" headline derived from existing holders data.
-- Empty state if Solana Tracker has no risk record.
+A search box at the top lets users add custom queries (kept in localStorage). Default queries: `$SOL`, `$BONK`, top 3 watchlist tokens.
 
-## 3. Watchlist price alerts (lightweight)
+If Nitter is unreliable, fall back to **CryptoPanic** which aggregates X posts + news under one API (free tier, key required — would request via add_secret).
 
-The watchlist already exists (`/watchlist`). Add:
+## 3. News feed (CryptoPanic or RSS)
 
-- Per-row **target price** input (above / below). Stored in `localStorage` (extending `src/lib/watchlist-store.ts`) — no DB, no backend.
-- Background poll on `/watchlist`: every 60s refetch trending + prices, compare against targets, fire a `sonner` toast + browser notification (if permission granted) when crossed. Mark the alert as "triggered" so it doesn't re-fire.
-- Small bell icon on each row, filled when an alert is set.
+New `getNewsFeedFn` pulling from CryptoPanic public API (free, no key for basic). Shows:
+- Headline + source badge (CoinDesk, The Block, etc.)
+- Sentiment dot (bullish/bearish/neutral from API)
+- Linked tokens as clickable chips
+- Time ago
 
-Out of scope: persisting alerts across devices (requires auth + DB — separate task), SMS/email alerts.
+Filter pills: `All | Bullish | Bearish | Important`
 
-## Verification
+## 4. Trending tokens column
 
-After build I'll: open WIF token detail → confirm Smart Money tab aggregates the same Birdeye trades; open Risk tab → confirm score + factors render; on /watchlist set a target above current price → wait or simulate → confirm toast fires.
+Reuse existing trending/movers data already wired through Solana Tracker. Show top 10 gainers (24h) with sparkline, % change, and click → token detail.
 
-## Not in scope this round
+## 5. Whale pings column (cross-watchlist)
 
-Social feeds, narrative AI, mobile-specific tweaks beyond what these components inherit. Say which of the three you want first if you don't want all three at once — otherwise I'll ship them in order 1 → 2 → 3.
+Aggregate the existing whale trade hook across every token in the user's watchlist. Single chronological stream: `$WIF • BUY $42k • 3m ago`. Click → token detail's Whales tab.
+
+## 6. Navigation
+
+Add **Pulse** as the default landing tab in `MainNav`, before `Coins`. Existing routes (`/coins`, `/watchlist`, `/wallet-pnl`, token detail) untouched.
+
+## Technical details
+
+- **New files:**
+  - `src/routes/pulse.tsx` — route + layout
+  - `src/components/pulse/TwitterColumn.tsx`
+  - `src/components/pulse/NewsColumn.tsx`
+  - `src/components/pulse/TrendingColumn.tsx`
+  - `src/components/pulse/WhalePingsColumn.tsx`
+  - `src/lib/data/providers/nitter.server.ts` (or `cryptopanic.server.ts`)
+- **Edited:**
+  - `src/lib/data/live.functions.ts` — add `getTwitterFeedFn`, `getNewsFeedFn`
+  - `src/lib/data/adapters/live.ts` + `src/lib/data/index.ts` — wire hooks
+  - `src/components/MainNav.tsx` — add Pulse tab
+- All columns use `useQuery` with 30s `refetchInterval`, server-cached 60s.
+
+## Out of scope
+- Posting to X / replying
+- Push notifications (price alerts already cover that)
+- Sentiment ML — rely on CryptoPanic's labels
+
+## Open question
+Do you have a **CryptoPanic API key**, or should I start with Nitter RSS (no key, less reliable) and only request a key if needed?

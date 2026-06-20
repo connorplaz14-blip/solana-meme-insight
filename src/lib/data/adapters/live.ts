@@ -13,6 +13,8 @@ import {
   getTokenHoldersFn,
   getTokenWhaleTradesFn,
   getTokenRiskFn,
+  getNewsFeedFn,
+  getSocialFeedFn,
 } from "../live.functions";
 
 export const liveAdapter = {
@@ -31,6 +33,8 @@ export const liveAdapter = {
   getTokenWhaleTrades: (address: string, minUsd = 1000) =>
     getTokenWhaleTradesFn({ data: { address, minUsd } }),
   getTokenRisk: (address: string) => getTokenRiskFn({ data: { address } }),
+  getNewsFeed: () => getNewsFeedFn(),
+  getSocialFeed: (q: string) => getSocialFeedFn({ data: { q } }),
 };
 
 export type LiveAdapter = typeof liveAdapter;

@@ -270,3 +270,26 @@ export const getWalletPnLFn = createServerFn({ method: "POST" })
       return { ...sampleWallet, address: addr, source: "mock", lastUpdatedIso: nowIso };
     }
   });
+
+export const getNewsFeedFn = createServerFn({ method: "GET" }).handler(async () => {
+  const { withCache } = await import("./cache.server");
+  const { fetchAggregatedNews } = await import("./providers/newsfeed.server");
+  try {
+    return await withCache("newsfeed:aggregated:v1", 60, () => fetchAggregatedNews(40));
+  } catch {
+    return [] as Awaited<ReturnType<typeof fetchAggregatedNews>>;
+  }
+});
+
+export const getSocialFeedFn = createServerFn({ method: "GET" })
+  .inputValidator((d: { q?: string }) => ({ q: String(d?.q ?? "$SOL OR $BONK OR $WIF").slice(0, 120) }))
+  .handler(async ({ data }) => {
+    const { withCache } = await import("./cache.server");
+    const { fetchSocialFeed } = await import("./providers/newsfeed.server");
+    const key = `social:nitter:${data.q}`;
+    try {
+      return await withCache(key, 90, () => fetchSocialFeed(data.q, 30));
+    } catch {
+      return [] as Awaited<ReturnType<typeof fetchSocialFeed>>;
+    }
+  });

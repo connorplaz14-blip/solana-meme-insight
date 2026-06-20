@@ -1,11 +1,12 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutGrid, Flame, TrendingUp, Newspaper, Star, Wallet, Settings, Trophy, Coins, MessageSquare, X } from "lucide-react";
+import { LayoutGrid, Flame, TrendingUp, Newspaper, Star, Wallet, Settings, Trophy, Coins, MessageSquare, X, Radio } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMobileNav } from "./MobileNavContext";
 import { useEffect } from "react";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutGrid },
+  { to: "/pulse", label: "Pulse", icon: Radio },
   { to: "/coins", label: "Coins", icon: Coins },
   { to: "/ai", label: "AI Desk", icon: MessageSquare },
   { to: "/meme-of-the-day", label: "Meme of the Day", icon: Trophy },
