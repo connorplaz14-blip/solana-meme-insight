@@ -1,75 +1,35 @@
-# News-First Fast Info Dashboard
+## Goal
 
-Pivot the dashboard toward real-time information flow: X (Twitter) posts, news headlines, and on-chain signals — optimized for at-a-glance scanning, terminal-style.
+On `/pulse`, the **Whales** column often shows nothing (Birdeye trades endpoint is unreliable on the free tier, and an empty watchlist short-circuits the column). The **X / Social** column relies on Nitter mirrors that are largely dead in 2026, with no way to follow specific accounts. Fix both, and make X feed configurable.
 
-## 1. New `/pulse` route — the fast-info homepage
+## Whales column
 
-A dense, multi-column terminal layout (think Bloomberg/TweetDeck) showing live streams side-by-side. Auto-refreshes every 30s. Columns:
+**Server (`src/lib/data/providers/solana-tracker.server.ts` + `live.functions.ts`)**
+- Add `fetchTokenTrades(mint, limit)` hitting `https://data.solanatracker.io/trades/{mint}` (Solana Tracker key already configured) and normalize to the existing `WhaleTradeRow` shape.
+- Update `getTokenWhaleTradesFn` to try Birdeye first, fall back to Solana Tracker when Birdeye returns empty or errors. No key → return `[]`.
 
-```text
-┌──────────────┬──────────────┬──────────────┬──────────────┐
-│ X / Twitter  │ News         │ Trending     │ Whale Pings  │
-│ (cashtag     │ (CryptoPanic │ Tokens       │ (large txs   │
-│  stream)     │  headlines)  │ (24h movers) │  across      │
-│              │              │              │  watchlist)  │
-└──────────────┴──────────────┴──────────────┴──────────────┘
-```
+**UI (`src/components/pulse/WhalePingsColumn.tsx`)**
+- If watchlist is empty, fall back to the top 6 trending tokens automatically so the column is never blank.
+- Show a small header strip: source label ("Watchlist · N" or "Trending (auto)") and four threshold chips (≥$1k / $2.5k / $10k / $25k) that drive the min-USD filter.
+- Replace the silent "No whale trades yet" with an actionable empty state explaining the threshold and refresh.
 
-Each column is independently scrollable, color-coded by sentiment/severity, with relative timestamps ("2m ago") and one-click filters.
+## X / Social column
 
-## 2. X / Twitter integration
+**Server (`src/lib/data/providers/newsfeed.server.ts`)**
+- Detect query mode from the prefix: `@handle` → user timeline, `$TAG` or plain text → search.
+- Expand Nitter host list (privacydev, poast, tiekoetter, kavin.rocks, …) and try in order.
+- Add a second-tier RSSHub fallback (`rsshub.app`, `rss.shab.fun`) hitting `/twitter/user/:handle` or `/twitter/keyword/:q`.
+- Tweak the title parser so user-timeline RSS items keep the right handle.
 
-Use **Nitter RSS** (free, no API key) as primary source, with fallback to scraping via existing data layer. New server function `getTwitterFeedFn(query)` that:
-- Pulls posts mentioning a cashtag (e.g. `$WIF`, `$BONK`) or watchlist tokens
-- Parses author, text, timestamp, engagement (if available)
-- Caches 60s server-side
-- Auto-detects token mentions and links them to `/coin/[mint]`
-
-A search box at the top lets users add custom queries (kept in localStorage). Default queries: `$SOL`, `$BONK`, top 3 watchlist tokens.
-
-If Nitter is unreliable, fall back to **CryptoPanic** which aggregates X posts + news under one API (free tier, key required — would request via add_secret).
-
-## 3. News feed (CryptoPanic or RSS)
-
-New `getNewsFeedFn` pulling from CryptoPanic public API (free, no key for basic). Shows:
-- Headline + source badge (CoinDesk, The Block, etc.)
-- Sentiment dot (bullish/bearish/neutral from API)
-- Linked tokens as clickable chips
-- Time ago
-
-Filter pills: `All | Bullish | Bearish | Important`
-
-## 4. Trending tokens column
-
-Reuse existing trending/movers data already wired through Solana Tracker. Show top 10 gainers (24h) with sparkline, % change, and click → token detail.
-
-## 5. Whale pings column (cross-watchlist)
-
-Aggregate the existing whale trade hook across every token in the user's watchlist. Single chronological stream: `$WIF • BUY $42k • 3m ago`. Click → token detail's Whales tab.
-
-## 6. Navigation
-
-Add **Pulse** as the default landing tab in `MainNav`, before `Coins`. Existing routes (`/coins`, `/watchlist`, `/wallet-pnl`, token detail) untouched.
-
-## Technical details
-
-- **New files:**
-  - `src/routes/pulse.tsx` — route + layout
-  - `src/components/pulse/TwitterColumn.tsx`
-  - `src/components/pulse/NewsColumn.tsx`
-  - `src/components/pulse/TrendingColumn.tsx`
-  - `src/components/pulse/WhalePingsColumn.tsx`
-  - `src/lib/data/providers/nitter.server.ts` (or `cryptopanic.server.ts`)
-- **Edited:**
-  - `src/lib/data/live.functions.ts` — add `getTwitterFeedFn`, `getNewsFeedFn`
-  - `src/lib/data/adapters/live.ts` + `src/lib/data/index.ts` — wire hooks
-  - `src/components/MainNav.tsx` — add Pulse tab
-- All columns use `useQuery` with 30s `refetchInterval`, server-cached 60s.
+**UI (`src/components/pulse/SocialColumn.tsx`)**
+- New presets row (toggleable): cashtags (`$SOL`, `$BONK`, `$WIF`, `$JUP`), accounts (`@aeyakovenko`, `@SolanaFloor`, `@blknoiz06`), terms (`pump.fun`, `solana memecoin`, `rugpull`, `airdrop`). Clicking adds to saved queries and activates.
+- Input placeholder updated to `@user, $TAG, or keyword`. Saved-query cap raised to 12.
+- Active-query meta row shows the detected mode badge (USER / TAG / TERM) so users see how it'll be fetched.
+- Empty state explains mirrors may be rate-limited and suggests refreshing or trying a preset.
+- Storage key bumped to `v2` to seed the new default mix.
 
 ## Out of scope
-- Posting to X / replying
-- Push notifications (price alerts already cover that)
-- Sentiment ML — rely on CryptoPanic's labels
 
-## Open question
-Do you have a **CryptoPanic API key**, or should I start with Nitter RSS (no key, less reliable) and only request a key if needed?
+- No new dependencies, no auth changes, no schema changes.
+- Other Pulse columns (News, Trending) and the watchlist page itself are untouched.
+- No paid X/Twitter API — we stay on free RSS mirrors.
