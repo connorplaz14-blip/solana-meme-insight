@@ -16,6 +16,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PulseRouteImport } from './routes/pulse'
 import { Route as NarrativesRouteImport } from './routes/narratives'
 import { Route as MemeOfTheDayRouteImport } from './routes/meme-of-the-day'
+import { Route as LaunchesRouteImport } from './routes/launches'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CoinsRouteImport } from './routes/coins'
 import { Route as AiRouteImport } from './routes/ai'
@@ -58,6 +59,11 @@ const MemeOfTheDayRoute = MemeOfTheDayRouteImport.update({
   path: '/meme-of-the-day',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LaunchesRoute = LaunchesRouteImport.update({
+  id: '/launches',
+  path: '/launches',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/ai': typeof AiRoute
   '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
+  '/launches': typeof LaunchesRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
   '/pulse': typeof PulseRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/ai': typeof AiRoute
   '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
+  '/launches': typeof LaunchesRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
   '/pulse': typeof PulseRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/ai': typeof AiRoute
   '/coins': typeof CoinsRoute
   '/dashboard': typeof DashboardRoute
+  '/launches': typeof LaunchesRoute
   '/meme-of-the-day': typeof MemeOfTheDayRoute
   '/narratives': typeof NarrativesRoute
   '/pulse': typeof PulseRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/coins'
     | '/dashboard'
+    | '/launches'
     | '/meme-of-the-day'
     | '/narratives'
     | '/pulse'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/coins'
     | '/dashboard'
+    | '/launches'
     | '/meme-of-the-day'
     | '/narratives'
     | '/pulse'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/ai'
     | '/coins'
     | '/dashboard'
+    | '/launches'
     | '/meme-of-the-day'
     | '/narratives'
     | '/pulse'
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   AiRoute: typeof AiRoute
   CoinsRoute: typeof CoinsRoute
   DashboardRoute: typeof DashboardRoute
+  LaunchesRoute: typeof LaunchesRoute
   MemeOfTheDayRoute: typeof MemeOfTheDayRoute
   NarrativesRoute: typeof NarrativesRoute
   PulseRoute: typeof PulseRoute
@@ -250,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MemeOfTheDayRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/launches': {
+      id: '/launches'
+      path: '/launches'
+      fullPath: '/launches'
+      preLoaderRoute: typeof LaunchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -300,6 +320,7 @@ const rootRouteChildren: RootRouteChildren = {
   AiRoute: AiRoute,
   CoinsRoute: CoinsRoute,
   DashboardRoute: DashboardRoute,
+  LaunchesRoute: LaunchesRoute,
   MemeOfTheDayRoute: MemeOfTheDayRoute,
   NarrativesRoute: NarrativesRoute,
   PulseRoute: PulseRoute,
