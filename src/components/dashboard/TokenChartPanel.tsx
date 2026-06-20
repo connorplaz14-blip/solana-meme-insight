@@ -1,6 +1,7 @@
 import { Panel, PanelHeader, PanelBody } from "@/components/terminal/Panel";
 import { useMemeOfTheDay } from "@/lib/data";
 import { TokenChartEmbed } from "./embeds/TokenChartEmbed";
+import { TokenSparkline } from "./TokenSparkline";
 import { isBonded } from "@/lib/token-bonded";
 
 export function TokenChartPanel() {
@@ -18,12 +19,15 @@ export function TokenChartPanel() {
     );
   }
   return (
-    <TokenChartEmbed
-      address={mod.address}
-      symbol={mod.symbol}
-      bonded={isBonded(mod)}
-      subtitle={`${mod.symbol} · ${mod.name}`}
-      height={480}
-    />
+    <div className="flex flex-col">
+      <TokenSparkline address={mod.address} />
+      <TokenChartEmbed
+        address={mod.address}
+        symbol={mod.symbol}
+        bonded={isBonded(mod)}
+        subtitle={`${mod.symbol} · ${mod.name}`}
+        height={420}
+      />
+    </div>
   );
 }

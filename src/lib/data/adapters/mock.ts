@@ -3,7 +3,6 @@ import { trendingTokens } from "@/mocks/trending-tokens";
 import { memeOfTheDay } from "@/mocks/meme-of-the-day";
 import { narrativeReport, marketPulse } from "@/mocks/narratives";
 import { providers } from "@/mocks/providers";
-import { generateCandleSeries } from "@/mocks/chart";
 import type { PumpLaunchesResult, WalletPnLResponse } from "@/types";
 
 export const mockAdapter = {
@@ -24,7 +23,19 @@ export const mockAdapter = {
     message: "Mock adapter — no live data.",
   }),
   getProviders: async () => providers,
-  getTokenChart: async (_address: string, points = 96) => generateCandleSeries(points),
+  getTokenChart: async (
+    _address: string,
+    timeframe: "1H" | "4H" | "1D" | "1W" = "1D",
+  ) => ({
+    source: "synth" as const,
+    timeframe,
+    interval: "1H",
+    points: Array.from({ length: 96 }, (_, i) => ({
+      t: Date.now() - (96 - i) * 15 * 60 * 1000,
+      price: 0.000024 * (1 + Math.sin(i / 6) * 0.05),
+    })),
+    message: "Mock adapter — no live data.",
+  }),
 };
 
 export type DataAdapter = typeof mockAdapter;
