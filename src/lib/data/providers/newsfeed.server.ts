@@ -145,16 +145,27 @@ export async function fetchSocialFeed(query: string, limit = 30): Promise<Social
   const { mode, value } = detectMode(query);
   if (!value) return [];
 
-  // Primary: live X data via Firecrawl. Bluesky stays as fallback so the
-  // column never goes blank when Firecrawl is rate-limited or out of credits.
-  const { searchX, userTimelineX } = await import("./xfeed.server");
-  const xPosts =
-    mode === "user"
-      ? await userTimelineX(value, limit).catch(() => [] as SocialItem[])
-      : await searchX(value, limit).catch(() => [] as SocialItem[]);
+  // Primary: live X via FxTwitter (Firecrawl fallback). Bluesky as final
+  // safety net so the column never goes blank.
+  const { searchX, userTimelineX, fetchHandlesTimeline, SOLANA_KOLS } =
+    await import("./xfeed.server");
+
+  // Magic query: "kols" / "@kols" / "solana kols" fan-out across the
+  // curated KOL list and merge into one ranked feed.
+  const isKols = /^@?kols$/i.test(value) || /^solana\s+kols$/i.test(value);
+  let xPosts: SocialItem[];
+  if (isKols) {
+    xPosts = await fetchHandlesTimeline(SOLANA_KOLS, 3, limit).catch(
+      () => [] as SocialItem[],
+    );
+  } else if (mode === "user") {
+    xPosts = await userTimelineX(value, limit).catch(() => [] as SocialItem[]);
+  } else {
+    xPosts = await searchX(value, limit).catch(() => [] as SocialItem[]);
+  }
 
   let bsky: SocialItem[] = [];
-  if (xPosts.length < 4) {
+  if (!isKols && xPosts.length < 4) {
     bsky = await fetchBlueskyFeed(mode, value, Math.ceil(limit / 2)).catch(
       () => [] as SocialItem[],
     );
