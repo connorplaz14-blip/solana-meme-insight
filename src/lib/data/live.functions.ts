@@ -87,22 +87,42 @@ export const getMarketPulseFn = createServerFn({ method: "GET" }).handler(async 
 });
 
 export const getTokenChartFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { address: string; points?: number }) => ({
-    address: String(d?.address ?? ""),
-    points: Number(d?.points ?? 96),
-  }))
+  .inputValidator((d: { address: string; timeframe?: string }) => {
+    const tf = String(d?.timeframe ?? "1D");
+    const safe: "1H" | "4H" | "1D" | "1W" =
+      tf === "1H" || tf === "4H" || tf === "1W" ? tf : "1D";
+    return { address: String(d?.address ?? ""), timeframe: safe };
+  })
   .handler(async ({ data }) => {
-    if (!data.address) return [];
     const { withCache } = await import("./cache.server");
     const { trackProvider } = await import("./health.server");
+    const { fetchBirdeyeHistory, buildSyntheticChart } = await import(
+      "./providers/birdeye-ohlcv.server"
+    );
+    if (!data.address) {
+      return buildSyntheticChart("empty", 1, 0, data.timeframe);
+    }
+    // Birdeye primary — works on free tier with 1m/5m/15m/1H intervals.
+    if (process.env.BIRDEYE_API_KEY) {
+      try {
+        return await withCache(
+          `birdeye:hist:${data.address}:${data.timeframe}`,
+          45,
+          () => trackProvider("birdeye", () => fetchBirdeyeHistory(data.address, data.timeframe)),
+        );
+      } catch {
+        // fall through to synth
+      }
+    }
+    // Synthetic fallback — anchored to DexScreener current price + 24h change.
     const { fetchSolanaTrending } = await import("./providers/dexscreener.server");
-    const { buildSyntheticSeries } = await import("./providers/chart.server");
     const tokens = await withCache("dexscreener:trending:30", 60, () =>
       trackProvider("dexscreener", () => fetchSolanaTrending(30)),
     );
     const token = tokens.find((t) => t.address === data.address) ?? tokens[0];
-    if (!token) return [];
-    return buildSyntheticSeries(token, data.points);
+    const price = token?.priceUsd ?? 0;
+    const change = token?.changes.h24 ?? 0;
+    return buildSyntheticChart(data.address, price, change, data.timeframe);
   });
 
 export const getNarrativesFn = createServerFn({ method: "GET" }).handler(async (): Promise<NarrativeReport> => {
