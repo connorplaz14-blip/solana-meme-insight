@@ -31,7 +31,7 @@ function NavBody({ onNavigate }: { onNavigate?: () => void }) {
           </span>
         </div>
         <div className="font-mono text-[10px] text-pos mt-0.5 flex items-center gap-1">
-          <Flame className="h-3 w-3" /> Phase 2 · Live data
+          <Flame className="h-3 w-3" /> Limited access version
         </div>
       </div>
       <ul className="flex-1 py-2 overflow-y-auto">
