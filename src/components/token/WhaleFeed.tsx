@@ -1,5 +1,4 @@
 import { useState, useMemo } from "react";
-import { Link } from "@tanstack/react-router";
 import { useTokenWhaleTrades } from "@/lib/data";
 import { fmtUsd, fmtNum, shortAddr } from "@/lib/format";
 
@@ -137,13 +136,12 @@ export function WhaleFeed({ address }: { address: string }) {
                     </td>
                     <td className="text-right font-mono text-muted-foreground">{w.trades}</td>
                     <td>
-                      <Link
-                        to="/wallet-pnl"
-                        search={{ address: w.owner }}
+                      <a
+                        href={`/wallet-pnl?address=${encodeURIComponent(w.owner)}`}
                         className="font-mono text-[10px] uppercase tracking-wider text-info hover:underline"
                       >
                         P&L →
-                      </Link>
+                      </a>
                     </td>
                   </tr>
                 );
