@@ -36,6 +36,8 @@ export type SocialItem = {
   retweets?: number;
   views?: number;
   hasMedia?: boolean;
+  photos?: { url: string; width?: number; height?: number }[];
+  videos?: { url: string; thumb?: string; width?: number; height?: number }[];
 };
 
 const NEWS_FEEDS: { source: string; url: string }[] = [

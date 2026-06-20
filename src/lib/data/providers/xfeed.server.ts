@@ -78,6 +78,8 @@ function xtweetToItem(t: XTweet): SocialItem {
     retweets: t.retweets,
     views: t.views,
     hasMedia: t.hasMedia,
+    photos: t.photos,
+    videos: t.videos,
   };
 }
 
