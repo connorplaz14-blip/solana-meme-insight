@@ -202,3 +202,60 @@ export async function fetchPumpfunLaunches(limit = 25): Promise<PumpLaunch[]> {
     .sort((a, b) => b.liquidityUsd - a.liquidityUsd)
     .slice(0, limit);
 }
+
+export interface STWhaleTrade {
+  signature: string;
+  owner: string;
+  side: "buy" | "sell";
+  tokenAmount: number;
+  valueUsd: number;
+  blockUnixTime: number;
+}
+
+type STTradeRow = {
+  tx?: string;
+  signature?: string;
+  wallet?: string;
+  owner?: string;
+  type?: string;
+  side?: string;
+  time?: number; // ms
+  blockTime?: number; // s
+  volume?: { usd?: number } | number;
+  volumeUsd?: number;
+  amount?: number;
+  from?: { amount?: number; token?: { decimals?: number } };
+  to?: { amount?: number; token?: { decimals?: number } };
+};
+
+export async function fetchTokenTrades(mint: string, limit = 50): Promise<STWhaleTrade[]> {
+  const apiKey = process.env.SOLANA_TRACKER_API_KEY;
+  if (!apiKey) throw new Error("SOLANA_TRACKER_API_KEY not configured");
+  const res = await fetch(TRADES_ENDPOINT(mint), {
+    headers: { accept: "application/json", "x-api-key": apiKey },
+  });
+  if (!res.ok) throw new Error(`Solana Tracker trades ${res.status}`);
+  const json = (await res.json()) as { trades?: STTradeRow[] } | STTradeRow[];
+  const rows: STTradeRow[] = Array.isArray(json) ? json : (json.trades ?? []);
+  return rows.slice(0, limit).map((r): STWhaleTrade => {
+    const sideRaw = (r.type ?? r.side ?? "").toString().toLowerCase();
+    const side: "buy" | "sell" = sideRaw.includes("buy") ? "buy" : "sell";
+    const usd =
+      typeof r.volume === "number"
+        ? r.volume
+        : (r.volume?.usd ?? r.volumeUsd ?? 0);
+    const ts =
+      typeof r.time === "number" ? Math.floor(r.time / 1000)
+      : typeof r.blockTime === "number" ? r.blockTime
+      : 0;
+    const tokenAmount = r.amount ?? r.to?.amount ?? r.from?.amount ?? 0;
+    return {
+      signature: r.tx ?? r.signature ?? "",
+      owner: r.wallet ?? r.owner ?? "",
+      side,
+      tokenAmount,
+      valueUsd: usd,
+      blockUnixTime: ts,
+    };
+  }).filter((t) => t.signature);
+}
