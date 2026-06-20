@@ -6,13 +6,13 @@ import { TokenListEmbed } from "@/components/dashboard/embeds/TokenListEmbed";
 export const Route = createFileRoute("/coins")({
   head: () => ({
     meta: [
-      { title: "Coins · MemeDesk" },
+      { title: "Coins · SCBOL" },
       {
         name: "description",
         content:
           "Live Solana coin feeds: 24h trending pools and the Pump.fun new-pair stream, side by side.",
       },
-      { property: "og:title", content: "Coins · MemeDesk" },
+      { property: "og:title", content: "Coins · SCBOL" },
       {
         property: "og:description",
         content: "24h trending Solana pools + live Pump.fun new pairs.",

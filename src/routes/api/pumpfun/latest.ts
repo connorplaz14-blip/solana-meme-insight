@@ -48,7 +48,7 @@ async function fetchPumpfunSeed(): Promise<Launch[]> {
           signal: ctrl.signal,
           headers: {
             accept: "application/json",
-            "user-agent": "Mozilla/5.0 MemeDeskBot/1.0",
+            "user-agent": "Mozilla/5.0 SCBOLBot/1.0",
           },
         },
       );

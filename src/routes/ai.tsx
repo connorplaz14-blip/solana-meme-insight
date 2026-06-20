@@ -5,13 +5,13 @@ import { DailyBrief } from "@/components/ai/DailyBrief";
 export const Route = createFileRoute("/ai")({
   head: () => ({
     meta: [
-      { title: "AI Desk · MemeDesk" },
+      { title: "AI Desk · SCBOL" },
       {
         name: "description",
         content:
-          "Chat with MemeDesk AI about today's Solana memecoin meta — grounded in live trending, Pump.fun launches and the daily narrative brief.",
+          "Chat with SCBOL AI about today's Solana memecoin meta — grounded in live trending, Pump.fun launches and the daily narrative brief.",
       },
-      { property: "og:title", content: "AI Desk · MemeDesk" },
+      { property: "og:title", content: "AI Desk · SCBOL" },
       {
         property: "og:description",
         content: "AI-powered Solana memecoin meta analyst, grounded in live on-chain data.",

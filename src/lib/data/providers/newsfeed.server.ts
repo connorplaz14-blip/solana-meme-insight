@@ -108,7 +108,7 @@ async function fetchFeed(url: string, timeoutMs = 6000): Promise<string | null> 
     const r = await fetch(url, {
       signal: ctrl.signal,
       headers: {
-        "user-agent": "Mozilla/5.0 MemeDeskBot/1.0 (+https://memedesk.app)",
+        "user-agent": "Mozilla/5.0 SCBOLBot/1.0 (+https://memedesk.app)",
         accept: "application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.5",
       },
     });
@@ -296,7 +296,7 @@ async function bskyJson<T>(path: string, timeoutMs = 6000): Promise<T | null> {
       signal: ctrl.signal,
       headers: {
         accept: "application/json",
-        "user-agent": "MemeDeskBot/1.0 (+https://memedesk.app)",
+        "user-agent": "SCBOLBot/1.0 (+https://memedesk.app)",
       },
     });
     clearTimeout(t);
@@ -361,7 +361,7 @@ async function fetchSocialTickers(): Promise<StTicker[]> {
       "https://socialtickers.com/api/v1/leaderboard?class=crypto&sort=trending&win=1h",
       {
         signal: ctrl.signal,
-        headers: { accept: "application/json", "user-agent": "MemeDeskBot/1.0" },
+        headers: { accept: "application/json", "user-agent": "SCBOLBot/1.0" },
       },
     );
     clearTimeout(t);
@@ -436,7 +436,7 @@ async function dexJson<T>(url: string): Promise<T | null> {
     const t = setTimeout(() => ctrl.abort(), 6000);
     const r = await fetch(url, {
       signal: ctrl.signal,
-      headers: { accept: "application/json", "user-agent": "MemeDeskBot/1.0" },
+      headers: { accept: "application/json", "user-agent": "SCBOLBot/1.0" },
     });
     clearTimeout(t);
     if (!r.ok) return null;

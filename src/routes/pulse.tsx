@@ -10,13 +10,13 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/pulse")({
   head: () => ({
     meta: [
-      { title: "Pulse · Fast Info Terminal · MemeDesk" },
+      { title: "Pulse · Fast Info Terminal · SCBOL" },
       {
         name: "description",
         content:
           "Real-time Solana memecoin terminal: X cashtag stream, crypto news, 24h movers, and whale pings across your watchlist — all in one scannable view.",
       },
-      { property: "og:title", content: "Pulse · Fast Info Terminal · MemeDesk" },
+      { property: "og:title", content: "Pulse · Fast Info Terminal · SCBOL" },
       {
         property: "og:description",
         content: "X, news, movers, and whale pings — one terminal, auto-refreshed.",

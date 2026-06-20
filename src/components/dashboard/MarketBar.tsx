@@ -17,7 +17,7 @@ export function MarketBar() {
   return (
     <div className="flex items-stretch h-10 border-b border-border bg-panel">
       <div className="flex items-center px-3 border-r border-border min-w-[140px]">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos">◆ MemeDesk</span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos">◆ SCBOL</span>
       </div>
       <Cell label="SOL/USD" value={data ? fmtUsd(data.priceUsd, { compact: false, digits: 2 }) : "…"} />
       <Cell label="24h Δ" value={data ? fmtPct(data.change24hPct) : "…"}

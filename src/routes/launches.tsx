@@ -21,7 +21,7 @@ const seedQueryOptions = queryOptions({
 export const Route = createFileRoute("/launches")({
   head: () => ({
     meta: [
-      { title: "Launches · Live pump.fun Stream · MemeDesk" },
+      { title: "Launches · Live pump.fun Stream · SCBOL" },
       {
         name: "description",
         content:
