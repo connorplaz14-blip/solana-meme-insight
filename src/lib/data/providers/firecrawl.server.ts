@@ -14,9 +14,7 @@ export type FcSearchResult = {
 
 type FcSearchResponse = {
   success?: boolean;
-  data?:
-    | FcSearchResult[]
-    | { web?: FcSearchResult[]; news?: FcSearchResult[] };
+  data?: FcSearchResult[] | { web?: FcSearchResult[]; news?: FcSearchResult[] };
   // v2 sometimes nests under `web`
   web?: FcSearchResult[];
 };

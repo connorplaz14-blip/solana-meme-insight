@@ -20,9 +20,7 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
       const target = e.target as HTMLElement | null;
       const inField =
         !!target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable);
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
       if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         toggle();

@@ -31,10 +31,7 @@ type PumpCoin = {
   website?: string;
 };
 
-const PUMP_HOSTS = [
-  "https://frontend-api-v3.pump.fun",
-  "https://frontend-api-v2.pump.fun",
-];
+const PUMP_HOSTS = ["https://frontend-api-v3.pump.fun", "https://frontend-api-v2.pump.fun"];
 
 let cache: { ts: number; data: Launch[] } | null = null;
 const TTL_MS = 5000;

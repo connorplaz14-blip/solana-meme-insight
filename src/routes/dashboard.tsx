@@ -7,12 +7,22 @@ import { Panel, PanelHeader, PanelBody } from "@/components/terminal/Panel";
 import { Coins, MessageSquare, TrendingUp } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [
-    { title: "SCBOL · Solana Memecoin Terminal" },
-    { name: "description", content: "Real-time-style intelligence dashboard for Solana memecoins: trending tokens, daily AI narratives, market pulse, and watchlist." },
-    { property: "og:title", content: "SCBOL · Solana Memecoin Terminal" },
-    { property: "og:description", content: "Solana memecoin intelligence dashboard. Trending tokens, narratives, market pulse." },
-  ]}),
+  head: () => ({
+    meta: [
+      { title: "SCBOL · Solana Memecoin Terminal" },
+      {
+        name: "description",
+        content:
+          "Real-time-style intelligence dashboard for Solana memecoins: trending tokens, daily AI narratives, market pulse, and watchlist.",
+      },
+      { property: "og:title", content: "SCBOL · Solana Memecoin Terminal" },
+      {
+        property: "og:description",
+        content:
+          "Solana memecoin intelligence dashboard. Trending tokens, narratives, market pulse.",
+      },
+    ],
+  }),
   component: Dashboard,
 });
 
@@ -20,12 +30,20 @@ function Dashboard() {
   return (
     <div className="p-3 space-y-3">
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
-        <div className="xl:col-span-4"><MemeOfTheDayCard /></div>
-        <div className="xl:col-span-8"><TokenChartPanel /></div>
+        <div className="xl:col-span-4">
+          <MemeOfTheDayCard />
+        </div>
+        <div className="xl:col-span-8">
+          <TokenChartPanel />
+        </div>
       </div>
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-3">
-        <div className="xl:col-span-8"><JumpInCards /></div>
-        <div className="xl:col-span-4"><MarketPulse /></div>
+        <div className="xl:col-span-8">
+          <JumpInCards />
+        </div>
+        <div className="xl:col-span-4">
+          <MarketPulse />
+        </div>
       </div>
     </div>
   );
@@ -66,12 +84,23 @@ function JumpInCards() {
               to={c.to}
               className="group border border-border bg-panel-2 hover:bg-accent/30 hover:border-foreground/30 transition-colors p-3 flex flex-col gap-2"
             >
-              <c.Icon className={
-                "h-4 w-4 " + (c.accent === "pos" ? "text-pos" : c.accent === "warn" ? "text-warn" : "text-info")
-              } />
-              <div className="font-mono text-[12px] uppercase tracking-[0.14em] text-foreground/90">{c.title}</div>
+              <c.Icon
+                className={
+                  "h-4 w-4 " +
+                  (c.accent === "pos"
+                    ? "text-pos"
+                    : c.accent === "warn"
+                      ? "text-warn"
+                      : "text-info")
+                }
+              />
+              <div className="font-mono text-[12px] uppercase tracking-[0.14em] text-foreground/90">
+                {c.title}
+              </div>
               <div className="text-[11px] text-muted-foreground leading-relaxed">{c.desc}</div>
-              <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground group-hover:text-foreground mt-auto">Open →</div>
+              <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground group-hover:text-foreground mt-auto">
+                Open →
+              </div>
             </Link>
           ))}
         </div>

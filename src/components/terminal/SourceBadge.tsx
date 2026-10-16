@@ -1,9 +1,16 @@
 import type { Source } from "@/types";
 
 const labels: Record<Source, string> = {
-  dexscreener: "DEX", geckoterminal: "GECKO", coingecko: "CG", bitquery: "BQ",
-  "solana-tracker": "ST", birdeye: "BE", vybe: "VY",
-  "pump.fun": "PF", gmgn: "GMGN", mock: "MOCK",
+  dexscreener: "DEX",
+  geckoterminal: "GECKO",
+  coingecko: "CG",
+  bitquery: "BQ",
+  "solana-tracker": "ST",
+  birdeye: "BE",
+  vybe: "VY",
+  "pump.fun": "PF",
+  gmgn: "GMGN",
+  mock: "MOCK",
 };
 export function SourceBadge({ source }: { source: Source }) {
   return (

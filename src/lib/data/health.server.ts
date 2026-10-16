@@ -43,9 +43,7 @@ export type ProviderHealthRow = {
 };
 
 export async function readAllHealth(): Promise<ProviderHealthRow[]> {
-  const { data, error } = await supabaseAdmin
-    .from("provider_health")
-    .select("*");
+  const { data, error } = await supabaseAdmin.from("provider_health").select("*");
   if (error || !data) return [];
   return data as ProviderHealthRow[];
 }

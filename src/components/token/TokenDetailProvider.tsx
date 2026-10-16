@@ -57,15 +57,35 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
                 <span className="text-base font-medium">{token.name ?? token.symbol}</span>
                 <span className="font-mono text-xs text-muted-foreground">${token.symbol}</span>
               </div>
-              <div className="mt-0.5"><CopyAddress address={addr} /></div>
+              <div className="mt-0.5">
+                <CopyAddress address={addr} />
+              </div>
             </div>
             <div className="ml-auto flex items-center gap-2 font-mono text-[10px] uppercase tracking-wider">
-              <a href={`https://dexscreener.com/solana/${addr}`} target="_blank" rel="noreferrer"
-                className="border border-border bg-panel-2 px-2 py-1 hover:bg-accent">DexScreener ↗</a>
-              <a href={`https://pump.fun/${addr}`} target="_blank" rel="noreferrer"
-                className="border border-border bg-panel-2 px-2 py-1 hover:bg-accent">Pump.fun ↗</a>
-              <a href={`https://solscan.io/token/${addr}`} target="_blank" rel="noreferrer"
-                className="border border-border bg-panel-2 px-2 py-1 hover:bg-accent">Solscan ↗</a>
+              <a
+                href={`https://dexscreener.com/solana/${addr}`}
+                target="_blank"
+                rel="noreferrer"
+                className="border border-border bg-panel-2 px-2 py-1 hover:bg-accent"
+              >
+                DexScreener ↗
+              </a>
+              <a
+                href={`https://pump.fun/${addr}`}
+                target="_blank"
+                rel="noreferrer"
+                className="border border-border bg-panel-2 px-2 py-1 hover:bg-accent"
+              >
+                Pump.fun ↗
+              </a>
+              <a
+                href={`https://solscan.io/token/${addr}`}
+                target="_blank"
+                rel="noreferrer"
+                className="border border-border bg-panel-2 px-2 py-1 hover:bg-accent"
+              >
+                Solscan ↗
+              </a>
             </div>
           </div>
         </DialogTitle>
@@ -73,11 +93,21 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
 
       <Tabs defaultValue="chart" className="flex-1 min-h-0 flex flex-col">
         <TabsList className="mx-4 mt-3 self-start bg-panel-2 border border-border h-8 overflow-x-auto max-w-[calc(100%-2rem)]">
-          <TabsTrigger value="chart" className="font-mono text-[11px] uppercase tracking-wider">Chart</TabsTrigger>
-          <TabsTrigger value="txns" className="font-mono text-[11px] uppercase tracking-wider">Transactions</TabsTrigger>
-          <TabsTrigger value="holders" className="font-mono text-[11px] uppercase tracking-wider">Holders</TabsTrigger>
-          <TabsTrigger value="whales" className="font-mono text-[11px] uppercase tracking-wider">Whales</TabsTrigger>
-          <TabsTrigger value="risk" className="font-mono text-[11px] uppercase tracking-wider">Risk</TabsTrigger>
+          <TabsTrigger value="chart" className="font-mono text-[11px] uppercase tracking-wider">
+            Chart
+          </TabsTrigger>
+          <TabsTrigger value="txns" className="font-mono text-[11px] uppercase tracking-wider">
+            Transactions
+          </TabsTrigger>
+          <TabsTrigger value="holders" className="font-mono text-[11px] uppercase tracking-wider">
+            Holders
+          </TabsTrigger>
+          <TabsTrigger value="whales" className="font-mono text-[11px] uppercase tracking-wider">
+            Whales
+          </TabsTrigger>
+          <TabsTrigger value="risk" className="font-mono text-[11px] uppercase tracking-wider">
+            Risk
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="chart" className="flex-1 min-h-0 m-0 p-3 pt-2">
@@ -129,7 +159,6 @@ function TokenDetailBody({ token }: { token: TokenRef }) {
         <TabsContent value="risk" className="flex-1 min-h-0 m-0 p-3 pt-2">
           <RiskPanel address={addr} />
         </TabsContent>
-
       </Tabs>
     </div>
   );

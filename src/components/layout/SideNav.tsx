@@ -1,5 +1,19 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutGrid, Flame, TrendingUp, Newspaper, Star, Wallet, Settings, Trophy, Coins, MessageSquare, X, Radio, Rocket } from "lucide-react";
+import {
+  LayoutGrid,
+  Flame,
+  TrendingUp,
+  Newspaper,
+  Star,
+  Wallet,
+  Settings,
+  Trophy,
+  Coins,
+  MessageSquare,
+  X,
+  Radio,
+  Rocket,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMobileNav } from "./MobileNavContext";
 import { useEffect } from "react";
@@ -27,11 +41,11 @@ function NavBody({ onNavigate }: { onNavigate?: () => void }) {
         <div className="flex items-center gap-1.5">
           <ScotlandFlag className="h-3.5 w-3.5 rounded-sm" />
           <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            SCBOL
+            CTRL
           </span>
         </div>
         <div className="font-mono text-[10px] text-pos mt-0.5 flex items-center gap-1">
-          <Flame className="h-3 w-3" /> Limited access version
+          <Flame className="h-3 w-3" /> Intelligence / Private preview
         </div>
       </div>
       <ul className="flex-1 py-2 overflow-y-auto">
@@ -47,7 +61,7 @@ function NavBody({ onNavigate }: { onNavigate?: () => void }) {
                   "flex items-center gap-2 px-3 py-2 text-[12px] border-l-2 border-transparent md:py-1.5",
                   active
                     ? "bg-accent/40 border-pos text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/20",
                 )}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -92,13 +106,13 @@ export function SideNav() {
       <nav
         className={cn(
           "md:hidden fixed top-0 left-0 z-50 h-full w-64 border-r border-border bg-sidebar flex flex-col transition-transform duration-200",
-          open ? "translate-x-0" : "-translate-x-full"
+          open ? "translate-x-0" : "-translate-x-full",
         )}
         aria-hidden={!open}
       >
         <div className="flex items-center justify-between px-3 h-10 border-b border-border">
           <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos flex items-center gap-1.5">
-            <ScotlandFlag className="h-3.5 w-3.5 rounded-sm" /> SCBOL
+            <ScotlandFlag className="h-3.5 w-3.5 rounded-sm" /> CTRL
           </span>
           <button
             onClick={() => setOpen(false)}

@@ -22,10 +22,7 @@ type WsMsg = {
 
 export type StreamStatus = "connecting" | "open" | "closed" | "offline";
 
-export function usePumpfunStream(opts: {
-  seed: Launch[];
-  solPriceUsd?: number;
-}) {
+export function usePumpfunStream(opts: { seed: Launch[]; solPriceUsd?: number }) {
   const { seed, solPriceUsd } = opts;
   const [launches, setLaunches] = useState<Launch[]>(seed);
   const [status, setStatus] = useState<StreamStatus>("connecting");
@@ -119,9 +116,7 @@ export function usePumpfunStream(opts: {
         });
         // Subscribe to trades for this mint to keep mcap fresh
         try {
-          ws.send(
-            JSON.stringify({ method: "subscribeTokenTrade", keys: [msg.mint] }),
-          );
+          ws.send(JSON.stringify({ method: "subscribeTokenTrade", keys: [msg.mint] }));
         } catch {
           /* ignore */
         }

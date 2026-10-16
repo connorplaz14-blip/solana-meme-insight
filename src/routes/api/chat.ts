@@ -17,9 +17,8 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("Missing LOVABLE_API_KEY", { status: 500 });
         }
 
-        const { createLovableAiGatewayProvider } = await import(
-          "@/lib/data/providers/gateway.server"
-        );
+        const { createLovableAiGatewayProvider } =
+          await import("@/lib/data/providers/gateway.server");
         const { buildMarketSnapshot } = await import("@/lib/ai/snapshot.server");
         const { buildSCBOLTools } = await import("@/lib/ai/tools.server");
 

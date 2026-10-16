@@ -10,7 +10,11 @@ function read(): WatchlistEntry[] {
   if (typeof window === "undefined") return seedWatchlist;
   const raw = window.localStorage.getItem(KEY);
   if (!raw) return seedWatchlist;
-  try { return JSON.parse(raw) as WatchlistEntry[]; } catch { return seedWatchlist; }
+  try {
+    return JSON.parse(raw) as WatchlistEntry[];
+  } catch {
+    return seedWatchlist;
+  }
 }
 function write(v: WatchlistEntry[]) {
   if (typeof window === "undefined") return;
@@ -18,8 +22,12 @@ function write(v: WatchlistEntry[]) {
   listeners.forEach((l) => l());
 }
 
-export function getWatchlist() { return read(); }
-export function isWatched(address: string) { return read().some((e) => e.address === address); }
+export function getWatchlist() {
+  return read();
+}
+export function isWatched(address: string) {
+  return read().some((e) => e.address === address);
+}
 export function addToWatchlist(entry: WatchlistEntry) {
   const cur = read();
   if (cur.some((e) => e.address === entry.address)) return;
@@ -28,7 +36,12 @@ export function addToWatchlist(entry: WatchlistEntry) {
 export function removeFromWatchlist(address: string) {
   write(read().filter((e) => e.address !== address));
 }
-export function subscribeWatchlist(cb: () => void) { listeners.add(cb); return () => { listeners.delete(cb); }; }
+export function subscribeWatchlist(cb: () => void) {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+}
 
 export type PriceAlert = {
   address: string;
@@ -42,15 +55,23 @@ function readAlerts(): PriceAlert[] {
   if (typeof window === "undefined") return [];
   const raw = window.localStorage.getItem(ALERT_KEY);
   if (!raw) return [];
-  try { return JSON.parse(raw) as PriceAlert[]; } catch { return []; }
+  try {
+    return JSON.parse(raw) as PriceAlert[];
+  } catch {
+    return [];
+  }
 }
 function writeAlerts(v: PriceAlert[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(ALERT_KEY, JSON.stringify(v));
   alertListeners.forEach((l) => l());
 }
-export function getAlerts() { return readAlerts(); }
-export function getAlert(address: string) { return readAlerts().find((a) => a.address === address); }
+export function getAlerts() {
+  return readAlerts();
+}
+export function getAlert(address: string) {
+  return readAlerts().find((a) => a.address === address);
+}
 export function setAlert(alert: PriceAlert) {
   const cur = readAlerts().filter((a) => a.address !== alert.address);
   writeAlerts([alert, ...cur]);
@@ -65,4 +86,9 @@ export function markAlertTriggered(address: string) {
   cur[idx] = { ...cur[idx], triggeredAt: new Date().toISOString() };
   writeAlerts(cur);
 }
-export function subscribeAlerts(cb: () => void) { alertListeners.add(cb); return () => { alertListeners.delete(cb); }; }
+export function subscribeAlerts(cb: () => void) {
+  alertListeners.add(cb);
+  return () => {
+    alertListeners.delete(cb);
+  };
+}

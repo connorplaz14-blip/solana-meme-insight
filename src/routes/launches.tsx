@@ -42,8 +42,7 @@ export const Route = createFileRoute("/launches")({
       },
     ],
   }),
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(seedQueryOptions),
+  loader: ({ context }) => context.queryClient.ensureQueryData(seedQueryOptions),
   component: LaunchesPage,
 });
 
@@ -77,8 +76,7 @@ function LaunchesPage() {
     const total = launches.length;
     const withMcap = launches.filter((l) => (l.marketCapUsd ?? 0) > 0);
     const avg =
-      withMcap.reduce((s, l) => s + (l.marketCapUsd ?? 0), 0) /
-      Math.max(withMcap.length, 1);
+      withMcap.reduce((s, l) => s + (l.marketCapUsd ?? 0), 0) / Math.max(withMcap.length, 1);
     const max = withMcap.reduce(
       (m, l) => ((l.marketCapUsd ?? 0) > (m.marketCapUsd ?? 0) ? l : m),
       withMcap[0],
@@ -110,12 +108,7 @@ function LaunchesPage() {
         onMinDevBuy={setMinDevBuy}
       />
 
-      <StatsStrip
-        total={stats.total}
-        avgMcap={stats.avg}
-        top={stats.max}
-        perMin={perMin}
-      />
+      <StatsStrip total={stats.total} avgMcap={stats.avg} top={stats.max} perMin={perMin} />
 
       <div className="border border-border bg-card/40">
         <div className="grid grid-cols-[1fr_90px_110px_90px_60px] gap-2 px-3 py-1.5 border-b border-border bg-muted/20 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
@@ -128,9 +121,7 @@ function LaunchesPage() {
         <ul className="divide-y divide-border">
           {filtered.length === 0 && (
             <li className="p-6 text-center font-mono text-[11px] text-muted-foreground">
-              {status === "open"
-                ? "Waiting for next launch…"
-                : "Connecting to pump.fun stream…"}
+              {status === "open" ? "Waiting for next launch…" : "Connecting to pump.fun stream…"}
             </li>
           )}
           {filtered.map((l) => (
@@ -154,9 +145,7 @@ function StatusPill({ status, perMin }: { status: StreamStatus; perMin: number }
     <span className="inline-flex items-center gap-1.5 px-2 py-1 border border-border bg-panel-2 font-mono text-[10px] text-muted-foreground">
       <span className={cn("h-1.5 w-1.5 rounded-full", v.dot)} />
       {v.label}
-      {status === "open" && (
-        <span className="text-foreground ml-1">· {perMin}/min</span>
-      )}
+      {status === "open" && <span className="text-foreground ml-1">· {perMin}/min</span>}
     </span>
   );
 }
@@ -284,9 +273,9 @@ function LaunchRow({ launch }: { launch: Launch }) {
     >
       <div className="flex items-center gap-2 min-w-0">
         {launch.imageUrl ? (
-          // eslint-disable-next-line jsx-a11y/alt-text
           <img
             src={launch.imageUrl}
+            alt={launch.name}
             className="h-8 w-8 rounded-sm border border-border bg-muted/20 object-cover"
             loading="lazy"
           />
@@ -331,9 +320,7 @@ function LaunchRow({ launch }: { launch: Launch }) {
           </div>
         </div>
       </div>
-      <span className="font-mono text-[11px] text-right text-muted-foreground">
-        {age}
-      </span>
+      <span className="font-mono text-[11px] text-right text-muted-foreground">{age}</span>
       <span className="font-mono text-[11px] text-right text-foreground">
         {launch.marketCapUsd ? fmtUsd(launch.marketCapUsd) : "—"}
       </span>

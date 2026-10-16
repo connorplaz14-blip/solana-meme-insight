@@ -23,11 +23,11 @@ export type SocialItem = {
   kind?: "post" | "signal" | "launch";
   ticker?: string;
   icon?: string;
-  signal?: number;       // 0-100
-  buzz?: number;         // -100..100
+  signal?: number; // 0-100
+  buzz?: number; // -100..100
   mentions?: number;
-  priceChg?: number;     // percent
-  spark?: number[];      // mention counts timeseries
+  priceChg?: number; // percent
+  spark?: number[]; // mention counts timeseries
   links?: { label?: string; type?: string; url: string }[];
   headlines?: { text: string; src: string; lean?: string }[];
   // Engagement metrics (X posts via FxTwitter)
@@ -61,7 +61,9 @@ function decodeEntities(s: string): string {
 }
 
 function stripHtml(s: string): string {
-  return decodeEntities(s.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
+  return decodeEntities(s.replace(/<[^>]+>/g, ""))
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function pick(block: string, tag: string): string | undefined {
@@ -70,8 +72,16 @@ function pick(block: string, tag: string): string | undefined {
   return m ? decodeEntities(m[1]).trim() : undefined;
 }
 
-function parseItems(xml: string): { raw: string; title?: string; link?: string; pubDate?: string; description?: string }[] {
-  const out: { raw: string; title?: string; link?: string; pubDate?: string; description?: string }[] = [];
+function parseItems(
+  xml: string,
+): { raw: string; title?: string; link?: string; pubDate?: string; description?: string }[] {
+  const out: {
+    raw: string;
+    title?: string;
+    link?: string;
+    pubDate?: string;
+    description?: string;
+  }[] = [];
   const re = /<(item|entry)[^>]*>([\s\S]*?)<\/\1>/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(xml)) !== null) {
@@ -112,7 +122,9 @@ async function fetchFeed(url: string, timeoutMs = 6000): Promise<string | null> 
 }
 
 export async function fetchAggregatedNews(limit = 40): Promise<NewsItem[]> {
-  const xmls = await Promise.all(NEWS_FEEDS.map((f) => fetchFeed(f.url).then((x) => ({ ...f, xml: x }))));
+  const xmls = await Promise.all(
+    NEWS_FEEDS.map((f) => fetchFeed(f.url).then((x) => ({ ...f, xml: x }))),
+  );
   const items: NewsItem[] = [];
   for (const f of xmls) {
     if (!f.xml) continue;
@@ -171,9 +183,7 @@ export async function fetchSocialFeed(query: string, limit = 30): Promise<Social
       roster.push(h);
       if (roster.length >= 60) break;
     }
-    xPosts = await fetchHandlesTimeline(roster, 2, limit).catch(
-      () => [] as SocialItem[],
-    );
+    xPosts = await fetchHandlesTimeline(roster, 2, limit).catch(() => [] as SocialItem[]);
   } else if (mode === "user") {
     xPosts = await userTimelineX(value, limit).catch(() => [] as SocialItem[]);
   } else {
@@ -285,9 +295,7 @@ async function fetchBlueskyFeed(
   const json = await bskyJson<{ posts?: BskyPost[] }>(
     `/app.bsky.feed.searchPosts?q=${encodeURIComponent(value)}&limit=${limit}&sort=latest`,
   );
-  return (json?.posts ?? [])
-    .map((p) => normalizePost(p))
-    .filter((x): x is SocialItem => !!x);
+  return (json?.posts ?? []).map((p) => normalizePost(p)).filter((x): x is SocialItem => !!x);
 }
 // ─── socialtickers.com (signal scores) ──────────────────────────────────────
 // No auth. Single endpoint returns 60+ crypto tickers with signal score,
@@ -329,10 +337,7 @@ function matchTicker(t: StTicker, mode: "user" | "search", value: string): boole
   if (mode === "user") return false;
   const v = value.replace(/^\$/, "").toLowerCase();
   if (!v) return true;
-  return (
-    t.ticker?.toLowerCase().includes(v) ||
-    (t.name?.toLowerCase().includes(v) ?? false)
-  );
+  return t.ticker?.toLowerCase().includes(v) || (t.name?.toLowerCase().includes(v) ?? false);
 }
 
 async function fetchSocialSignals(
@@ -347,10 +352,11 @@ async function fetchSocialSignals(
     id: `st:${t.ticker}`,
     author: t.name ?? t.ticker,
     handle: `$${t.ticker}`,
-    text: (t.news?.items ?? [])
-      .slice(0, 2)
-      .map((n) => n.t)
-      .join(" · ") || `${t.name ?? t.ticker} trending`,
+    text:
+      (t.news?.items ?? [])
+        .slice(0, 2)
+        .map((n) => n.t)
+        .join(" · ") || `${t.name ?? t.ticker} trending`,
     url: `https://socialtickers.com/asset/${encodeURIComponent(t.ticker)}`,
     publishedAt: now,
     source: "SocialTickers",
@@ -419,9 +425,7 @@ async function fetchDexLaunches(
         (p) =>
           (p.description ?? "").toLowerCase().includes(needle) ||
           (p.tokenAddress ?? "").toLowerCase().includes(needle) ||
-          (p.links ?? []).some((l) =>
-            (l.url ?? "").toLowerCase().includes(needle),
-          ),
+          (p.links ?? []).some((l) => (l.url ?? "").toLowerCase().includes(needle)),
       )
     : merged;
 

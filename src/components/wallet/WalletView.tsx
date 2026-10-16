@@ -1,177 +1,423 @@
-import { useEffect, useState } from "react";
-import { Panel, PanelHeader, PanelBody } from "@/components/terminal/Panel";
-import { StatCell } from "@/components/terminal/StatCell";
-import { useWalletPnL } from "@/lib/data";
-import { fmtUsd, fmtPct } from "@/lib/format";
-import { ChangeCell } from "@/components/terminal/ChangeCell";
-import { CopyAddress } from "@/components/terminal/CopyAddress";
-import { SourceBadge } from "@/components/terminal/SourceBadge";
-import { Info } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ArrowUpRight, Check, SlidersHorizontal } from "lucide-react";
+import { getWalletAnalysisFn } from "@/lib/wallet/wallet.functions";
+import { parseWalletRequest, type WalletJob, type WalletRequest } from "@/lib/wallet/contracts";
+import { defaults, readPreferences, type WalletPreferences } from "@/lib/wallet/preferences";
 
-export function WalletView({ initialAddress }: { initialAddress?: string } = {}) {
-  const [addr, setAddr] = useState(initialAddress ?? "");
-  const [submitted, setSubmitted] = useState<string | null>(initialAddress ?? null);
+const storageKey = "ctrl:wallet-layout:v1";
+const money = (value: string | null) => (value === null ? "Unavailable" : `$${value}`);
+const humanize = (value: string) => value.replaceAll("_", " ");
+
+export function WalletView({ initialAddress = "" }: { initialAddress?: string } = {}) {
+  const [wallet, setWallet] = useState(initialAddress);
+  const [mint, setMint] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [preferences, setPreferences] = useState<WalletPreferences>({ ...defaults });
+  const [preferencesReady, setPreferencesReady] = useState(false);
+  const [job, setJob] = useState<WalletJob | null>(null);
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const generation = useRef(0);
+  const request = useRef<WalletRequest | null>(null);
   useEffect(() => {
-    if (initialAddress && initialAddress !== submitted) {
-      setAddr(initialAddress);
-      setSubmitted(initialAddress);
+    try {
+      setPreferences(readPreferences(localStorage.getItem(storageKey)));
+    } catch {
+      /* Private browsing may disable storage. */
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    setPreferencesReady(true);
+    return () => {
+      generation.current += 1;
+    };
+  }, []);
+  useEffect(() => {
+    if (preferencesReady) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(preferences));
+      } catch {
+        /* Layout still works in memory. */
+      }
+    }
+  }, [preferences, preferencesReady]);
+  useEffect(() => {
+    generation.current += 1;
+    setJob(null);
+    setMessage("");
+    setBusy(false);
+    request.current = null;
+    setWallet(initialAddress);
   }, [initialAddress]);
-  const { data, status } = useWalletPnL(submitted);
-  const source = (data && (data as { source?: string }).source) ?? "mock";
-  const isLive = source === "birdeye";
 
+  const jobId = job?.id;
+  const jobStatus = job?.status;
+  useEffect(() => {
+    if (!jobId || !jobStatus || !["queued", "running"].includes(jobStatus) || !request.current)
+      return;
+    const current = generation.current;
+    const context = { ...request.current, jobId };
+    let cancelled = false;
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      try {
+        const result = await getWalletAnalysisFn({ data: context });
+        if (cancelled || current !== generation.current) return;
+        if (result.status !== "ready") {
+          setMessage(result.message);
+          return;
+        }
+        setJob(result.job);
+        if (["queued", "running"].includes(result.job.status)) {
+          attempts += 1;
+          if (attempts < 60) timer = setTimeout(poll, 2000);
+          else
+            setMessage(
+              "This analysis is taking longer than expected. Its version remains in the queue.",
+            );
+        }
+      } catch {
+        if (!cancelled && current === generation.current)
+          setMessage("Could not read the analysis status. Try again shortly.");
+      }
+    };
+    timer = setTimeout(poll, 2000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [jobId, jobStatus]);
+
+  function invalidateIdentity() {
+    generation.current += 1;
+    request.current = null;
+    setJob(null);
+    setMessage("");
+    setBusy(false);
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const current = ++generation.current;
+    setMessage("");
+    setJob(null);
+    let input: WalletRequest;
+    try {
+      input = parseWalletRequest({ wallet, mint, accessToken, requestKey: crypto.randomUUID() });
+    } catch {
+      setMessage("Enter a valid Solana wallet address and token mint.");
+      return;
+    }
+    request.current = input;
+    setBusy(true);
+    try {
+      const result = await getWalletAnalysisFn({ data: input });
+      if (current !== generation.current) return;
+      if (result.status === "ready") setJob(result.job);
+      else setMessage(result.message);
+    } catch {
+      if (current === generation.current)
+        setMessage("Analysis could not be verified. No sample result was substituted.");
+    } finally {
+      if (current === generation.current) setBusy(false);
+    }
+  }
+  const analysis = job?.analysis;
+  const terminal = preferences.mode === "terminal";
   return (
-    <div className="space-y-3">
-      <Panel>
-        <PanelHeader title="Wallet Lookup" accent="info" />
-        <PanelBody>
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setSubmitted(addr.trim() || "demo-wallet");
-            }}
-          >
-            <input
-              value={addr}
-              onChange={(e) => setAddr(e.target.value)}
-              placeholder="Solana wallet address (32–44 chars)"
-              className="flex-1 bg-panel-2 border border-border px-2 py-1.5 font-mono text-[12px] outline-none focus:border-info"
-            />
+    <section
+      className={`ctrl-wallet ${terminal ? "ctrl-terminal" : ""} ${preferences.density === "compact" ? "ctrl-compact" : ""}`}
+    >
+      <header className="ctrl-heading">
+        <div>
+          <p className="ctrl-eyebrow">CTRL INTELLIGENCE / WALLET RESEARCH</p>
+          <h1>Follow the evidence.</h1>
+          <p className="ctrl-intro">
+            Understand the wallet behind the move. Every lot, every fee, every gap.
+          </p>
+        </div>
+        <div className="ctrl-mode" aria-label="Workspace mode">
+          {(["simple", "terminal"] as const).map((mode) => (
             <button
-              type="submit"
-              className="border border-info/40 bg-info/10 hover:bg-info/20 text-info font-mono text-[11px] uppercase tracking-wider px-4"
+              key={mode}
+              type="button"
+              aria-pressed={preferences.mode === mode}
+              onClick={() => setPreferences((p) => ({ ...p, mode }))}
             >
-              Analyse
+              {mode === "simple" ? "Simple" : "Terminal"}
             </button>
-          </form>
-          <div className="mt-2 text-[10px] text-muted-foreground font-mono flex items-center gap-1.5">
-            <Info className="h-3 w-3" />
-            Live portfolio via Birdeye for valid Solana addresses. Realised P&L needs trade history (not wired yet) — shown as 0; unrealised is 24h price-change inferred.
-          </div>
-        </PanelBody>
-      </Panel>
-
-      {submitted && status === "loading" && (
-        <Panel><PanelBody><p className="text-[12px] text-muted-foreground text-center py-6 font-mono">Loading wallet…</p></PanelBody></Panel>
-      )}
-
-      {data && (
-        <>
-          <Panel>
-            <PanelHeader
-              title="Wallet Score"
-              subtitle={data.address}
-              accent="pos"
-              right={
-                <div className="flex items-center gap-2">
-                  <SourceBadge source={isLive ? "birdeye" : "mock"} />
-                  <span className="font-mono text-pos text-base">{data.score}/100</span>
-                </div>
+          ))}
+        </div>
+      </header>
+      {terminal && (
+        <div className="ctrl-tools">
+          <SlidersHorizontal size={14} aria-hidden="true" />
+          <label>
+            Density{" "}
+            <select
+              aria-label="Density"
+              value={preferences.density}
+              onChange={(e) =>
+                setPreferences((p) => ({
+                  ...p,
+                  density: e.target.value as WalletPreferences["density"],
+                }))
               }
+            >
+              <option value="comfortable">Comfortable</option>
+              <option value="compact">Compact</option>
+            </select>
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={preferences.lots}
+              onChange={(e) => setPreferences((p) => ({ ...p, lots: e.target.checked }))}
+            />{" "}
+            Show lots
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={preferences.evidence}
+              onChange={(e) => setPreferences((p) => ({ ...p, evidence: e.target.checked }))}
+            />{" "}
+            Show evidence
+          </label>
+          <button type="button" onClick={() => setPreferences({ ...defaults })}>
+            Reset layout
+          </button>
+        </div>
+      )}
+      <form className="ctrl-lookup" onSubmit={submit} noValidate>
+        <div className="ctrl-form-fields">
+          <label>
+            Wallet address
+            <input
+              aria-label="Wallet address"
+              autoComplete="off"
+              spellCheck={false}
+              value={wallet}
+              onChange={(e) => {
+                invalidateIdentity();
+                setWallet(e.target.value);
+              }}
+              placeholder="Solana public address"
             />
-            <PanelBody>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <StatCell label="Realised P&L" value={fmtUsd(data.realisedUsd)} tone={data.realisedUsd >= 0 ? "pos" : "neg"} />
-                <StatCell label="Unrealised P&L" value={fmtUsd(data.unrealisedUsd)} tone={data.unrealisedUsd >= 0 ? "pos" : "neg"} />
-                <StatCell label="ROI (24h)" value={fmtPct(data.roiPct)} tone={data.roiPct >= 0 ? "pos" : "neg"} />
-                <StatCell label="Win rate" value={`${data.winRatePct}%`} />
-                <StatCell label="Avg hold" value={`${data.avgHoldHours}h`} />
-                <StatCell label="Best trade" value={`${data.bestTrade.symbol} ${fmtPct(data.bestTrade.roiPct)}`} tone="pos" sub={fmtUsd(data.bestTrade.pnlUsd)} />
-                <StatCell label="Worst trade" value={`${data.worstTrade.symbol} ${fmtPct(data.worstTrade.roiPct)}`} tone="neg" sub={fmtUsd(data.worstTrade.pnlUsd)} />
-                <StatCell label="Positions" value={data.positions.length.toString()} />
-              </div>
-            </PanelBody>
-          </Panel>
-
-          <Panel>
-            <PanelHeader title="Token-level P&L" subtitle={`${data.positions.length} positions`} />
-            <PanelBody className="p-0">
-              {/* Mobile card list */}
-              <ul className="md:hidden divide-y divide-border">
-                {data.positions.map((p) => (
-                  <li key={p.address || p.symbol} className="px-3 py-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="truncate text-[12px]">{p.name}</div>
-                        <div className="font-mono text-[10px] text-muted-foreground">${p.symbol}</div>
-                      </div>
-                      <span className={`font-mono text-[10px] uppercase tracking-wider px-1.5 py-[1px] border shrink-0 ${p.status === "open" ? "border-info/40 text-info bg-info/10" : "border-border text-muted-foreground bg-panel-2"}`}>
-                        {p.status}
-                      </span>
-                    </div>
-                    <div className="mt-2 grid grid-cols-2 gap-2 font-mono text-[11px]">
-                      <div>
-                        <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Cost</div>
-                        <div>{fmtUsd(p.costUsd)}</div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Value</div>
-                        <div>{fmtUsd(p.valueUsd)}</div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] uppercase tracking-wider text-muted-foreground">P&L</div>
-                        <div className={p.pnlUsd >= 0 ? "text-pos" : "text-neg"}>{fmtUsd(p.pnlUsd)}</div>
-                      </div>
-                      <div>
-                        <div className="text-[9px] uppercase tracking-wider text-muted-foreground">ROI 24h</div>
-                        <div><ChangeCell value={p.roiPct} /></div>
-                      </div>
-                    </div>
-                    <div className="mt-1.5"><CopyAddress address={p.address} /></div>
+          </label>
+          <label>
+            Token mint
+            <input
+              aria-label="Token mint"
+              autoComplete="off"
+              spellCheck={false}
+              value={mint}
+              onChange={(e) => {
+                invalidateIdentity();
+                setMint(e.target.value);
+              }}
+              placeholder="Token contract address"
+            />
+          </label>
+        </div>
+        <div className="ctrl-form-footer">
+          <details>
+            <summary>Private preview access</summary>
+            <label>
+              Access code
+              <input
+                aria-label="Access code"
+                type="password"
+                autoComplete="off"
+                value={accessToken}
+                onChange={(e) => setAccessToken(e.target.value)}
+              />
+            </label>
+            <small>Used only for this session. Never saved with your layout.</small>
+          </details>
+          <button className="ctrl-primary" type="submit" disabled={busy}>
+            {busy ? "Starting analysis…" : "Analyse wallet"}
+            <ArrowUpRight size={16} aria-hidden="true" />
+          </button>
+        </div>
+      </form>
+      {message && (
+        <div className="ctrl-notice" role="alert">
+          {message}
+        </div>
+      )}
+      {job && (
+        <div className="ctrl-version" role="status">
+          <span className="ctrl-status">
+            {job.status === "complete" ? <Check size={13} /> : null}
+            {job.status === "failed" ? "Analysis unavailable" : humanize(job.status)}
+          </span>
+          <span>VERSION {job.id}</span>
+        </div>
+      )}
+      {job?.status === "failed" && (
+        <p className="ctrl-notice">
+          The provider-backed analysis could not finish. No figures have been invented.
+        </p>
+      )}
+      {analysis ? (
+        <>
+          <div className="ctrl-version" aria-label="Result identity">
+            <span>Wallet / {analysis.wallet}</span>
+            <span>Token / {analysis.mint}</span>
+          </div>
+          <div className="ctrl-metrics">
+            <article>
+              <span>Realised net P&amp;L</span>
+              <strong>{money(analysis.accounting.netPnlUsd)}</strong>
+              <small>FIFO after known costs</small>
+            </article>
+            <article>
+              <span>Realised gross P&amp;L</span>
+              <strong>{money(analysis.accounting.grossPnlUsd)}</strong>
+              <small>Before allocated fees</small>
+            </article>
+            <article>
+              <span>Observed fees</span>
+              <strong>{money(analysis.accounting.feesUsd)}</strong>
+              <small>Unknown USD costs stay unavailable</small>
+            </article>
+            <article>
+              <span>Supported events</span>
+              <strong>{analysis.accounting.eventCount}</strong>
+              <small>{analysis.coverage.transactionCount} records examined</small>
+            </article>
+          </div>
+          <div className="ctrl-coverage">
+            <div>
+              <p className="ctrl-eyebrow">COVERAGE</p>
+              <h2>
+                {analysis.coverage.status === "partial"
+                  ? "The gaps are part of the result."
+                  : "Evidence checked."}
+              </h2>
+            </div>
+            <p>
+              Observed{" "}
+              {analysis.observedAt
+                ? new Date(analysis.observedAt).toLocaleString()
+                : "time unavailable"}
+              . Fetched{" "}
+              {analysis.fetchedAt
+                ? new Date(analysis.fetchedAt).toLocaleString()
+                : "time unavailable"}
+              .<br />
+              {analysis.coverage.historyExhausted
+                ? "Provider history exhausted."
+                : "History remains incomplete."}{" "}
+              This is not a lifetime performance claim.
+            </p>
+            <ul>
+              {analysis.coverage.warnings.map((w) => (
+                <li key={w}>{humanize(w)}</li>
+              ))}
+            </ul>
+          </div>
+          {(preferences.lots || !terminal) && (
+            <section className="ctrl-panel">
+              <header>
+                <h2>FIFO lot matches</h2>
+                <span>{analysis.accounting.matches.length} matches</span>
+              </header>
+              {analysis.accounting.matches.length === 0 ? (
+                <p className="ctrl-empty">
+                  No supported closed lots were reconstructed. This does not mean the wallet has
+                  never traded.
+                </p>
+              ) : (
+                <div className="ctrl-table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Quantity</th>
+                        <th>Acquired cost</th>
+                        <th>Proceeds</th>
+                        <th>Net P&amp;L</th>
+                        <th>Evidence</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {analysis.accounting.matches.map((m) => (
+                        <tr key={m.closed_lot_match_id}>
+                          <td>{m.matched_quantity}</td>
+                          <td>{money(m.cost_basis_usd)}</td>
+                          <td>{money(m.proceeds_usd)}</td>
+                          <td>{money(m.realized_pnl_usd)}</td>
+                          <td>
+                            <a
+                              href={`https://solscan.io/tx/${encodeURIComponent(m.entry_signature)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Entry ↗
+                            </a>
+                            <a
+                              href={`https://solscan.io/tx/${encodeURIComponent(m.exit_signature)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Exit ↗
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          )}
+          {(preferences.evidence || !terminal) && (
+            <section className="ctrl-panel">
+              <header>
+                <h2>Why this result?</h2>
+                <span>{analysis.method}</span>
+              </header>
+              <p>
+                FIFO matches the earliest observed acquisition first. USD results require historical
+                prices, acquired basis and fees. Unsupported activity and unknown values remain
+                visible.
+              </p>
+              <ul className="ctrl-sources">
+                {analysis.sources.map((source, index) => (
+                  <li key={`${source.payloadHash}:${index}`}>
+                    <strong>{source.provider}</strong>
+                    <span>
+                      {source.recordCount} records · {source.parserVersion}
+                    </span>
+                    <code title={source.payloadHash}>{source.payloadHash.slice(0, 20)}…</code>
+                    <time>{new Date(source.fetchedAt).toLocaleString()}</time>
                   </li>
                 ))}
               </ul>
-              {/* Desktop table */}
-              <table className="hidden md:table w-full text-[12px]">
-                <thead className="bg-panel-2/60 border-b border-border">
-                  <tr className="[&>th]:px-2 [&>th]:py-1.5 [&>th]:font-normal [&>th]:text-[10px] [&>th]:uppercase [&>th]:tracking-wider [&>th]:text-muted-foreground">
-                    <th className="text-left">Token</th>
-                    <th className="text-left">Contract</th>
-                    <th className="text-right">Cost</th>
-                    <th className="text-right">Value</th>
-                    <th className="text-right">P&L</th>
-                    <th className="text-right">ROI (24h)</th>
-                    <th className="text-left">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.positions.map((p) => (
-                    <tr key={p.address || p.symbol} className="border-b border-border/50 [&>td]:px-2 [&>td]:py-1.5">
-                      <td>
-                        <div>{p.name}</div>
-                        <div className="font-mono text-[10px] text-muted-foreground">${p.symbol}</div>
-                      </td>
-                      <td><CopyAddress address={p.address} /></td>
-                      <td className="text-right font-mono">{fmtUsd(p.costUsd)}</td>
-                      <td className="text-right font-mono">{fmtUsd(p.valueUsd)}</td>
-                      <td className={`text-right font-mono ${p.pnlUsd >= 0 ? "text-pos" : "text-neg"}`}>{fmtUsd(p.pnlUsd)}</td>
-                      <td className="text-right"><ChangeCell value={p.roiPct} /></td>
-                      <td>
-                        <span className={`font-mono text-[10px] uppercase tracking-wider px-1.5 py-[1px] border ${p.status === "open" ? "border-info/40 text-info bg-info/10" : "border-border text-muted-foreground bg-panel-2"}`}>
-                          {p.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </PanelBody>
-          </Panel>
+            </section>
+          )}
         </>
-      )}
-
-      {!submitted && (
-        <Panel>
-          <PanelBody>
-            <p className="text-[12px] text-muted-foreground text-center py-6 font-mono">
-              Enter a Solana wallet address above to see its current portfolio + 24h P&L.
+      ) : (
+        !job &&
+        !message && (
+          <div className="ctrl-start">
+            <span className="ctrl-outline-mark">CTRL</span>
+            <h2>Know what you are following.</h2>
+            <p>
+              Choose a wallet and token to trace its acquired lots and closed positions. Results
+              include source timestamps and coverage, so missing history is never mistaken for zero.
             </p>
-          </PanelBody>
-        </Panel>
+            <div>
+              <span>01 / Public addresses only</span>
+              <span>02 / Transaction evidence</span>
+              <span>03 / No trading or signing</span>
+            </div>
+          </div>
+        )
       )}
-    </div>
+      <footer className="ctrl-footnote">
+        TAKE CTRL <span>Read-only research. No trade execution.</span>
+      </footer>
+    </section>
   );
 }

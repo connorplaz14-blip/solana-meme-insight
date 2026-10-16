@@ -6,7 +6,10 @@ import type { Token } from "@/types";
  * history, so we build a deterministic-ish series for the chart UI until
  * Phase 3 (Birdeye / Solana Tracker) ships real candles.
  */
-export function buildSyntheticSeries(token: Token, points = 96): { t: number; price: number; volume: number }[] {
+export function buildSyntheticSeries(
+  token: Token,
+  points = 96,
+): { t: number; price: number; volume: number }[] {
   const now = Date.now();
   const stepMs = (24 * 60 * 60 * 1000) / points;
   const change = token.changes.h24 / 100;

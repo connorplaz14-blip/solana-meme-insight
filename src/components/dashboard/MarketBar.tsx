@@ -19,9 +19,15 @@ export function MarketBar() {
       <div className="flex items-center px-3 border-r border-border min-w-[140px]">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos">◆ SCBOL</span>
       </div>
-      <Cell label="SOL/USD" value={data ? fmtUsd(data.priceUsd, { compact: false, digits: 2 }) : "…"} />
-      <Cell label="24h Δ" value={data ? fmtPct(data.change24hPct) : "…"}
-        tone={data ? (data.change24hPct >= 0 ? "text-pos" : "text-neg") : ""} />
+      <Cell
+        label="SOL/USD"
+        value={data ? fmtUsd(data.priceUsd, { compact: false, digits: 2 }) : "…"}
+      />
+      <Cell
+        label="24h Δ"
+        value={data ? fmtPct(data.change24hPct) : "…"}
+        tone={data ? (data.change24hPct >= 0 ? "text-pos" : "text-neg") : ""}
+      />
       <Cell label="24h Vol" value={data ? fmtUsd(data.volume24hUsd) : "…"} />
       <Cell label="SOL Mcap" value={data ? fmtUsd(data.marketCapUsd) : "…"} />
       <div className="flex-1" />

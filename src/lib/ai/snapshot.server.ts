@@ -68,9 +68,7 @@ export async function buildMarketSnapshot(): Promise<MarketSnapshot> {
   let launches: PumpLaunch[] = [];
   if (process.env.SOLANA_TRACKER_API_KEY) {
     try {
-      const { fetchPumpfunLaunches } = await import(
-        "@/lib/data/providers/solana-tracker.server"
-      );
+      const { fetchPumpfunLaunches } = await import("@/lib/data/providers/solana-tracker.server");
       launches = await withCache("solana-tracker:launches:25", 60, () =>
         trackProvider("solana-tracker", () => fetchPumpfunLaunches(15)),
       );
@@ -81,9 +79,7 @@ export async function buildMarketSnapshot(): Promise<MarketSnapshot> {
 
   let narrative: NarrativeReport | null = null;
   try {
-    const { getOrGenerateNarrative } = await import(
-      "@/lib/data/providers/narrative.server"
-    );
+    const { getOrGenerateNarrative } = await import("@/lib/data/providers/narrative.server");
     narrative = await getOrGenerateNarrative(tokens);
   } catch {
     narrative = null;
@@ -153,12 +149,8 @@ const SOCIAL_TTL_MS = 90_000;
 
 async function getCachedTopTweets(): Promise<CachedTweet[]> {
   if (_tweetCache && Date.now() - _tweetCache.ts < SOCIAL_TTL_MS) return _tweetCache.data;
-  const { fetchHandlesTimeline, SOLANA_KOLS } = await import(
-    "@/lib/data/providers/xfeed.server"
-  );
-  const items = await fetchHandlesTimeline(SOLANA_KOLS.slice(0, 25), 2, 60).catch(
-    () => [],
-  );
+  const { fetchHandlesTimeline, SOLANA_KOLS } = await import("@/lib/data/providers/xfeed.server");
+  const items = await fetchHandlesTimeline(SOLANA_KOLS.slice(0, 25), 2, 60).catch(() => []);
   const cutoff = Date.now() - 6 * 3600 * 1000;
   const recent = items
     .filter((i) => +new Date(i.publishedAt) > cutoff)
@@ -178,9 +170,7 @@ async function getCachedTopTweets(): Promise<CachedTweet[]> {
 
 async function getCachedTopNews(): Promise<CachedNews[]> {
   if (_newsCache && Date.now() - _newsCache.ts < SOCIAL_TTL_MS) return _newsCache.data;
-  const { fetchAggregatedNews } = await import(
-    "@/lib/data/providers/newsfeed.server"
-  );
+  const { fetchAggregatedNews } = await import("@/lib/data/providers/newsfeed.server");
   const items = await fetchAggregatedNews(20).catch(() => []);
   const trimmed = items.slice(0, 10).map((n) => ({
     source: n.source,

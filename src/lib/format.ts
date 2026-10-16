@@ -2,17 +2,25 @@ export function fmtUsd(n: number, opts: { compact?: boolean; digits?: number } =
   const { compact = true, digits } = opts;
   if (!isFinite(n)) return "—";
   if (compact && Math.abs(n) >= 1000) {
-    return "$" + new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 2 }).format(n);
+    return (
+      "$" +
+      new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 2 }).format(n)
+    );
   }
-  return "$" + new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: digits ?? (Math.abs(n) < 1 ? 6 : 2),
-    maximumFractionDigits: digits ?? (Math.abs(n) < 1 ? 8 : 2),
-  }).format(n);
+  return (
+    "$" +
+    new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: digits ?? (Math.abs(n) < 1 ? 6 : 2),
+      maximumFractionDigits: digits ?? (Math.abs(n) < 1 ? 8 : 2),
+    }).format(n)
+  );
 }
 export function fmtNum(n: number, compact = true) {
   if (!isFinite(n)) return "—";
   if (compact && Math.abs(n) >= 1000) {
-    return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(n);
+    return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(
+      n,
+    );
   }
   return new Intl.NumberFormat("en-US").format(n);
 }

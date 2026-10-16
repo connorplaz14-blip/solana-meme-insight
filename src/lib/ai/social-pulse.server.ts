@@ -52,9 +52,7 @@ export async function getSocialPulse(force = false): Promise<SocialPulse> {
   if (!key) throw new Error("Missing LOVABLE_API_KEY");
 
   const { getCachedTopTweets, getCachedTopNews } = await import("./snapshot.server");
-  const { createLovableAiGatewayProvider } = await import(
-    "@/lib/data/providers/gateway.server"
-  );
+  const { createLovableAiGatewayProvider } = await import("@/lib/data/providers/gateway.server");
 
   const [tweets, news] = await Promise.all([
     getCachedTopTweets().catch(() => []),

@@ -5,7 +5,14 @@ import { timeAgo } from "./timeAgo";
 import { cn } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
 
-const SOURCES = ["All", "CoinDesk", "Cointelegraph", "Decrypt", "The Block", "CryptoSlate"] as const;
+const SOURCES = [
+  "All",
+  "CoinDesk",
+  "Cointelegraph",
+  "Decrypt",
+  "The Block",
+  "CryptoSlate",
+] as const;
 
 export function NewsColumn() {
   const { data, status, refresh } = useNewsFeed();
@@ -21,11 +28,7 @@ export function NewsColumn() {
       title="News"
       status={status}
       onRefresh={refresh}
-      badge={
-        <span className="font-mono text-[10px] text-muted-foreground">
-          {items.length}
-        </span>
-      }
+      badge={<span className="font-mono text-[10px] text-muted-foreground">{items.length}</span>}
     >
       <div className="flex gap-1 overflow-x-auto border-b border-border px-2 py-1.5">
         {SOURCES.map((s) => (
@@ -34,9 +37,7 @@ export function NewsColumn() {
             onClick={() => setFilter(s)}
             className={cn(
               "shrink-0 rounded-sm px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide transition-colors",
-              filter === s
-                ? "bg-pos/20 text-pos"
-                : "text-muted-foreground hover:text-foreground",
+              filter === s ? "bg-pos/20 text-pos" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {s}
@@ -49,12 +50,7 @@ export function NewsColumn() {
         )}
         {items.map((n) => (
           <li key={n.id} className="group hover:bg-accent/20">
-            <a
-              href={n.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block px-3 py-2"
-            >
+            <a href={n.url} target="_blank" rel="noopener noreferrer" className="block px-3 py-2">
               <div className="flex items-center justify-between gap-2 mb-0.5">
                 <span className="font-mono text-[9px] uppercase tracking-wider text-info">
                   {n.source}

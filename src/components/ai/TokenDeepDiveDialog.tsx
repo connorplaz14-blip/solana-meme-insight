@@ -24,9 +24,7 @@ export function TokenDeepDiveDialog({
           <span className="font-mono text-[11px] uppercase tracking-wider text-info">
             AI Deep Dive
           </span>
-          <span className="font-mono text-[11px] text-muted-foreground ml-auto">
-            ${query}
-          </span>
+          <span className="font-mono text-[11px] text-muted-foreground ml-auto">${query}</span>
         </div>
         <TokenDeepDive query={query} />
       </DialogContent>

@@ -25,7 +25,9 @@ function srcFor(provider: ChartProvider, addr: string) {
     : `https://www.gmgn.cc/kline/sol/${addr}`;
 }
 
-function storageKey(addr: string) { return `chart-provider:${addr}`; }
+function storageKey(addr: string) {
+  return `chart-provider:${addr}`;
+}
 
 export function TokenChartEmbed({
   address,
@@ -69,7 +71,9 @@ export function TokenChartEmbed({
           onClick={() => pick(p)}
           className={cn(
             "px-2 py-[2px] transition-colors",
-            p === provider ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
+            p === provider
+              ? "bg-foreground text-background"
+              : "text-muted-foreground hover:text-foreground",
           )}
         >
           {p === "dex" ? "DEX" : "PF"}

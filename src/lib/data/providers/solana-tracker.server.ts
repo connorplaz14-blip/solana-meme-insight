@@ -19,10 +19,8 @@ export interface PumpLaunch {
 const ENDPOINT = "https://data.solanatracker.io/tokens/latest";
 const HOLDERS_ENDPOINT = (mint: string) =>
   `https://data.solanatracker.io/tokens/${mint}/holders/top`;
-const TOKEN_ENDPOINT = (mint: string) =>
-  `https://data.solanatracker.io/tokens/${mint}`;
-const TRADES_ENDPOINT = (mint: string) =>
-  `https://data.solanatracker.io/trades/${mint}`;
+const TOKEN_ENDPOINT = (mint: string) => `https://data.solanatracker.io/tokens/${mint}`;
+const TRADES_ENDPOINT = (mint: string) => `https://data.solanatracker.io/trades/${mint}`;
 
 export interface TopHolder {
   rank: number;
@@ -52,20 +50,22 @@ export async function fetchTopHolders(mint: string, limit = 20): Promise<TopHold
   if (!res.ok) throw new Error(`Solana Tracker holders ${res.status}`);
   const json = (await res.json()) as STHolder[] | { holders?: STHolder[] };
   const rows: STHolder[] = Array.isArray(json) ? json : (json.holders ?? []);
-  return rows.slice(0, limit).map((h, i) => {
-    const addr = h.address ?? h.wallet ?? "";
-    const value =
-      typeof h.value === "number" ? h.value : (h.value?.usd ?? 0);
-    const pct = h.percentage ?? h.percent ?? 0;
-    return {
-      rank: i + 1,
-      address: addr,
-      amount: h.amount ?? 0,
-      percentage: pct,
-      valueUsd: value,
-      insider: h.insider ?? false,
-    };
-  }).filter((h) => h.address);
+  return rows
+    .slice(0, limit)
+    .map((h, i) => {
+      const addr = h.address ?? h.wallet ?? "";
+      const value = typeof h.value === "number" ? h.value : (h.value?.usd ?? 0);
+      const pct = h.percentage ?? h.percent ?? 0;
+      return {
+        rank: i + 1,
+        address: addr,
+        amount: h.amount ?? 0,
+        percentage: pct,
+        valueUsd: value,
+        insider: h.insider ?? false,
+      };
+    })
+    .filter((h) => h.address);
 }
 
 export interface TokenRiskFactor {
@@ -177,7 +177,8 @@ export async function fetchPumpfunLaunches(limit = 25): Promise<PumpLaunch[]> {
     const mcap = pool?.marketCap?.usd ?? 0;
     const price = pool?.price?.usd ?? 0;
     const change = row.events?.["24h"]?.priceChangePercentage ?? 0;
-    const created = pool?.createdAt ?? (tok.createdOn ? new Date(tok.createdOn).getTime() : Date.now());
+    const created =
+      pool?.createdAt ?? (tok.createdOn ? new Date(tok.createdOn).getTime() : Date.now());
     const ageHours = Math.max(0, (Date.now() - created) / 36e5);
     out.push({
       name: tok.name ?? tok.symbol,
@@ -237,25 +238,27 @@ export async function fetchTokenTrades(mint: string, limit = 50): Promise<STWhal
   if (!res.ok) throw new Error(`Solana Tracker trades ${res.status}`);
   const json = (await res.json()) as { trades?: STTradeRow[] } | STTradeRow[];
   const rows: STTradeRow[] = Array.isArray(json) ? json : (json.trades ?? []);
-  return rows.slice(0, limit).map((r): STWhaleTrade => {
-    const sideRaw = (r.type ?? r.side ?? "").toString().toLowerCase();
-    const side: "buy" | "sell" = sideRaw.includes("buy") ? "buy" : "sell";
-    const usd =
-      typeof r.volume === "number"
-        ? r.volume
-        : (r.volume?.usd ?? r.volumeUsd ?? 0);
-    const ts =
-      typeof r.time === "number" ? Math.floor(r.time / 1000)
-      : typeof r.blockTime === "number" ? r.blockTime
-      : 0;
-    const tokenAmount = r.amount ?? r.to?.amount ?? r.from?.amount ?? 0;
-    return {
-      signature: r.tx ?? r.signature ?? "",
-      owner: r.wallet ?? r.owner ?? "",
-      side,
-      tokenAmount,
-      valueUsd: usd,
-      blockUnixTime: ts,
-    };
-  }).filter((t) => t.signature);
+  return rows
+    .slice(0, limit)
+    .map((r): STWhaleTrade => {
+      const sideRaw = (r.type ?? r.side ?? "").toString().toLowerCase();
+      const side: "buy" | "sell" = sideRaw.includes("buy") ? "buy" : "sell";
+      const usd = typeof r.volume === "number" ? r.volume : (r.volume?.usd ?? r.volumeUsd ?? 0);
+      const ts =
+        typeof r.time === "number"
+          ? Math.floor(r.time / 1000)
+          : typeof r.blockTime === "number"
+            ? r.blockTime
+            : 0;
+      const tokenAmount = r.amount ?? r.to?.amount ?? r.from?.amount ?? 0;
+      return {
+        signature: r.tx ?? r.signature ?? "",
+        owner: r.wallet ?? r.owner ?? "",
+        side,
+        tokenAmount,
+        valueUsd: usd,
+        blockUnixTime: ts,
+      };
+    })
+    .filter((t) => t.signature);
 }

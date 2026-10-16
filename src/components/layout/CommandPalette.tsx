@@ -71,9 +71,7 @@ function writeRecents(next: Recent[]) {
   }
 }
 function pushRecent(item: Recent) {
-  const cur = readRecents().filter(
-    (r) => !(r.kind === item.kind && r.address === item.address),
-  );
+  const cur = readRecents().filter((r) => !(r.kind === item.kind && r.address === item.address));
   writeRecents([item, ...cur]);
 }
 
@@ -126,10 +124,7 @@ export function CommandPalette() {
     };
   }, [debounced, isOpen]);
 
-  const looksLikeAddress = useMemo(
-    () => SOL_ADDR_RE.test(query.trim()),
-    [query],
-  );
+  const looksLikeAddress = useMemo(() => SOL_ADDR_RE.test(query.trim()), [query]);
 
   const filteredRoutes = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -137,8 +132,19 @@ export function CommandPalette() {
     return ROUTES.filter((r) => r.label.toLowerCase().includes(q));
   }, [query]);
 
-  function handleOpenToken(t: { address: string; symbol: string; name?: string; logoUrl?: string }) {
-    pushRecent({ kind: "token", address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl });
+  function handleOpenToken(t: {
+    address: string;
+    symbol: string;
+    name?: string;
+    logoUrl?: string;
+  }) {
+    pushRecent({
+      kind: "token",
+      address: t.address,
+      symbol: t.symbol,
+      name: t.name,
+      logoUrl: t.logoUrl,
+    });
     close();
     openToken({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl });
   }
@@ -154,10 +160,7 @@ export function CommandPalette() {
   }
 
   return (
-    <CommandDialog
-      open={isOpen}
-      onOpenChange={(o) => (o ? null : close())}
-    >
+    <CommandDialog open={isOpen} onOpenChange={(o) => (o ? null : close())}>
       <CommandInput
         placeholder="Search token, wallet, CA, narrative…"
         value={query}
@@ -185,7 +188,10 @@ export function CommandPalette() {
                 <Coins className="mr-2 h-4 w-4 text-pos" />
                 <span className="font-mono text-xs truncate">Open token · {query.trim()}</span>
               </CommandItem>
-              <CommandItem value={`wallet-${query}`} onSelect={() => handleOpenWallet(query.trim())}>
+              <CommandItem
+                value={`wallet-${query}`}
+                onSelect={() => handleOpenWallet(query.trim())}
+              >
                 <Wallet className="mr-2 h-4 w-4 text-info" />
                 <span className="font-mono text-xs truncate">Open as wallet · {query.trim()}</span>
               </CommandItem>
@@ -216,7 +222,9 @@ export function CommandPalette() {
                     </span>
                   </div>
                   <div className="text-right shrink-0 font-mono text-[11px]">
-                    <div>{fmtUsd(r.priceUsd, { compact: false, digits: r.priceUsd < 0.01 ? 6 : 4 })}</div>
+                    <div>
+                      {fmtUsd(r.priceUsd, { compact: false, digits: r.priceUsd < 0.01 ? 6 : 4 })}
+                    </div>
                     <div className={cn(r.change24hPct >= 0 ? "text-pos" : "text-neg")}>
                       {fmtPct(r.change24hPct)}
                     </div>
@@ -238,7 +246,12 @@ export function CommandPalette() {
                   value={`recent-${r.kind}-${r.address}`}
                   onSelect={() =>
                     r.kind === "token"
-                      ? handleOpenToken({ address: r.address, symbol: r.symbol, name: r.name, logoUrl: r.logoUrl })
+                      ? handleOpenToken({
+                          address: r.address,
+                          symbol: r.symbol,
+                          name: r.name,
+                          logoUrl: r.logoUrl,
+                        })
                       : handleOpenWallet(r.address)
                   }
                   className="gap-2"

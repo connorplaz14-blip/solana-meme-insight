@@ -14,7 +14,7 @@ import type { SocialItem } from "./newsfeed.server";
 // (parallel fetch fans out to each handle on every refresh).
 export const SOLANA_KOLS = [
   // Traders / KOLs
-  "blknoiz06",        // Ansem
+  "blknoiz06", // Ansem
   "MustStopMurad",
   "Cupseyy",
   "notthreadguy",
@@ -25,15 +25,15 @@ export const SOLANA_KOLS = [
   "ZssBecker",
   "gake_eth",
   // Solana / infra founders
-  "aeyakovenko",      // Anatoly Yakovenko (Solana co-founder)
-  "rajgokal",         // Raj Gokal (Solana co-founder)
-  "0xMert_",          // Mert Mumtaz (Helius)
-  "weremeow",         // Meow — Jupiter founder
-  "a1lon9",           // Alon — Pump.fun co-founder
+  "aeyakovenko", // Anatoly Yakovenko (Solana co-founder)
+  "rajgokal", // Raj Gokal (Solana co-founder)
+  "0xMert_", // Mert Mumtaz (Helius)
+  "weremeow", // Meow — Jupiter founder
+  "a1lon9", // Alon — Pump.fun co-founder
   // Project / culture accounts
   "pumpdotfun",
   "JupiterExchange",
-  "TheOnlyNom",       // BONK core contributor
+  "TheOnlyNom", // BONK core contributor
   "bonk_inu",
   "dogwifcoin",
   "SolanaFndn",
@@ -102,10 +102,7 @@ function parseStatusUrl(url: string): { handle: string; id: string } | null {
 }
 
 function cleanTweetText(raw: string): string {
-  return raw
-    .replace(/\s+/g, " ")
-    .replace(/^"|"$/g, "")
-    .trim();
+  return raw.replace(/\s+/g, " ").replace(/^"|"$/g, "").trim();
 }
 
 function xtweetToItem(t: XTweet): SocialItem {
@@ -142,9 +139,7 @@ export async function fetchHandlesTimeline(
   const hit = cached(key);
   if (hit) return hit;
 
-  const results = await Promise.allSettled(
-    handles.map((h) => fxUserTimeline(h, perHandle)),
-  );
+  const results = await Promise.allSettled(handles.map((h) => fxUserTimeline(h, perHandle)));
   const seen = new Set<string>();
   const out: SocialItem[] = [];
   for (const r of results) {
@@ -283,7 +278,8 @@ export async function userTimelineX(handle: string, limit = 25): Promise<SocialI
     return fromSearch;
   }
 
-  const linkRe = /\[([^\]]{1,400})\]\((https?:\/\/(?:x|twitter)\.com\/[A-Za-z0-9_]+\/status\/\d+)[^)]*\)/g;
+  const linkRe =
+    /\[([^\]]{1,400})\]\((https?:\/\/(?:x|twitter)\.com\/[A-Za-z0-9_]+\/status\/\d+)[^)]*\)/g;
   const seen = new Set<string>();
   const parsed: { handle: string; id: string; text: string }[] = [];
   let m: RegExpExecArray | null;

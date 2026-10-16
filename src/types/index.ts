@@ -1,5 +1,15 @@
 export type Risk = "low" | "medium" | "high" | "extreme";
-export type Source = "dexscreener" | "geckoterminal" | "coingecko" | "bitquery" | "solana-tracker" | "birdeye" | "vybe" | "pump.fun" | "gmgn" | "mock";
+export type Source =
+  | "dexscreener"
+  | "geckoterminal"
+  | "coingecko"
+  | "bitquery"
+  | "solana-tracker"
+  | "birdeye"
+  | "vybe"
+  | "pump.fun"
+  | "gmgn"
+  | "mock";
 export type ProviderStatus = "live" | "mock" | "missing" | "error";
 
 export interface SolMarket {
@@ -10,8 +20,16 @@ export interface SolMarket {
   lastUpdated: string;
 }
 
-export interface TokenChanges { m5: number; h1: number; h6: number; h24: number; }
-export interface TokenTxns { buys24h: number; sells24h: number; }
+export interface TokenChanges {
+  m5: number;
+  h1: number;
+  h6: number;
+  h24: number;
+}
+export interface TokenTxns {
+  buys24h: number;
+  sells24h: number;
+}
 
 export interface Token {
   rank?: number;
@@ -60,7 +78,12 @@ export interface MarketPulseSnapshot {
   condition: "Hot" | "Neutral" | "Dead" | "Risky";
 }
 
-export interface WatchlistEntry { address: string; name: string; symbol: string; addedAt: string; }
+export interface WatchlistEntry {
+  address: string;
+  name: string;
+  symbol: string;
+  addedAt: string;
+}
 
 export interface WalletPnL {
   address: string;
@@ -72,7 +95,16 @@ export interface WalletPnL {
   avgHoldHours: number;
   bestTrade: { symbol: string; pnlUsd: number; roiPct: number };
   worstTrade: { symbol: string; pnlUsd: number; roiPct: number };
-  positions: { symbol: string; name: string; address: string; costUsd: number; valueUsd: number; pnlUsd: number; roiPct: number; status: "open" | "closed" }[];
+  positions: {
+    symbol: string;
+    name: string;
+    address: string;
+    costUsd: number;
+    valueUsd: number;
+    pnlUsd: number;
+    roiPct: number;
+    status: "open" | "closed";
+  }[];
 }
 
 export interface ProviderInfo {

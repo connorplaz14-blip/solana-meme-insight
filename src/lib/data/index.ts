@@ -22,17 +22,28 @@ function useAsync<T>(fn: () => Promise<T>, deps: unknown[] = [], pollMs?: number
   const run = useCallback(() => {
     setStatus("loading");
     fn()
-      .then((d) => { setData(d); setLast(new Date().toISOString()); setStatus("ready"); })
-      .catch((e) => { setError(String(e?.message ?? e)); setStatus("error"); });
+      .then((d) => {
+        setData(d);
+        setLast(new Date().toISOString());
+        setStatus("ready");
+      })
+      .catch((e) => {
+        setError(String(e?.message ?? e));
+        setStatus("error");
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
-  useEffect(() => { run(); }, [run]);
+  useEffect(() => {
+    run();
+  }, [run]);
   const pollRef = useRef<pollHandle | null>(null);
   useEffect(() => {
     if (!pollMs) return;
     pollRef.current = setInterval(run, pollMs) as unknown as pollHandle;
-    return () => { if (pollRef.current) clearInterval(pollRef.current as unknown as number); };
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current as unknown as number);
+    };
   }, [run, pollMs]);
   return { data, status, lastUpdated, error, refresh: run };
 }
@@ -45,7 +56,7 @@ export const useTrending = () => useAsync(() => adapter.getTrending(), []);
 export const useTokensByAddresses = (addresses: string[]) => {
   const key = [...addresses].sort().join(",");
   return useAsync(
-    () => addresses.length ? adapter.getTokensByAddresses(addresses) : Promise.resolve([]),
+    () => (addresses.length ? adapter.getTokensByAddresses(addresses) : Promise.resolve([])),
     [key],
     30_000,
   );
@@ -54,21 +65,24 @@ export const useMemeOfTheDay = () => useAsync(() => adapter.getMemeOfTheDay(), [
 export const useNarratives = () => useAsync(() => adapter.getNarratives(), []);
 export const useMarketPulse = () => useAsync(() => adapter.getMarketPulse(), []);
 export const useWalletPnL = (address: string | null) =>
-  useAsync(() => address ? adapter.getWalletPnL(address) : Promise.resolve(null as never), [address]);
+  useAsync(
+    () => (address ? adapter.getWalletPnL(address) : Promise.resolve(null as never)),
+    [address],
+  );
 export const useProviders = () => useAsync(() => adapter.getProviders(), []);
 export const useTokenChart = (address: string, points = 96) =>
   useAsync(() => adapter.getTokenChart(address, points), [address, points]);
 export const usePumpfunLaunches = () => useAsync(() => adapter.getPumpfunLaunches(), []);
 export const useTokenHolders = (address: string | null) =>
-  useAsync(() => address ? adapter.getTokenHolders(address) : Promise.resolve([]), [address]);
+  useAsync(() => (address ? adapter.getTokenHolders(address) : Promise.resolve([])), [address]);
 export const useTokenWhaleTrades = (address: string | null, minUsd = 1000) =>
   useAsync(
-    () => address ? adapter.getTokenWhaleTrades(address, minUsd) : Promise.resolve([]),
+    () => (address ? adapter.getTokenWhaleTrades(address, minUsd) : Promise.resolve([])),
     [address, minUsd],
     15_000,
   );
 export const useTokenRisk = (address: string | null) =>
-  useAsync(() => address ? adapter.getTokenRisk(address) : Promise.resolve(null), [address]);
+  useAsync(() => (address ? adapter.getTokenRisk(address) : Promise.resolve(null)), [address]);
 
 export const useNewsFeed = () => useAsync(() => adapter.getNewsFeed(), [], 60_000);
 export const useSocialFeed = (query: string) =>

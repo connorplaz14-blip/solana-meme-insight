@@ -43,33 +43,35 @@ export function WhalePingsColumn() {
         .map((t) => ({ address: t.address, symbol: t.symbol, name: t.name }));
     }
 
-    resolveTargets().then((targets) =>
-      Promise.all(
-        targets.map((w) =>
-          liveAdapter
-            .getTokenWhaleTrades(w.address, minUsd)
-            .then((rows) => rows.map((r) => ({ ...r, symbol: w.symbol, address: w.address })))
-            .catch(() => [] as (Ping & { owner: string; tokenAmount: number })[]),
+    resolveTargets()
+      .then((targets) =>
+        Promise.all(
+          targets.map((w) =>
+            liveAdapter
+              .getTokenWhaleTrades(w.address, minUsd)
+              .then((rows) => rows.map((r) => ({ ...r, symbol: w.symbol, address: w.address })))
+              .catch(() => [] as (Ping & { owner: string; tokenAmount: number })[]),
+          ),
         ),
-      ),
-    ).then((arrs) => {
-      if (cancelled) return;
-      const all: Ping[] = arrs
-        .flat()
-        .map((r) => ({
-          signature: r.signature,
-          symbol: r.symbol,
-          address: r.address,
-          side: r.side,
-          valueUsd: r.valueUsd,
-          blockUnixTime: r.blockUnixTime,
-        }))
-        .sort((a, b) => b.blockUnixTime - a.blockUnixTime)
-        .slice(0, 40);
-      setPings(all);
-      setStatus("ready");
-      setSource(list.length > 0 ? "watchlist" : "trending");
-    });
+      )
+      .then((arrs) => {
+        if (cancelled) return;
+        const all: Ping[] = arrs
+          .flat()
+          .map((r) => ({
+            signature: r.signature,
+            symbol: r.symbol,
+            address: r.address,
+            side: r.side,
+            valueUsd: r.valueUsd,
+            blockUnixTime: r.blockUnixTime,
+          }))
+          .sort((a, b) => b.blockUnixTime - a.blockUnixTime)
+          .slice(0, 40);
+        setPings(all);
+        setStatus("ready");
+        setSource(list.length > 0 ? "watchlist" : "trending");
+      });
     return () => {
       cancelled = true;
     };
@@ -101,9 +103,7 @@ export function WhalePingsColumn() {
               onClick={() => setMinUsd(v)}
               className={cn(
                 "font-mono text-[10px] px-1.5 py-0.5 rounded-sm",
-                minUsd === v
-                  ? "bg-pos/20 text-pos"
-                  : "text-muted-foreground hover:text-foreground",
+                minUsd === v ? "bg-pos/20 text-pos" : "text-muted-foreground hover:text-foreground",
               )}
             >
               ≥${v >= 1000 ? `${v / 1000}k` : v}
@@ -112,46 +112,49 @@ export function WhalePingsColumn() {
         </div>
       </div>
       <ul className="divide-y divide-border">
-          {pings.length === 0 && status !== "loading" && (
-            <li className="p-3 font-mono text-[11px] text-muted-foreground">
-              No trades ≥ ${minUsd.toLocaleString()} in the latest 50 swaps per token.
-              Try lowering the threshold or refresh.
-            </li>
-          )}
-          {pings.map((p) => {
-            const w = symbolMap.get(p.address);
-            return (
-              <li key={p.signature}>
-                <button
-                  onClick={() =>
-                    open({ address: p.address, symbol: p.symbol, name: w?.name })
-                  }
-                  className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-accent/20"
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "font-mono text-[10px] uppercase",
-                          p.side === "buy" ? "text-pos" : "text-neg",
-                        )}
-                      >
-                        {p.side}
-                      </span>
-                      <span className="font-mono text-[12px] text-foreground">${p.symbol}</span>
-                    </div>
-                    <div className="font-mono text-[10px] text-muted-foreground">
-                      {timeAgo(new Date(p.blockUnixTime * 1000).toISOString())} ago
-                    </div>
+        {pings.length === 0 && status !== "loading" && (
+          <li className="p-3 font-mono text-[11px] text-muted-foreground">
+            No trades ≥ ${minUsd.toLocaleString()} in the latest 50 swaps per token. Try lowering
+            the threshold or refresh.
+          </li>
+        )}
+        {pings.map((p) => {
+          const w = symbolMap.get(p.address);
+          return (
+            <li key={p.signature}>
+              <button
+                onClick={() => open({ address: p.address, symbol: p.symbol, name: w?.name })}
+                className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-accent/20"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "font-mono text-[10px] uppercase",
+                        p.side === "buy" ? "text-pos" : "text-neg",
+                      )}
+                    >
+                      {p.side}
+                    </span>
+                    <span className="font-mono text-[12px] text-foreground">${p.symbol}</span>
                   </div>
-                  <span className={cn("font-mono text-[11px]", p.side === "buy" ? "text-pos" : "text-neg")}>
-                    {fmtUsd(p.valueUsd)}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                  <div className="font-mono text-[10px] text-muted-foreground">
+                    {timeAgo(new Date(p.blockUnixTime * 1000).toISOString())} ago
+                  </div>
+                </div>
+                <span
+                  className={cn(
+                    "font-mono text-[11px]",
+                    p.side === "buy" ? "text-pos" : "text-neg",
+                  )}
+                >
+                  {fmtUsd(p.valueUsd)}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </PulseColumn>
   );
 }

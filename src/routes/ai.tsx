@@ -24,8 +24,12 @@ export const Route = createFileRoute("/ai")({
 function AiDesk() {
   return (
     <div className="p-3 grid grid-cols-1 xl:grid-cols-12 gap-3">
-      <div className="xl:col-span-7"><AiChat /></div>
-      <div className="xl:col-span-5"><DailyBrief /></div>
+      <div className="xl:col-span-7">
+        <AiChat />
+      </div>
+      <div className="xl:col-span-5">
+        <DailyBrief />
+      </div>
     </div>
   );
 }
