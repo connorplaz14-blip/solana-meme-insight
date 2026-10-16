@@ -20,6 +20,7 @@
 | TypeScript tsc --noEmit | Pass |
 | NITRO_PRESET=vercel npm run build | Pass; .vercel/output generated |
 | HTTP/SSR smoke | HTTP 200; wallet heading and CTRL branding present |
+| Live Helius smoke | 10 real records fetched within budget; a separate finalized getTransaction RPC call confirmed one transaction slot and integer fee |
 | Independent review | Accounting, workload, persistence and UI findings reviewed; material findings corrected with regression evidence |
 | Added-source credential pattern scan / git diff --check | No added credential patterns; whitespace check passes |
 | Browser screenshot | Blocked: runtime browser absent; Chromium download returned invalid/truncated archive. DOM interaction tests ran in jsdom, not a real browser |
@@ -31,6 +32,13 @@ Applied the checked-in migration through the connected SQL interface. Inserted a
 
 This proves the SQL schema/persistence path on a real isolated PostgreSQL instance. It does not prove the Python psycopg network path: runtime DNS/network access blocks direct database connections. Four driver/worker integration tests therefore remain skipped. A local Postgres attempt was also blocked by runtime user/process permissions; it was not treated as successful persistence.
 
+## Live provider evidence
+A ten-record read-only Helius Enhanced-history request succeeded for public wallet `86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY`. The returned records were TRANSFER/UNKNOWN, not a supported priced-swap sample. Pagination correctly stopped as partial at the ten-record budget. A separate finalized `getTransaction` RPC read confirmed the first transaction's slot and integer network fee; no transaction was submitted.
+
+Source page SHA-256: `185977b9d5c8d5843d2fef9d384c2636c2720415bbc4e9d4e26f0fa68f760b8e`. Fetch timestamp: `2026-10-16T18:33:20.390807+00:00`. This verifies live access/provenance, not historical USD pricing, complete coverage or deployed end-to-end accounting.
+
+Published implementation checkpoint: `2d553c735bff3fbc8b4aab8f107b544e508dce76`; draft PR https://github.com/connorplaz14-blip/solana-meme-insight/pull/1. The documentation follow-up records the live smoke result.
+
 ## Deployment
 - No production deployment or promotion.
 - New preview URL: none. Vercel project creation returned HTTP 403: permission to create project denied for team `team_6C7Ib5PlR8m7yWFAt7lDmcld`. No authenticated local Vercel CLI fallback was available.
@@ -38,7 +46,7 @@ This proves the SQL schema/persistence path on a real isolated PostgreSQL instan
 - Python API/worker hosting has not been provisioned. Live browser-to-worker-to-provider-to-database verification remains incomplete.
 
 ## Current product limits
-This is a tested first implementation increment, not a production-ready platform. The wallet UI deliberately reports unavailable when the private service is not configured. No live Helius key was retrieved or used. Current live normalization preserves token/quote quantities, but complete USD PnL is withheld until historical price/fee enrichment, transfer basis and token-account coverage are independently verified. Partial provider activity is never a trusted wallet leaderboard.
+This is a tested first implementation increment, not a production-ready platform. The wallet UI deliberately reports unavailable when the private service is not configured. An existing authorized Helius configuration was used server-side for the bounded read-only smoke; credential values were never printed or committed. Current live normalization preserves token/quote quantities, but complete USD PnL is withheld until historical price/fee enrichment, transfer basis and token-account coverage are independently verified. Partial provider activity is never a trusted wallet leaderboard.
 
 The source carries provider cursors and response hashes; cumulative resume into an existing analysis version is not exposed. Global wallet discovery, early-token ranking, Bubblemaps cluster integration, risk-evidence scoring and broader provider live contract checks are later increments. Existing market integrations are retained rather than reimplemented.
 
@@ -205,7 +213,7 @@ Remote delivery is a checkpoint commit from the verified original branch head, u
 Most existing UI paths are formatting-only; the dedicated style commit isolates that change. Functional changes are concentrated in the wallet service, wallet UI/contracts, legacy wallet removal, TanStack API compatibility and CTRL shell branding.
 
 ## Next independently verifiable work
-1. Configure authorized Helius and historical-price sources in a private worker environment.
+1. Configure the verified existing Helius integration and historical-price sources in a private worker environment.
 2. Verify direct psycopg connectivity, lease/crash recovery and immutable reads against the isolated database.
 3. Deploy Python API/worker and a protected web preview when Vercel project creation is permitted.
 4. Run real-browser desktop/mobile and full live evidence verification.
