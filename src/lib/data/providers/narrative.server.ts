@@ -6,16 +6,30 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { fmtAge } from "@/lib/format";
 
 const NarrativeSchema = z.object({
-  summary: z.string().describe("2–4 sentence overview of today's Solana memecoin market based ONLY on the provided tokens."),
-  dominant_theme: z.string().describe("Short label, e.g. 'Dog-coin rotation', 'AI memes', 'Frog micro-caps'."),
+  summary: z
+    .string()
+    .describe(
+      "2–4 sentence overview of today's Solana memecoin market based ONLY on the provided tokens.",
+    ),
+  dominant_theme: z
+    .string()
+    .describe("Short label, e.g. 'Dog-coin rotation', 'AI memes', 'Frog micro-caps'."),
   fastest_growing: z.string().describe("Short label for the fastest-growing sub-narrative."),
-  keywords: z.array(z.object({ word: z.string(), weight: z.number().min(1).max(10) })).min(4).max(8),
-  items: z.array(z.object({
-    theme: z.string(),
-    growthPct: z.number(),
-    description: z.string(),
-    tokens: z.array(z.string()),
-  })).min(2).max(5),
+  keywords: z
+    .array(z.object({ word: z.string(), weight: z.number().min(1).max(10) }))
+    .min(4)
+    .max(8),
+  items: z
+    .array(
+      z.object({
+        theme: z.string(),
+        growthPct: z.number(),
+        description: z.string(),
+        tokens: z.array(z.string()),
+      }),
+    )
+    .min(2)
+    .max(5),
   warnings: z.array(z.string()).min(1).max(4),
 });
 
@@ -44,7 +58,10 @@ function todayUtcIso(): string {
 }
 
 function parseJsonObject(text: string): unknown {
-  const cleaned = text.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  const cleaned = text
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
   const first = cleaned.indexOf("{");
   const last = cleaned.lastIndexOf("}");
   if (first === -1 || last === -1) throw new Error("Model returned no JSON object");
@@ -113,7 +130,12 @@ export async function getOrGenerateNarrative(tokens: Token[]): Promise<Narrative
     notable = tokens
       .filter((t) => t.ageHours < 72 || t.risk === "extreme")
       .slice(0, 3)
-      .map((t) => ({ name: t.name, symbol: t.symbol, address: t.address, note: `${t.changes.h24.toFixed(1)}% 24h · liq ${Math.round(t.liquidityUsd / 1000)}k` }));
+      .map((t) => ({
+        name: t.name,
+        symbol: t.symbol,
+        address: t.address,
+        note: `${t.changes.h24.toFixed(1)}% 24h · liq ${Math.round(t.liquidityUsd / 1000)}k`,
+      }));
   }
 
   await supabaseAdmin.from("narratives").upsert({
@@ -149,7 +171,9 @@ function rowToReport(row: Record<string, unknown>, _tokens: Token[]): NarrativeR
     dominantTheme: row.dominant_theme as string,
     fastestGrowing: (row.fastest_growing as string) ?? "",
     keywords: (row.keywords as { word: string; weight: number }[]) ?? [],
-    notableLaunches: (row.notable_launches as { name: string; symbol: string; address: string; note: string }[]) ?? [],
+    notableLaunches:
+      (row.notable_launches as { name: string; symbol: string; address: string; note: string }[]) ??
+      [],
     warnings: (row.warnings as string[]) ?? [],
     items: (row.items as NarrativeReport["items"]) ?? [],
     sources: ["dexscreener", "coingecko"],

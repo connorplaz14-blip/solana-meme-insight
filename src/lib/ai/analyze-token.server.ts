@@ -37,9 +37,7 @@ const AiSchema = z.object({
 });
 
 export async function analyzeToken(query: string): Promise<TokenAnalysis> {
-  const { fetchSolanaTrending } = await import(
-    "@/lib/data/providers/dexscreener.server"
-  );
+  const { fetchSolanaTrending } = await import("@/lib/data/providers/dexscreener.server");
   const all = await fetchSolanaTrending(80).catch(() => []);
   const q = query.trim().replace(/^\$/, "").toLowerCase();
   const hit =
@@ -50,9 +48,7 @@ export async function analyzeToken(query: string): Promise<TokenAnalysis> {
   if (!hit) return { query, found: false };
 
   const { searchX } = await import("@/lib/data/providers/xfeed.server");
-  const { fetchAggregatedNews } = await import(
-    "@/lib/data/providers/newsfeed.server"
-  );
+  const { fetchAggregatedNews } = await import("@/lib/data/providers/newsfeed.server");
 
   const [tweets, allNews] = await Promise.all([
     searchX(`$${hit.symbol}`, 8).catch(() => []),
@@ -93,9 +89,7 @@ export async function analyzeToken(query: string): Promise<TokenAnalysis> {
     };
   }
 
-  const { createLovableAiGatewayProvider } = await import(
-    "@/lib/data/providers/gateway.server"
-  );
+  const { createLovableAiGatewayProvider } = await import("@/lib/data/providers/gateway.server");
   const gateway = createLovableAiGatewayProvider(key);
 
   const tweetCtx = tweets.map((t) => ({

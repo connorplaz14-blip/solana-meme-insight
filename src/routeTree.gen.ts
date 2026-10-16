@@ -9,69 +9,24 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WatchlistRouteImport } from './routes/watchlist'
-import { Route as WalletPnlRouteImport } from './routes/wallet-pnl'
-import { Route as TrendingRouteImport } from './routes/trending'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as PulseRouteImport } from './routes/pulse'
-import { Route as NarrativesRouteImport } from './routes/narratives'
-import { Route as MemeOfTheDayRouteImport } from './routes/meme-of-the-day'
-import { Route as LaunchesRouteImport } from './routes/launches'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as CoinsRouteImport } from './routes/coins'
-import { Route as AiRouteImport } from './routes/ai'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AiRouteImport } from './routes/ai'
+import { Route as CoinsRouteImport } from './routes/coins'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as LaunchesRouteImport } from './routes/launches'
+import { Route as MemeOfTheDayRouteImport } from './routes/meme-of-the-day'
+import { Route as NarrativesRouteImport } from './routes/narratives'
+import { Route as PulseRouteImport } from './routes/pulse'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as TrendingRouteImport } from './routes/trending'
+import { Route as WalletPnlRouteImport } from './routes/wallet-pnl'
+import { Route as WatchlistRouteImport } from './routes/watchlist'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiPumpfunLatestRouteImport } from './routes/api/pumpfun/latest'
 
-const WatchlistRoute = WatchlistRouteImport.update({
-  id: '/watchlist',
-  path: '/watchlist',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WalletPnlRoute = WalletPnlRouteImport.update({
-  id: '/wallet-pnl',
-  path: '/wallet-pnl',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TrendingRoute = TrendingRouteImport.update({
-  id: '/trending',
-  path: '/trending',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PulseRoute = PulseRouteImport.update({
-  id: '/pulse',
-  path: '/pulse',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NarrativesRoute = NarrativesRouteImport.update({
-  id: '/narratives',
-  path: '/narratives',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MemeOfTheDayRoute = MemeOfTheDayRouteImport.update({
-  id: '/meme-of-the-day',
-  path: '/meme-of-the-day',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LaunchesRoute = LaunchesRouteImport.update({
-  id: '/launches',
-  path: '/launches',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CoinsRoute = CoinsRouteImport.update({
-  id: '/coins',
-  path: '/coins',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AiRoute = AiRouteImport.update({
@@ -79,9 +34,54 @@ const AiRoute = AiRouteImport.update({
   path: '/ai',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const CoinsRoute = CoinsRouteImport.update({
+  id: '/coins',
+  path: '/coins',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LaunchesRoute = LaunchesRouteImport.update({
+  id: '/launches',
+  path: '/launches',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MemeOfTheDayRoute = MemeOfTheDayRouteImport.update({
+  id: '/meme-of-the-day',
+  path: '/meme-of-the-day',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NarrativesRoute = NarrativesRouteImport.update({
+  id: '/narratives',
+  path: '/narratives',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PulseRoute = PulseRouteImport.update({
+  id: '/pulse',
+  path: '/pulse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrendingRoute = TrendingRouteImport.update({
+  id: '/trending',
+  path: '/trending',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WalletPnlRoute = WalletPnlRouteImport.update({
+  id: '/wallet-pnl',
+  path: '/wallet-pnl',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WatchlistRoute = WatchlistRouteImport.update({
+  id: '/watchlist',
+  path: '/watchlist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiChatRoute = ApiChatRouteImport.update({
@@ -214,74 +214,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/watchlist': {
-      id: '/watchlist'
-      path: '/watchlist'
-      fullPath: '/watchlist'
-      preLoaderRoute: typeof WatchlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/wallet-pnl': {
-      id: '/wallet-pnl'
-      path: '/wallet-pnl'
-      fullPath: '/wallet-pnl'
-      preLoaderRoute: typeof WalletPnlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/trending': {
-      id: '/trending'
-      path: '/trending'
-      fullPath: '/trending'
-      preLoaderRoute: typeof TrendingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pulse': {
-      id: '/pulse'
-      path: '/pulse'
-      fullPath: '/pulse'
-      preLoaderRoute: typeof PulseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/narratives': {
-      id: '/narratives'
-      path: '/narratives'
-      fullPath: '/narratives'
-      preLoaderRoute: typeof NarrativesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/meme-of-the-day': {
-      id: '/meme-of-the-day'
-      path: '/meme-of-the-day'
-      fullPath: '/meme-of-the-day'
-      preLoaderRoute: typeof MemeOfTheDayRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/launches': {
-      id: '/launches'
-      path: '/launches'
-      fullPath: '/launches'
-      preLoaderRoute: typeof LaunchesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/coins': {
-      id: '/coins'
-      path: '/coins'
-      fullPath: '/coins'
-      preLoaderRoute: typeof CoinsRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ai': {
@@ -291,11 +228,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AiRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/coins': {
+      id: '/coins'
+      path: '/coins'
+      fullPath: '/coins'
+      preLoaderRoute: typeof CoinsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/launches': {
+      id: '/launches'
+      path: '/launches'
+      fullPath: '/launches'
+      preLoaderRoute: typeof LaunchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meme-of-the-day': {
+      id: '/meme-of-the-day'
+      path: '/meme-of-the-day'
+      fullPath: '/meme-of-the-day'
+      preLoaderRoute: typeof MemeOfTheDayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/narratives': {
+      id: '/narratives'
+      path: '/narratives'
+      fullPath: '/narratives'
+      preLoaderRoute: typeof NarrativesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pulse': {
+      id: '/pulse'
+      path: '/pulse'
+      fullPath: '/pulse'
+      preLoaderRoute: typeof PulseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trending': {
+      id: '/trending'
+      path: '/trending'
+      fullPath: '/trending'
+      preLoaderRoute: typeof TrendingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wallet-pnl': {
+      id: '/wallet-pnl'
+      path: '/wallet-pnl'
+      fullPath: '/wallet-pnl'
+      preLoaderRoute: typeof WalletPnlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/watchlist': {
+      id: '/watchlist'
+      path: '/watchlist'
+      fullPath: '/watchlist'
+      preLoaderRoute: typeof WatchlistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/chat': {
@@ -334,3 +334,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -38,9 +38,7 @@ export function AiSocialPulse() {
       >
         <span className="flex items-center gap-1.5">
           <Sparkles className="h-3 w-3 text-info" />
-          <span className="font-mono text-[10px] uppercase tracking-wider text-info">
-            AI Pulse
-          </span>
+          <span className="font-mono text-[10px] uppercase tracking-wider text-info">AI Pulse</span>
           {data && (
             <span className="font-mono text-[9px] text-muted-foreground">
               · {new Date(data.generatedAtIso).toLocaleTimeString()}
@@ -54,10 +52,7 @@ export function AiSocialPulse() {
               e.stopPropagation();
               void load(true);
             }}
-            className={cn(
-              "text-muted-foreground hover:text-foreground",
-              loading && "animate-spin",
-            )}
+            className={cn("text-muted-foreground hover:text-foreground", loading && "animate-spin")}
             aria-label="Refresh"
           >
             <RotateCw className="h-3 w-3" />
@@ -87,10 +82,7 @@ export function AiSocialPulse() {
             </div>
           )}
           {data?.topThemes.map((t, i) => (
-            <div
-              key={i}
-              className="border-l-2 border-info/40 pl-2 py-0.5"
-            >
+            <div key={i} className="border-l-2 border-info/40 pl-2 py-0.5">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="font-mono text-[11px] text-foreground font-semibold">
                   {t.title}
@@ -107,9 +99,7 @@ export function AiSocialPulse() {
                   {t.tweetCount}
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
-                {t.oneLiner}
-              </p>
+              <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{t.oneLiner}</p>
             </div>
           ))}
           {data?.surprisingTake && (

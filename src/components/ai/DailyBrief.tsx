@@ -10,7 +10,9 @@ export function DailyBrief() {
       <Panel>
         <PanelHeader title="Daily Brief" accent="info" />
         <PanelBody>
-          <p className="text-[12px] text-muted-foreground font-mono">Generating today&apos;s brief…</p>
+          <p className="text-[12px] text-muted-foreground font-mono">
+            Generating today&apos;s brief…
+          </p>
         </PanelBody>
       </Panel>
     );
@@ -33,17 +35,23 @@ export function DailyBrief() {
 
         <div className="grid grid-cols-2 gap-2">
           <div className="border border-border bg-panel-2 p-2">
-            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Dominant</div>
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+              Dominant
+            </div>
             <div className="font-mono text-[13px] text-pos mt-0.5">{data.dominantTheme}</div>
           </div>
           <div className="border border-border bg-panel-2 p-2">
-            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Fastest growing</div>
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+              Fastest growing
+            </div>
             <div className="font-mono text-[13px] text-warn mt-0.5">{data.fastestGrowing}</div>
           </div>
         </div>
 
         <div>
-          <div className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Keywords</div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">
+            Keywords
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {data.keywords.map((k) => (
               <span
@@ -58,7 +66,9 @@ export function DailyBrief() {
         </div>
 
         <div>
-          <div className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Themes</div>
+          <div className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">
+            Themes
+          </div>
           <ul className="space-y-1.5">
             {data.items.map((it) => (
               <li key={it.theme} className="border-l-2 border-info/40 pl-2">
@@ -77,10 +87,15 @@ export function DailyBrief() {
 
         {data.notableLaunches.length > 0 && (
           <div>
-            <div className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">Notable launches</div>
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground mb-1.5">
+              Notable launches
+            </div>
             <ul className="space-y-1">
               {data.notableLaunches.map((l) => (
-                <li key={l.symbol} className="font-mono text-[11px] flex items-center gap-2 flex-wrap">
+                <li
+                  key={l.symbol}
+                  className="font-mono text-[11px] flex items-center gap-2 flex-wrap"
+                >
                   <span className="text-foreground">${l.symbol}</span>
                   <span className="text-muted-foreground">{l.name}</span>
                   <span className="text-muted-foreground">— {l.note}</span>
@@ -97,7 +112,10 @@ export function DailyBrief() {
             </div>
             <ul className="space-y-1">
               {data.warnings.map((w, i) => (
-                <li key={i} className="font-mono text-[11px] text-warn/90 border-l-2 border-warn/40 pl-2">
+                <li
+                  key={i}
+                  className="font-mono text-[11px] text-warn/90 border-l-2 border-warn/40 pl-2"
+                >
                   {w}
                 </li>
               ))}

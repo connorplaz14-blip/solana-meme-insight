@@ -11,9 +11,24 @@ function Tone({ pct }: { pct: number }) {
   return <span className={cn("font-mono", tone)}>{fmtPct(pct)}</span>;
 }
 
-function Cell({ label, value, sub, className }: { label: string; value: ReactNode; sub?: ReactNode; className?: string }) {
+function Cell({
+  label,
+  value,
+  sub,
+  className,
+}: {
+  label: string;
+  value: ReactNode;
+  sub?: ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={cn("flex flex-col justify-center px-2 md:px-3 h-full border-r border-border shrink-0 min-w-[84px] md:min-w-[112px]", className)}>
+    <div
+      className={cn(
+        "flex flex-col justify-center px-2 md:px-3 h-full border-r border-border shrink-0 min-w-[84px] md:min-w-[112px]",
+        className,
+      )}
+    >
       <span className="text-[9px] uppercase tracking-wider text-muted-foreground">{label}</span>
       <div className="flex items-baseline gap-1.5 font-mono text-xs leading-tight">
         {value}
@@ -48,25 +63,31 @@ export function MarketTape() {
         <Menu className="h-4 w-4" />
       </button>
       <div className="hidden md:flex items-center px-3 border-r border-border min-w-[140px] shrink-0">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos">◆ SCBOL</span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-pos">◆ CTRL</span>
       </div>
 
       <div className="flex-1 min-w-0 overflow-hidden">
         <div className="flex items-stretch h-full">
           <Cell
             label="SOL"
-            value={<span>{macro ? fmtUsd(macro.sol.priceUsd, { compact: false, digits: 2 }) : "…"}</span>}
+            value={
+              <span>{macro ? fmtUsd(macro.sol.priceUsd, { compact: false, digits: 2 }) : "…"}</span>
+            }
             sub={macro ? <Tone pct={macro.sol.change24hPct} /> : null}
           />
           <Cell
             label="BTC"
-            value={<span>{macro ? fmtUsd(macro.btc.priceUsd, { compact: false, digits: 0 }) : "…"}</span>}
+            value={
+              <span>{macro ? fmtUsd(macro.btc.priceUsd, { compact: false, digits: 0 }) : "…"}</span>
+            }
             sub={macro ? <Tone pct={macro.btc.change24hPct} /> : null}
           />
           <Cell
             className="hidden md:flex"
             label="ETH"
-            value={<span>{macro ? fmtUsd(macro.eth.priceUsd, { compact: false, digits: 0 }) : "…"}</span>}
+            value={
+              <span>{macro ? fmtUsd(macro.eth.priceUsd, { compact: false, digits: 0 }) : "…"}</span>
+            }
             sub={macro ? <Tone pct={macro.eth.change24hPct} /> : null}
           />
           <Cell
@@ -91,7 +112,10 @@ export function MarketTape() {
               macro?.fearGreed ? (
                 <span className={cn(fngTone(macro.fearGreed.value))}>
                   {macro.fearGreed.value}
-                  <span className="text-muted-foreground hidden md:inline"> · {macro.fearGreed.label}</span>
+                  <span className="text-muted-foreground hidden md:inline">
+                    {" "}
+                    · {macro.fearGreed.label}
+                  </span>
                 </span>
               ) : (
                 "…"
@@ -111,13 +135,7 @@ export function MarketTape() {
           <Cell
             className="hidden md:flex"
             label="Top Meme"
-            value={
-              meme ? (
-                <span className="truncate max-w-[120px]">${meme.symbol}</span>
-              ) : (
-                "…"
-              )
-            }
+            value={meme ? <span className="truncate max-w-[120px]">${meme.symbol}</span> : "…"}
             sub={meme ? <Tone pct={meme.changes.h24} /> : null}
           />
           <Cell
@@ -139,7 +157,9 @@ export function MarketTape() {
         title="Open command palette"
       >
         <Search className="h-3.5 w-3.5" />
-        <span className="hidden md:inline font-mono text-[10px] uppercase tracking-wider">Search</span>
+        <span className="hidden md:inline font-mono text-[10px] uppercase tracking-wider">
+          Search
+        </span>
         <kbd className="hidden md:inline-flex items-center font-mono text-[10px] border border-border bg-panel-2 px-1.5 py-0.5">
           ⌘K
         </kbd>

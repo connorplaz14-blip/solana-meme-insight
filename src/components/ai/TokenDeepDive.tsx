@@ -43,8 +43,8 @@ export function TokenDeepDive({ query }: { query: string }) {
   if (!data?.found) {
     return (
       <div className="font-mono text-[12px] text-muted-foreground p-3">
-        No data for <span className="text-foreground">${query}</span>. It may not
-        be in the trending feed.
+        No data for <span className="text-foreground">${query}</span>. It may not be in the trending
+        feed.
       </div>
     );
   }
@@ -52,11 +52,7 @@ export function TokenDeepDive({ query }: { query: string }) {
   const oc = data.onchain!;
   const ai = data.ai;
   const sentCls =
-    ai?.sentiment === "bull"
-      ? "text-pos"
-      : ai?.sentiment === "bear"
-        ? "text-neg"
-        : "text-warn";
+    ai?.sentiment === "bull" ? "text-pos" : ai?.sentiment === "bear" ? "text-neg" : "text-warn";
 
   return (
     <div className="p-3 space-y-3">
@@ -66,11 +62,7 @@ export function TokenDeepDive({ query }: { query: string }) {
             <span className="font-mono text-[14px] text-foreground">${data.symbol}</span>
             <span className="text-[12px] text-muted-foreground">{data.name}</span>
           </div>
-          {ai && (
-            <p className="text-[12px] mt-1 text-foreground/85 leading-snug">
-              {ai.verdict}
-            </p>
-          )}
+          {ai && <p className="text-[12px] mt-1 text-foreground/85 leading-snug">{ai.verdict}</p>}
         </div>
         {ai && (
           <div className="text-right">
@@ -104,10 +96,7 @@ export function TokenDeepDive({ query }: { query: string }) {
       </div>
 
       {ai && ai.whyMoving.length > 0 && (
-        <Section
-          icon={<TrendingUp className="h-3 w-3 text-info" />}
-          title="Why it's moving"
-        >
+        <Section icon={<TrendingUp className="h-3 w-3 text-info" />} title="Why it's moving">
           <ul className="space-y-1">
             {ai.whyMoving.map((w, i) => (
               <li key={i} className="text-[12px] text-foreground/85 border-l-2 border-info/40 pl-2">
@@ -119,10 +108,7 @@ export function TokenDeepDive({ query }: { query: string }) {
       )}
 
       {ai && ai.risks.length > 0 && (
-        <Section
-          icon={<AlertTriangle className="h-3 w-3 text-warn" />}
-          title="Risks"
-        >
+        <Section icon={<AlertTriangle className="h-3 w-3 text-warn" />} title="Risks">
           <ul className="space-y-1">
             {ai.risks.map((w, i) => (
               <li key={i} className="text-[12px] text-warn/90 border-l-2 border-warn/40 pl-2">

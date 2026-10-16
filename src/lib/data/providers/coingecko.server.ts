@@ -1,8 +1,11 @@
 import type { SolMarket } from "@/types";
 
-const URL = "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true";
+const URL =
+  "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true";
 
-type Resp = { solana?: { usd?: number; usd_market_cap?: number; usd_24h_vol?: number; usd_24h_change?: number } };
+type Resp = {
+  solana?: { usd?: number; usd_market_cap?: number; usd_24h_vol?: number; usd_24h_change?: number };
+};
 
 export async function fetchSolMarket(): Promise<SolMarket> {
   const res = await fetch(URL, { headers: { accept: "application/json" } });

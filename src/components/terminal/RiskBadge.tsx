@@ -9,7 +9,12 @@ export function RiskBadge({ risk }: { risk: Risk }) {
     extreme: "border-neg text-neg bg-neg/20",
   };
   return (
-    <span className={cn("inline-flex items-center px-1.5 py-[1px] text-[10px] font-mono uppercase tracking-wider border", map[risk])}>
+    <span
+      className={cn(
+        "inline-flex items-center px-1.5 py-[1px] text-[10px] font-mono uppercase tracking-wider border",
+        map[risk],
+      )}
+    >
       {risk}
     </span>
   );

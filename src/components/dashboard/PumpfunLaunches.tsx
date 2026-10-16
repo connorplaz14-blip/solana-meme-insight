@@ -34,31 +34,51 @@ export function PumpfunLaunches() {
             <li key={t.address} className="px-3 py-2.5 hover:bg-accent/20">
               <button
                 type="button"
-                onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl, bonded: false })}
+                onClick={() =>
+                  open({
+                    address: t.address,
+                    symbol: t.symbol,
+                    name: t.name,
+                    logoUrl: t.logoUrl,
+                    bonded: false,
+                  })
+                }
                 className="flex items-center gap-2 min-w-0 w-full text-left hover:text-warn transition-colors"
               >
                 <TokenAvatar symbol={t.symbol} size={22} logoUrl={t.logoUrl} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[12px]">{t.name}</div>
-                  <div className="font-mono text-[10px] text-muted-foreground">${t.symbol} · {fmtAge(t.ageHours)}</div>
+                  <div className="font-mono text-[10px] text-muted-foreground">
+                    ${t.symbol} · {fmtAge(t.ageHours)}
+                  </div>
                 </div>
                 <RiskBadge risk={t.risk} />
               </button>
               <div className="mt-2 grid grid-cols-3 gap-2 font-mono text-[11px]">
                 <div>
-                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Mcap</div>
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                    Mcap
+                  </div>
                   <div>{fmtUsd(t.marketCapUsd)}</div>
                 </div>
                 <div>
-                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Liq</div>
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                    Liq
+                  </div>
                   <div>{fmtUsd(t.liquidityUsd)}</div>
                 </div>
                 <div>
-                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">24h</div>
-                  <div><ChangeCell value={t.change24hPct} /></div>
+                  <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                    24h
+                  </div>
+                  <div>
+                    <ChangeCell value={t.change24hPct} />
+                  </div>
                 </div>
               </div>
-              <div className="mt-1.5"><CopyAddress address={t.address} /></div>
+              <div className="mt-1.5">
+                <CopyAddress address={t.address} />
+              </div>
             </li>
           ))}
         </ul>
@@ -80,49 +100,86 @@ export function PumpfunLaunches() {
             </thead>
             <tbody>
               {rows.map((t) => (
-                <tr key={t.address} className="border-b border-border/50 hover:bg-accent/20 [&>td]:px-2 [&>td]:py-1.5">
+                <tr
+                  key={t.address}
+                  className="border-b border-border/50 hover:bg-accent/20 [&>td]:px-2 [&>td]:py-1.5"
+                >
                   <td>
                     <button
                       type="button"
-                      onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl, bonded: false })}
+                      onClick={() =>
+                        open({
+                          address: t.address,
+                          symbol: t.symbol,
+                          name: t.name,
+                          logoUrl: t.logoUrl,
+                          bonded: false,
+                        })
+                      }
                       className="flex items-center gap-2 min-w-0 text-left hover:text-warn transition-colors"
                     >
                       <TokenAvatar symbol={t.symbol} size={20} logoUrl={t.logoUrl} />
                       <div className="min-w-0">
                         <div className="truncate">{t.name}</div>
-                        <div className="font-mono text-[10px] text-muted-foreground">${t.symbol}</div>
+                        <div className="font-mono text-[10px] text-muted-foreground">
+                          ${t.symbol}
+                        </div>
                       </div>
                     </button>
                   </td>
-                  <td><CopyAddress address={t.address} /></td>
+                  <td>
+                    <CopyAddress address={t.address} />
+                  </td>
                   <td className="text-right font-mono">{fmtUsd(t.priceUsd, { compact: false })}</td>
                   <td className="text-right font-mono">{fmtUsd(t.marketCapUsd)}</td>
                   <td className="text-right font-mono">{fmtUsd(t.liquidityUsd)}</td>
-                  <td className="text-right"><ChangeCell value={t.change24hPct} /></td>
+                  <td className="text-right">
+                    <ChangeCell value={t.change24hPct} />
+                  </td>
                   <td className="text-right font-mono whitespace-nowrap">
                     <span className="text-pos">{fmtNum(t.buys24h)}</span>
                     <span className="px-0.5 text-muted-foreground">/</span>
                     <span className="text-neg">{fmtNum(t.sells24h)}</span>
                   </td>
                   <td className="text-right font-mono">{fmtAge(t.ageHours)}</td>
-                  <td><RiskBadge risk={t.risk} /></td>
+                  <td>
+                    <RiskBadge risk={t.risk} />
+                  </td>
                 </tr>
               ))}
               {status === "loading" && (
-                <tr><td colSpan={9} className="px-3 py-6 text-center text-muted-foreground font-mono text-[11px]">Scanning Pump.fun launchpad…</td></tr>
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="px-3 py-6 text-center text-muted-foreground font-mono text-[11px]"
+                  >
+                    Scanning Pump.fun launchpad…
+                  </td>
+                </tr>
               )}
               {status === "ready" && rows.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-6 text-center text-muted-foreground font-mono text-[11px]">No fresh launches reported by Solana Tracker right now.</td></tr>
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="px-3 py-6 text-center text-muted-foreground font-mono text-[11px]"
+                  >
+                    No fresh launches reported by Solana Tracker right now.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         </div>
         {/* Mobile empty / loading state */}
         {status === "loading" && rows.length === 0 && (
-          <div className="md:hidden px-3 py-6 text-center text-muted-foreground font-mono text-[11px]">Scanning Pump.fun launchpad…</div>
+          <div className="md:hidden px-3 py-6 text-center text-muted-foreground font-mono text-[11px]">
+            Scanning Pump.fun launchpad…
+          </div>
         )}
         {status === "ready" && rows.length === 0 && (
-          <div className="md:hidden px-3 py-6 text-center text-muted-foreground font-mono text-[11px]">No fresh launches right now.</div>
+          <div className="md:hidden px-3 py-6 text-center text-muted-foreground font-mono text-[11px]">
+            No fresh launches right now.
+          </div>
         )}
       </PanelBody>
     </Panel>

@@ -58,9 +58,7 @@ export function AiTrendingTable() {
         }
       />
       <PanelBody className="p-0">
-        {error && (
-          <div className="px-3 py-3 font-mono text-[11px] text-neg">{error}</div>
-        )}
+        {error && <div className="px-3 py-3 font-mono text-[11px] text-neg">{error}</div>}
         {loading && !data && (
           <div className="px-3 py-6 font-mono text-[11px] text-muted-foreground text-center">
             Selecting today&apos;s narrative leaders…
@@ -90,9 +88,7 @@ export function AiTrendingTable() {
                 >
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-2.5">
                     <button
-                      onClick={() =>
-                        open({ address: p.address, symbol: p.symbol, name: p.name })
-                      }
+                      onClick={() => open({ address: p.address, symbol: p.symbol, name: p.name })}
                       className="flex items-center gap-2 min-w-0 hover:text-pos transition-colors sm:shrink-0"
                     >
                       <TokenAvatar symbol={p.symbol} size={22} />
@@ -104,9 +100,7 @@ export function AiTrendingTable() {
                       </div>
                     </button>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] text-foreground/80 leading-relaxed">
-                        {p.why}
-                      </div>
+                      <div className="text-[11px] text-foreground/80 leading-relaxed">{p.why}</div>
                       <div className="mt-1">
                         <CopyAddress address={p.address} />
                       </div>

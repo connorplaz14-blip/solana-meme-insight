@@ -34,7 +34,10 @@ export function TokenAvatar({
 
   return (
     <span
-      className={cn("inline-flex items-center justify-center font-mono font-medium text-[10px] text-black border border-border shrink-0", className)}
+      className={cn(
+        "inline-flex items-center justify-center font-mono font-medium text-[10px] text-black border border-border shrink-0",
+        className,
+      )}
       style={{ width: size, height: size, backgroundColor: bg }}
       aria-hidden
     >

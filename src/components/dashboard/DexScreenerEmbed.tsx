@@ -35,8 +35,7 @@ export function DexScreenerEmbed({
   storageKey,
 }: Props) {
   const hasToggle = providers && providers.length > 1;
-  const initialId =
-    providers?.[0]?.id ?? defaultProviderId ?? "default";
+  const initialId = providers?.[0]?.id ?? defaultProviderId ?? "default";
 
   const [currentId, setCurrentId] = useState<string>(() => {
     if (!hasToggle) return initialId;
@@ -53,7 +52,7 @@ export function DexScreenerEmbed({
     }
   }, [currentId, hasToggle, storageKey]);
 
-  const active = hasToggle ? providers!.find((p) => p.id === currentId) ?? providers![0] : null;
+  const active = hasToggle ? (providers!.find((p) => p.id === currentId) ?? providers![0]) : null;
   const iframeSrc = active?.src ?? src ?? "";
   const iframeSource: Source = active?.source ?? source;
 

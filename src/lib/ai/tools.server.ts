@@ -17,9 +17,7 @@ export function buildSCBOLTools() {
         query: z.string().describe("Ticker, name, or Solana mint address"),
       }),
       execute: async ({ query }) => {
-        const { fetchSolanaTrending } = await import(
-          "@/lib/data/providers/dexscreener.server"
-        );
+        const { fetchSolanaTrending } = await import("@/lib/data/providers/dexscreener.server");
         const all = await fetchSolanaTrending(80).catch(() => []);
         const q = query.trim().replace(/^\$/, "").toLowerCase();
         const hit =
@@ -81,9 +79,7 @@ export function buildSCBOLTools() {
         handle: z.string().describe("X handle, with or without @"),
       }),
       execute: async ({ handle }) => {
-        const { userTimelineX } = await import(
-          "@/lib/data/providers/xfeed.server"
-        );
+        const { userTimelineX } = await import("@/lib/data/providers/xfeed.server");
         const h = handle.replace(/^@/, "");
         const posts = await userTimelineX(h, 5).catch(() => []);
         return {
@@ -107,18 +103,14 @@ export function buildSCBOLTools() {
         hours: z.number().int().min(1).max(168).default(48),
       }),
       execute: async ({ query, hours }) => {
-        const { fetchAggregatedNews } = await import(
-          "@/lib/data/providers/newsfeed.server"
-        );
+        const { fetchAggregatedNews } = await import("@/lib/data/providers/newsfeed.server");
         const all = await fetchAggregatedNews(50).catch(() => []);
         const cutoff = Date.now() - hours * 3600 * 1000;
         const q = query.toLowerCase();
         const hits = all
           .filter((n) => +new Date(n.publishedAt) > cutoff)
           .filter(
-            (n) =>
-              n.title.toLowerCase().includes(q) ||
-              (n.summary ?? "").toLowerCase().includes(q),
+            (n) => n.title.toLowerCase().includes(q) || (n.summary ?? "").toLowerCase().includes(q),
           )
           .slice(0, 8)
           .map((n) => ({

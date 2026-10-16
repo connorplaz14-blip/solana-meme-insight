@@ -139,9 +139,7 @@ export function AiChat() {
 }
 
 function MessageBubble({ message }: { message: UIMessage }) {
-  const text = message.parts
-    .map((p) => (p.type === "text" ? p.text : ""))
-    .join("");
+  const text = message.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
   const toolCalls = (message.parts as unknown as Array<{ type: string; toolName?: string }>)
     .filter((p) => typeof p.type === "string" && p.type.startsWith("tool-"))
     .map((p) => p.toolName ?? p.type.slice(5))

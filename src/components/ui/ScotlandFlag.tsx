@@ -8,16 +8,8 @@ export function ScotlandFlag({ className = "h-4 w-4" }: { className?: string }) 
       aria-label="Scotland flag"
     >
       <rect width="32" height="32" rx="3" fill="#005EB8" />
-      <path
-        d="M0 0L32 32M32 0L0 32"
-        stroke="white"
-        strokeWidth="6"
-      />
-      <path
-        d="M0 0L32 32M32 0L0 32"
-        stroke="white"
-        strokeWidth="2"
-      />
+      <path d="M0 0L32 32M32 0L0 32" stroke="white" strokeWidth="6" />
+      <path d="M0 0L32 32M32 0L0 32" stroke="white" strokeWidth="2" />
       <rect width="32" height="32" rx="3" fill="none" stroke="white/20" strokeWidth="1" />
     </svg>
   );

@@ -9,10 +9,10 @@ const TTL_MS = 5 * 60 * 1000;
 export type XTweet = {
   id: string;
   url: string;
-  handle: string;       // @screen_name
-  author: string;       // display name
+  handle: string; // @screen_name
+  author: string; // display name
   text: string;
-  createdAt: string;    // ISO
+  createdAt: string; // ISO
   likes?: number;
   replies?: number;
   retweets?: number;
@@ -128,8 +128,7 @@ function extractList(r: FxListResp | null): XTweet[] {
   const out: XTweet[] = [];
   for (const row of r.results) {
     // Row can be { type: "status", status: {...} } or a raw FxStatus
-    const status: FxStatus | undefined =
-      (row as { status?: FxStatus }).status ?? (row as FxStatus);
+    const status: FxStatus | undefined = (row as { status?: FxStatus }).status ?? (row as FxStatus);
     const n = normalize(status);
     if (n) out.push(n);
   }

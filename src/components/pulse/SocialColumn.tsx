@@ -4,12 +4,7 @@ import { PulseColumn } from "./PulseColumn";
 import { AiSocialPulse } from "./AiSocialPulse";
 import { timeAgo } from "./timeAgo";
 import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import {
   Search,
@@ -157,9 +152,7 @@ export function SocialColumn() {
       status={status}
       onRefresh={refresh}
       badge={
-        <span className="font-mono text-[10px] text-muted-foreground">
-          {data?.length ?? 0}
-        </span>
+        <span className="font-mono text-[10px] text-muted-foreground">{data?.length ?? 0}</span>
       }
     >
       <AiSocialPulse />
@@ -225,9 +218,7 @@ export function SocialColumn() {
           <span className={cn("font-mono text-[9px] uppercase tracking-wider", meta.cls)}>
             {meta.label}
           </span>
-          <span className="font-mono text-[10px] text-muted-foreground truncate">
-            {active}
-          </span>
+          <span className="font-mono text-[10px] text-muted-foreground truncate">{active}</span>
           <span className="ml-auto flex items-center gap-1.5 font-mono text-[9px] text-muted-foreground shrink-0">
             <span className="text-pos">◆ {counts.signal}</span>
             <span className="text-warn">▲ {counts.launch}</span>
@@ -238,9 +229,8 @@ export function SocialColumn() {
       <ul className="divide-y divide-border">
         {(data?.length ?? 0) === 0 && status !== "loading" && (
           <li className="p-3 font-mono text-[11px] text-muted-foreground">
-            No posts for <span className="text-foreground">{active}</span>.
-            Source: X via Firecrawl · Bluesky fallback. Try a different
-            cashtag, handle, or preset.
+            No posts for <span className="text-foreground">{active}</span>. Source: X via Firecrawl
+            · Bluesky fallback. Try a different cashtag, handle, or preset.
           </li>
         )}
         {data?.map((p) => {
@@ -266,12 +256,7 @@ function SourceBadge({ source }: { source: string }) {
         ? "bg-info/15 text-info"
         : "bg-muted/30 text-muted-foreground";
   return (
-    <span
-      className={cn(
-        "font-mono text-[9px] uppercase tracking-wider px-1 rounded-sm",
-        cls,
-      )}
-    >
+    <span className={cn("font-mono text-[9px] uppercase tracking-wider px-1 rounded-sm", cls)}>
       {source}
     </span>
   );
@@ -305,12 +290,7 @@ function SignalCard({ item }: { item: Item }) {
   const buzzPos = buzz >= 0;
   return (
     <li className="group bg-pos/[0.03] hover:bg-pos/[0.07] border-l-2 border-pos/40">
-      <a
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block px-3 py-2"
-      >
+      <a href={item.url} target="_blank" rel="noopener noreferrer" className="block px-3 py-2">
         <div className="flex items-center justify-between gap-2 mb-1">
           <div className="flex items-center gap-1.5 min-w-0">
             <Activity className="h-3 w-3 text-pos shrink-0" />
@@ -342,11 +322,7 @@ function SignalCard({ item }: { item: Item }) {
               buzzPos ? "text-pos" : "text-neg",
             )}
           >
-            {buzzPos ? (
-              <TrendingUp className="h-3 w-3" />
-            ) : (
-              <TrendingDown className="h-3 w-3" />
-            )}
+            {buzzPos ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             {Math.abs(buzz)}
           </div>
           {typeof item.mentions === "number" && (
@@ -354,9 +330,7 @@ function SignalCard({ item }: { item: Item }) {
               {item.mentions} mentions
             </span>
           )}
-          <div className="ml-auto">
-            {item.spark && <Sparkline values={item.spark} />}
-          </div>
+          <div className="ml-auto">{item.spark && <Sparkline values={item.spark} />}</div>
         </div>
         {item.headlines && item.headlines.length > 0 && (
           <ul className="space-y-0.5">
@@ -382,12 +356,7 @@ function SignalCard({ item }: { item: Item }) {
 function LaunchCard({ item }: { item: Item }) {
   return (
     <li className="group hover:bg-accent/20">
-      <a
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block px-3 py-2"
-      >
+      <a href={item.url} target="_blank" rel="noopener noreferrer" className="block px-3 py-2">
         <div className="flex items-start gap-2">
           {item.icon ? (
             <img
@@ -403,9 +372,7 @@ function LaunchCard({ item }: { item: Item }) {
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2 mb-0.5">
-              <span className="font-mono text-[10px] text-info truncate">
-                {item.handle}
-              </span>
+              <span className="font-mono text-[10px] text-info truncate">{item.handle}</span>
               <span className="flex items-center gap-1.5 shrink-0">
                 <SourceBadge source={item.source} />
                 <span className="font-mono text-[10px] text-muted-foreground">
@@ -457,9 +424,7 @@ function PostCard({ item }: { item: Item }) {
         <div className="flex items-center justify-between gap-2 mb-0.5">
           <span className="flex items-center gap-1 min-w-0">
             <MessageCircle className="h-3 w-3 text-info shrink-0" />
-            <span className="font-mono text-[10px] text-info truncate">
-              {item.handle || "—"}
-            </span>
+            <span className="font-mono text-[10px] text-info truncate">{item.handle || "—"}</span>
           </span>
           <span className="flex items-center gap-1.5 shrink-0">
             <SourceBadge source={item.source} />
@@ -540,12 +505,8 @@ function TweetDialog({
         <div className="border-b border-border px-4 py-2.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
             <SourceBadge source={item.source} />
-            <span className="font-mono text-[11px] text-foreground truncate">
-              {item.author}
-            </span>
-            <span className="font-mono text-[10px] text-info truncate">
-              {item.handle}
-            </span>
+            <span className="font-mono text-[11px] text-foreground truncate">{item.author}</span>
+            <span className="font-mono text-[10px] text-info truncate">{item.handle}</span>
           </div>
           <span className="font-mono text-[10px] text-muted-foreground shrink-0">
             {timeAgo(item.publishedAt)}
@@ -563,13 +524,7 @@ function TweetDialog({
               )}
             >
               {photos.map((p, i) => (
-                <a
-                  key={i}
-                  href={p.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
-                >
+                <a key={i} href={p.url} target="_blank" rel="noopener noreferrer" className="block">
                   <img
                     src={p.url}
                     alt=""

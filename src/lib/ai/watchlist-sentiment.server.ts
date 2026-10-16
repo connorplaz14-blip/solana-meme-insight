@@ -21,13 +21,9 @@ const ItemSchema = z.object({
 });
 const ListSchema = z.object({ items: z.array(ItemSchema) });
 
-export async function scoreWatchlist(
-  addresses: string[],
-): Promise<SentimentScore[]> {
+export async function scoreWatchlist(addresses: string[]): Promise<SentimentScore[]> {
   if (addresses.length === 0) return [];
-  const { fetchSolanaTrending } = await import(
-    "@/lib/data/providers/dexscreener.server"
-  );
+  const { fetchSolanaTrending } = await import("@/lib/data/providers/dexscreener.server");
   const all = await fetchSolanaTrending(80).catch(() => []);
   const hits = addresses
     .map((a) => all.find((t) => t.address === a))
@@ -67,9 +63,7 @@ export async function scoreWatchlist(
     return hits.map((h) => heuristic(h.address, h));
   }
 
-  const { createLovableAiGatewayProvider } = await import(
-    "@/lib/data/providers/gateway.server"
-  );
+  const { createLovableAiGatewayProvider } = await import("@/lib/data/providers/gateway.server");
   const gateway = createLovableAiGatewayProvider(key);
 
   const prompt = [
@@ -92,9 +86,7 @@ export async function scoreWatchlist(
     const v = ListSchema.safeParse(parsed);
     if (v.success) {
       return hits.map((h) => {
-        const m = v.data.items.find(
-          (x) => x.symbol.toUpperCase() === h.symbol.toUpperCase(),
-        );
+        const m = v.data.items.find((x) => x.symbol.toUpperCase() === h.symbol.toUpperCase());
         if (!m) return heuristic(h.address, h);
         return {
           address: h.address,

@@ -27,7 +27,9 @@ export function TrendingColumn() {
           return (
             <li key={t.address}>
               <button
-                onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl })}
+                onClick={() =>
+                  open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl })
+                }
                 className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-accent/20"
               >
                 <div className="flex items-center gap-2 min-w-0">

@@ -43,9 +43,7 @@ function parseJsonObject(text: string): unknown {
 let cache: { at: number; data: CuratedTrending } | null = null;
 const TTL_MS = 30 * 60 * 1000;
 
-export async function getCuratedTrending(
-  force = false,
-): Promise<CuratedTrending> {
+export async function getCuratedTrending(force = false): Promise<CuratedTrending> {
   if (!force && cache && Date.now() - cache.at < TTL_MS) return cache.data;
 
   const { buildMarketSnapshot } = await import("./snapshot.server");
@@ -69,9 +67,7 @@ export async function getCuratedTrending(
     return fallback;
   }
 
-  const { createLovableAiGatewayProvider } = await import(
-    "@/lib/data/providers/gateway.server"
-  );
+  const { createLovableAiGatewayProvider } = await import("@/lib/data/providers/gateway.server");
   const gateway = createLovableAiGatewayProvider(apiKey);
 
   const trendingForPrompt = snap.trending.map((t) => ({

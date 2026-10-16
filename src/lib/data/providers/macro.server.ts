@@ -6,7 +6,12 @@ const CG_GLOBAL = "https://api.coingecko.com/api/v3/global";
 const FNG_URL = "https://api.alternative.me/fng/?limit=1";
 const SOL_RPC = "https://api.mainnet-beta.solana.com";
 
-type SimpleEntry = { usd?: number; usd_market_cap?: number; usd_24h_vol?: number; usd_24h_change?: number };
+type SimpleEntry = {
+  usd?: number;
+  usd_market_cap?: number;
+  usd_24h_vol?: number;
+  usd_24h_change?: number;
+};
 type SimpleResp = { bitcoin?: SimpleEntry; ethereum?: SimpleEntry; solana?: SimpleEntry };
 type GlobalResp = {
   data?: {

@@ -13,27 +13,61 @@ import { isBonded } from "@/lib/token-bonded";
 export function MemeOfTheDayCard({ expanded = false }: { expanded?: boolean }) {
   const { data: t } = useMemeOfTheDay();
   const { open } = useTokenDetail();
-  if (!t) return <Panel><PanelHeader title="Meme of the Day" /><PanelBody>Loading…</PanelBody></Panel>;
+  if (!t)
+    return (
+      <Panel>
+        <PanelHeader title="Meme of the Day" />
+        <PanelBody>Loading…</PanelBody>
+      </Panel>
+    );
   return (
     <Panel>
-      <PanelHeader title="Meme of the Day" accent="pos"
-        right={<span className="font-mono">Score <span className="text-pos">{t.score}</span>/100</span>} />
+      <PanelHeader
+        title="Meme of the Day"
+        accent="pos"
+        right={
+          <span className="font-mono">
+            Score <span className="text-pos">{t.score}</span>/100
+          </span>
+        }
+      />
       <PanelBody className="space-y-3">
         <div
           role="button"
           tabIndex={0}
-          onClick={() => open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl, bonded: isBonded(t) })}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") open({ address: t.address, symbol: t.symbol, name: t.name, logoUrl: t.logoUrl, bonded: isBonded(t) }); }}
+          onClick={() =>
+            open({
+              address: t.address,
+              symbol: t.symbol,
+              name: t.name,
+              logoUrl: t.logoUrl,
+              bonded: isBonded(t),
+            })
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ")
+              open({
+                address: t.address,
+                symbol: t.symbol,
+                name: t.name,
+                logoUrl: t.logoUrl,
+                bonded: isBonded(t),
+              });
+          }}
           className="flex items-center gap-3 w-full text-left cursor-pointer hover:bg-accent/20 -mx-1 px-1 py-1 transition-colors"
         >
           <TokenAvatar symbol={t.symbol} size={40} logoUrl={t.logoUrl} />
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-base font-medium hover:text-pos transition-colors">{t.name}</span>
+              <span className="text-base font-medium hover:text-pos transition-colors">
+                {t.name}
+              </span>
               <span className="font-mono text-xs text-muted-foreground">${t.symbol}</span>
               <RiskBadge risk={t.risk} />
             </div>
-            <div className="mt-0.5" onClick={(e) => e.stopPropagation()}><CopyAddress address={t.address} /></div>
+            <div className="mt-0.5" onClick={(e) => e.stopPropagation()}>
+              <CopyAddress address={t.address} />
+            </div>
           </div>
         </div>
 
@@ -46,25 +80,47 @@ export function MemeOfTheDayCard({ expanded = false }: { expanded?: boolean }) {
           <StatCell label="1h" value={<ChangeCell value={t.changes.h1} />} />
           <StatCell label="6h" value={<ChangeCell value={t.changes.h6} />} />
           <StatCell label="24h" value={<ChangeCell value={t.changes.h24} />} />
-          <StatCell label="Buys 24h" value={<span className="text-pos">{fmtNum(t.txns.buys24h)}</span>} />
-          <StatCell label="Sells 24h" value={<span className="text-neg">{fmtNum(t.txns.sells24h)}</span>} />
+          <StatCell
+            label="Buys 24h"
+            value={<span className="text-pos">{fmtNum(t.txns.buys24h)}</span>}
+          />
+          <StatCell
+            label="Sells 24h"
+            value={<span className="text-neg">{fmtNum(t.txns.sells24h)}</span>}
+          />
           <StatCell label="Age" value={fmtAge(t.ageHours)} />
-          <StatCell label="Sources" value={<div className="flex gap-1 flex-wrap">{t.sources.map((s) => <SourceBadge key={s} source={s} />)}</div>} />
+          <StatCell
+            label="Sources"
+            value={
+              <div className="flex gap-1 flex-wrap">
+                {t.sources.map((s) => (
+                  <SourceBadge key={s} source={s} />
+                ))}
+              </div>
+            }
+          />
         </div>
 
         {expanded && t.scoreBreakdown && (
           <div className="border-t border-border pt-3">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Score breakdown</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+              Score breakdown
+            </div>
             <div className="space-y-1.5">
               {t.scoreBreakdown.map((row) => (
                 <div key={row.label} className="grid grid-cols-[1fr_auto] items-center gap-2">
                   <div>
                     <div className="font-mono text-[11px] text-muted-foreground">{row.label}</div>
                     <div className="h-1 bg-panel-2 mt-0.5">
-                      <div className="h-full bg-pos" style={{ width: `${(row.value / row.max) * 100}%` }} />
+                      <div
+                        className="h-full bg-pos"
+                        style={{ width: `${(row.value / row.max) * 100}%` }}
+                      />
                     </div>
                   </div>
-                  <span className="font-mono text-[11px] tabular-nums">{row.value}/{row.max}</span>
+                  <span className="font-mono text-[11px] tabular-nums">
+                    {row.value}/{row.max}
+                  </span>
                 </div>
               ))}
             </div>

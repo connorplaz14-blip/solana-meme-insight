@@ -31,11 +31,11 @@ export function PulseColumn({
           </h2>
           {badge}
           {status === "loading" && (
-            <span className="font-mono text-[10px] text-muted-foreground animate-pulse">…syncing</span>
+            <span className="font-mono text-[10px] text-muted-foreground animate-pulse">
+              …syncing
+            </span>
           )}
-          {status === "error" && (
-            <span className="font-mono text-[10px] text-warn">offline</span>
-          )}
+          {status === "error" && <span className="font-mono text-[10px] text-warn">offline</span>}
         </div>
         {onRefresh && (
           <button

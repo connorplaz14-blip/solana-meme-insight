@@ -57,9 +57,7 @@ function PulsePage() {
   return (
     <div className="p-3">
       <header className="mb-3">
-        <h1 className="font-mono text-[14px] uppercase tracking-[0.18em] text-foreground">
-          Pulse
-        </h1>
+        <h1 className="font-mono text-[14px] uppercase tracking-[0.18em] text-foreground">Pulse</h1>
         <p className="font-mono text-[10px] text-muted-foreground mt-0.5">
           Fast-info terminal · auto-refresh{now ? ` · ${now}` : ""}
         </p>
@@ -79,7 +77,7 @@ function PulsePage() {
                 "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium whitespace-nowrap border transition-colors",
                 active
                   ? "bg-pos/10 border-pos/40 text-pos"
-                  : "bg-panel-2 border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
+                  : "bg-panel-2 border-border text-muted-foreground hover:text-foreground hover:border-foreground/20",
               )}
             >
               <Icon className="h-3 w-3" />
@@ -92,9 +90,7 @@ function PulsePage() {
       <div
         className={cn(
           "grid gap-3",
-          activeTab === "all"
-            ? "grid-cols-1 lg:grid-cols-2 xl:grid-cols-4"
-            : "grid-cols-1"
+          activeTab === "all" ? "grid-cols-1 lg:grid-cols-2 xl:grid-cols-4" : "grid-cols-1",
         )}
       >
         {showSocial && <SocialColumn />}

@@ -70,7 +70,10 @@ function toToken(p: DsPair, rank: number): Token {
 
 // Composite score 0–100. Surfaces tokens with real depth + activity, penalises
 // micro-liquidity outliers despite huge % swings.
-function scoreToken(t: Token): { score: number; breakdown: { label: string; value: number; max: number }[] } {
+function scoreToken(t: Token): {
+  score: number;
+  breakdown: { label: string; value: number; max: number }[];
+} {
   const volScore = Math.min(30, Math.log10(Math.max(t.volume24hUsd, 1)) * 4);
   const liqScore = Math.min(20, Math.log10(Math.max(t.liquidityUsd, 1)) * 3);
   const changeAbs = Math.min(300, Math.abs(t.changes.h24));
@@ -100,7 +103,13 @@ async function fetchBoostedSolanaAddresses(): Promise<string[]> {
   if (!res.ok) throw new Error(`DexScreener boosts ${res.status}`);
   const json = (await res.json()) as Boost[];
   return json
-    .filter((b) => b.chainId === "solana" && b.tokenAddress && b.tokenAddress !== WSOL && !STABLE_MINTS.has(b.tokenAddress))
+    .filter(
+      (b) =>
+        b.chainId === "solana" &&
+        b.tokenAddress &&
+        b.tokenAddress !== WSOL &&
+        !STABLE_MINTS.has(b.tokenAddress),
+    )
     .map((b) => b.tokenAddress);
 }
 
@@ -127,7 +136,12 @@ export async function fetchSolanaTrending(limit = 30): Promise<Token[]> {
   // base is SOL/stable (shouldn't happen for boosted memecoins but guard anyway).
   const byToken = new Map<string, DsPair>();
   for (const p of pairs) {
-    if (!p.baseToken?.address || p.baseToken.address === WSOL || STABLE_MINTS.has(p.baseToken.address)) continue;
+    if (
+      !p.baseToken?.address ||
+      p.baseToken.address === WSOL ||
+      STABLE_MINTS.has(p.baseToken.address)
+    )
+      continue;
     if (num(p.liquidity?.usd) < 25_000) continue;
     const existing = byToken.get(p.baseToken.address);
     if (!existing || num(p.liquidity?.usd) > num(existing.liquidity?.usd)) {

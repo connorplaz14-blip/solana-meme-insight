@@ -26,7 +26,9 @@ export function HoldersTable({ address }: { address: string }) {
     <div className="h-[65vh] overflow-auto">
       <div className="px-3 py-2 border-b border-border bg-panel-2/50 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
         <span>Top {rows.length} holders</span>
-        <span>Concentration: <span className="text-foreground">{totalPct.toFixed(1)}%</span></span>
+        <span>
+          Concentration: <span className="text-foreground">{totalPct.toFixed(1)}%</span>
+        </span>
       </div>
       <table className="w-full text-[12px]">
         <thead className="bg-panel-2/40 border-b border-border">
@@ -41,9 +43,13 @@ export function HoldersTable({ address }: { address: string }) {
         <tbody>
           {rows.map((h) => {
             const barPct = Math.min(100, h.percentage);
-            const heat = h.percentage >= 5 ? "bg-neg/70" : h.percentage >= 1 ? "bg-warn/70" : "bg-info/60";
+            const heat =
+              h.percentage >= 5 ? "bg-neg/70" : h.percentage >= 1 ? "bg-warn/70" : "bg-info/60";
             return (
-              <tr key={h.address} className="border-b border-border/40 hover:bg-accent/15 [&>td]:px-3 [&>td]:py-1.5">
+              <tr
+                key={h.address}
+                className="border-b border-border/40 hover:bg-accent/15 [&>td]:px-3 [&>td]:py-1.5"
+              >
                 <td className="font-mono text-muted-foreground">{h.rank}</td>
                 <td>
                   <a

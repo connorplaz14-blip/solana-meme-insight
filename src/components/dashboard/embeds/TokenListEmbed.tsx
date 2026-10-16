@@ -77,13 +77,13 @@ export function TokenListEmbed({ kind, title, subtitle, height = "78vh" }: Props
             src={src}
             title={cfg.title}
             loading="lazy"
-            onLoad={() => { loadedRef.current = true; }}
+            onLoad={() => {
+              loadedRef.current = true;
+            }}
             className="border-0 bg-background block w-full min-w-[760px] sm:min-w-0"
             style={{
               height:
-                typeof height === "number"
-                  ? `min(${height}px, 70svh)`
-                  : `min(${height}, 70svh)`,
+                typeof height === "number" ? `min(${height}px, 70svh)` : `min(${height}, 70svh)`,
             }}
             allow="clipboard-write"
           />

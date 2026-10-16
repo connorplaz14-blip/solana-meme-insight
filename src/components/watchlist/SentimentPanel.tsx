@@ -22,7 +22,11 @@ export function SentimentPanel() {
 
   useEffect(() => {
     const sync = () =>
-      setAddresses(getWatchlist().map((w) => w.address).slice(0, 25));
+      setAddresses(
+        getWatchlist()
+          .map((w) => w.address)
+          .slice(0, 25),
+      );
     sync();
     return subscribeWatchlist(sync);
   }, []);
@@ -60,10 +64,7 @@ export function SentimentPanel() {
         right={
           <button
             onClick={() => void load()}
-            className={cn(
-              "text-muted-foreground hover:text-foreground",
-              loading && "animate-spin",
-            )}
+            className={cn("text-muted-foreground hover:text-foreground", loading && "animate-spin")}
             aria-label="Refresh"
           >
             <RotateCw className="h-3 w-3" />
@@ -100,17 +101,9 @@ export function SentimentPanel() {
         <ul className="divide-y divide-border">
           {scores.map((s) => {
             const scoreCls =
-              s.label === "bullish"
-                ? "text-pos"
-                : s.label === "bearish"
-                  ? "text-neg"
-                  : "text-warn";
+              s.label === "bullish" ? "text-pos" : s.label === "bearish" ? "text-neg" : "text-warn";
             const Mom =
-              s.momentum === "up"
-                ? TrendingUp
-                : s.momentum === "down"
-                  ? TrendingDown
-                  : Minus;
+              s.momentum === "up" ? TrendingUp : s.momentum === "down" ? TrendingDown : Minus;
             return (
               <li
                 key={s.address}
@@ -155,10 +148,7 @@ export function SentimentPanel() {
   );
 }
 
-function computeAlerts(
-  current: SentimentScore[],
-  setAlerts: (s: SentimentScore[]) => void,
-) {
+function computeAlerts(current: SentimentScore[], setAlerts: (s: SentimentScore[]) => void) {
   if (typeof window === "undefined") return;
   const prevRaw = window.localStorage.getItem(ALERTS_KEY);
   const prev: Record<string, string[]> = prevRaw ? safeParse(prevRaw) : {};

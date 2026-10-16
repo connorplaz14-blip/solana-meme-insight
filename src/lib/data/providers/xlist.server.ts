@@ -21,17 +21,41 @@ export const SOLANA_KOL_LISTS = [
 // Strip out Twitter's own navigation / system handles so they don't pollute
 // the roster when we scrape the list page.
 const BLOCKED = new Set([
-  "home", "explore", "notifications", "messages", "i", "search", "compose",
-  "settings", "tos", "privacy", "about", "login", "signup", "logout",
-  "twitter", "x", "support", "help", "tweetdeck", "verified", "premium",
-  "intent", "share", "hashtag", "bookmarks", "communities", "topics", "lists",
+  "home",
+  "explore",
+  "notifications",
+  "messages",
+  "i",
+  "search",
+  "compose",
+  "settings",
+  "tos",
+  "privacy",
+  "about",
+  "login",
+  "signup",
+  "logout",
+  "twitter",
+  "x",
+  "support",
+  "help",
+  "tweetdeck",
+  "verified",
+  "premium",
+  "intent",
+  "share",
+  "hashtag",
+  "bookmarks",
+  "communities",
+  "topics",
+  "lists",
 ]);
 
 function extractHandles(md: string): string[] {
   const found = new Set<string>();
   // Match both @mentions and bare profile URLs.
   const reMention = /(?:^|[^A-Za-z0-9_])@([A-Za-z0-9_]{2,15})\b/g;
-  const reProfile = /(?:x|twitter)\.com\/([A-Za-z0-9_]{2,15})(?:[\/?#"\)\s]|$)/gi;
+  const reProfile = /(?:x|twitter)\.com\/([A-Za-z0-9_]{2,15})(?:[/?#")\s]|$)/gi;
   let m: RegExpExecArray | null;
   while ((m = reMention.exec(md)) !== null) {
     const h = m[1];
@@ -55,10 +79,7 @@ export async function fetchListMembers(listId: string): Promise<string[]> {
 
   // Try /members first (more comprehensive when accessible), then the list
   // page itself as a fallback for the timeline preview.
-  const urls = [
-    `https://x.com/i/lists/${id}/members`,
-    `https://x.com/i/lists/${id}`,
-  ];
+  const urls = [`https://x.com/i/lists/${id}/members`, `https://x.com/i/lists/${id}`];
   const all = new Set<string>();
   for (const url of urls) {
     const res = await firecrawlScrapeMarkdown(url).catch(() => null);
@@ -71,9 +92,7 @@ export async function fetchListMembers(listId: string): Promise<string[]> {
   return handles;
 }
 
-export async function fetchAllListMembers(
-  listIds: string[] = SOLANA_KOL_LISTS,
-): Promise<string[]> {
+export async function fetchAllListMembers(listIds: string[] = SOLANA_KOL_LISTS): Promise<string[]> {
   const results = await Promise.allSettled(listIds.map((id) => fetchListMembers(id)));
   const seen = new Set<string>();
   for (const r of results) {

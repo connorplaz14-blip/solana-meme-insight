@@ -1,6 +1,8 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-export async function readCache<T>(key: string): Promise<{ payload: T; fetchedAt: string; ttlSeconds: number; fresh: boolean } | null> {
+export async function readCache<T>(
+  key: string,
+): Promise<{ payload: T; fetchedAt: string; ttlSeconds: number; fresh: boolean } | null> {
   const { data, error } = await supabaseAdmin
     .from("provider_cache")
     .select("payload, fetched_at, ttl_seconds")
@@ -17,9 +19,12 @@ export async function readCache<T>(key: string): Promise<{ payload: T; fetchedAt
 }
 
 export async function writeCache(key: string, payload: unknown, ttlSeconds: number): Promise<void> {
-  await supabaseAdmin
-    .from("provider_cache")
-    .upsert({ key, payload: payload as never, ttl_seconds: ttlSeconds, fetched_at: new Date().toISOString() });
+  await supabaseAdmin.from("provider_cache").upsert({
+    key,
+    payload: payload as never,
+    ttl_seconds: ttlSeconds,
+    fetched_at: new Date().toISOString(),
+  });
 }
 
 /**
