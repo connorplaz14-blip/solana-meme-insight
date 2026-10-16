@@ -105,3 +105,81 @@ def test_tiny_unique_pages_cannot_trigger_thousands_of_requests():
     assert calls <= 40
     assert result.exhausted is False
     assert "page_budget_reached" in result.warnings
+
+
+@pytest.mark.parametrize("side", ["buy", "sell"])
+def test_native_sol_swap_preserves_exact_lamports_and_representation(side):
+    from decimal import Decimal
+    from ctrl_wallet.helius import normalize_records
+    token = {"mint": MINT, "userAccount": WALLET,
+             "rawTokenAmount": {"tokenAmount": "1234567", "decimals": 6}}
+    swap = {"tokenInputs": [] if side == "buy" else [token],
+            "tokenOutputs": [token] if side == "buy" else [],
+            "nativeInput": {"account": WALLET, "amount": "1234567891"} if side == "buy" else None,
+            "nativeOutput": {"account": WALLET, "amount": "1234567891"} if side == "sell" else None}
+    row = {"signature": "synthetic-native-" + side, "timestamp": 1, "slot": 1,
+           "transactionIndex": 0, "type": "SWAP", "events": {"swap": swap}}
+    events, warnings = normalize_records([row], WALLET, MINT)
+    assert len(events) == 1
+    event = events[0]
+    assert event.side == side
+    assert event.quantity == Decimal("1.234567")
+    assert event.counter_quantity == Decimal("1.234567891")
+    assert event.quote_asset_type == "SOL"
+    assert event.provenance["inputAssetRepresentation" if side == "buy" else "outputAssetRepresentation"] == "native"
+    assert event.notional_usd is None
+    assert event.fee_usd is None
+    assert "historical_usd_price_unavailable" in warnings
+    assert "unsupported_swap_route" not in warnings
+
+
+@pytest.mark.parametrize("native", [
+    {"account": WALLET, "amount": "0"},
+    {"account": WALLET, "amount": "-1"},
+    {"account": WALLET, "amount": "1.5"},
+    {"account": WALLET, "amount": True},
+    {"account": WALLET, "amount": "NaN"},
+    {"account": WALLET, "amount": str(2**64)},
+    {"account": MINT, "amount": "100"},
+    {"amount": "100"},
+])
+def test_native_sol_invalid_amount_or_owner_never_creates_event(native):
+    from ctrl_wallet.helius import normalize_records
+    row = {"signature": "synthetic-invalid-native", "timestamp": 1, "slot": 1,
+           "type": "SWAP", "events": {"swap": {"nativeInput": native,
+           "tokenOutputs": [{"mint": MINT, "userAccount": WALLET,
+           "rawTokenAmount": {"tokenAmount": "100", "decimals": 0}}]}}}
+    events, warnings = normalize_records([row], WALLET, MINT)
+    assert events == []
+    assert "unsupported_token_activity" in warnings
+
+
+def test_native_and_wrapped_sol_combined_route_is_not_double_counted():
+    from ctrl_wallet.helius import normalize_records
+    row = {"signature": "synthetic-ambiguous-native", "timestamp": 1, "slot": 1,
+           "type": "SWAP", "events": {"swap": {
+           "nativeInput": {"account": WALLET, "amount": "1000000000"},
+           "tokenInputs": [{"mint": WALLET, "userAccount": WALLET,
+           "rawTokenAmount": {"tokenAmount": "1000000000", "decimals": 9}}],
+           "tokenOutputs": [{"mint": MINT, "userAccount": WALLET,
+           "rawTokenAmount": {"tokenAmount": "100", "decimals": 0}}]}}}
+    events, warnings = normalize_records([row], WALLET, MINT)
+    assert events == []
+    assert "unsupported_swap_route" in warnings
+
+
+@pytest.mark.parametrize("wrap", [True, False])
+def test_sol_wrapping_and_unwrapping_are_never_trades(wrap):
+    from ctrl_wallet.helius import normalize_records, SOL_MINT
+    wrapped = {"mint": SOL_MINT, "userAccount": WALLET,
+               "rawTokenAmount": {"tokenAmount": "1000000000", "decimals": 9}}
+    native = {"account": WALLET, "amount": "1000000000"}
+    swap = {"nativeInput": native if wrap else None,
+            "nativeOutput": None if wrap else native,
+            "tokenInputs": [] if wrap else [wrapped],
+            "tokenOutputs": [wrapped] if wrap else []}
+    row = {"signature": "synthetic-wrap", "timestamp": 1, "slot": 1,
+           "type": "SWAP", "events": {"swap": swap}}
+    events, warnings = normalize_records([row], WALLET, SOL_MINT)
+    assert events == []
+    assert "unsupported_swap_route" in warnings

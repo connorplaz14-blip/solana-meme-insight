@@ -10,6 +10,7 @@ import httpx
 
 from .models import NormalizedEvent
 
+SOL_MINT = "So11111111111111111111111111111111111111112"
 ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 QUOTES = {"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": "USDC",
           "So11111111111111111111111111111111111111112": "SOL"}
@@ -88,7 +89,7 @@ class HeliusHistory:
                 raise ValueError("Helius response schema invalid")
             sources.append({"provider": "helius", "payloadHash": sha256(response.content).hexdigest(),
                             "fetchedAt": datetime.now(timezone.utc).isoformat(),
-                            "recordCount": len(page), "parserVersion": "ctrl-helius-v1"})
+                            "recordCount": len(page), "parserVersion": "ctrl-helius-v2"})
             if not page:
                 return HistoryBatch(list(records.values()), sources, True, None, warnings)
             consumed += len(page)
@@ -119,6 +120,18 @@ def token_amount(leg: dict) -> Decimal:
     return amount
 
 
+def native_leg(entry: dict, wallet: str) -> dict:
+    """Map a provider native swap leg to SOL units without inferring its USD value."""
+    if not isinstance(entry, dict) or entry.get("account") != wallet:
+        raise ValueError("Native swap owner unavailable")
+    lamports = Decimal(str(entry.get("amount")))
+    if (not lamports.is_finite() or lamports <= 0 or lamports > 2**64 - 1
+            or lamports != lamports.to_integral_value()):
+        raise ValueError("Invalid native amount")
+    return {"mint": SOL_MINT, "userAccount": wallet,
+            "rawTokenAmount": {"tokenAmount": str(lamports), "decimals": 9}}
+
+
 def normalize_records(records: list[dict], wallet: str, mint: str):
     events, warnings = [], set()
     for row in records:
@@ -131,13 +144,21 @@ def normalize_records(records: list[dict], wallet: str, mint: str):
                 if any(t.get("mint") == mint for t in transfers):
                     warnings.add("unsupported_token_activity")
                 continue
-            inputs = swap.get("tokenInputs") or []
-            outputs = swap.get("tokenOutputs") or []
+            inputs = list(swap.get("tokenInputs") or [])
+            outputs = list(swap.get("tokenOutputs") or [])
+            if swap.get("nativeInput") is not None:
+                inputs.append(native_leg(swap["nativeInput"], wallet))
+            if swap.get("nativeOutput") is not None:
+                outputs.append(native_leg(swap["nativeOutput"], wallet))
             # Ambiguous multi-leg routes are intentionally not guessed.
             if len(inputs) != 1 or len(outputs) != 1:
                 warnings.add("unsupported_swap_route")
                 continue
             incoming, outgoing = outputs[0], inputs[0]
+            # SOL wrap/unwrap and same-asset conversions are not economic trades.
+            if incoming.get("mint") == outgoing.get("mint"):
+                warnings.add("unsupported_swap_route")
+                continue
             side = "buy" if incoming.get("mint") == mint else "sell"
             token, quote = (incoming, outgoing) if side == "buy" else (outgoing, incoming)
             if token.get("mint") != mint:
@@ -157,7 +178,9 @@ def normalize_records(records: list[dict], wallet: str, mint: str):
                 output_amount_ui=token_amount(incoming), source_confidence="parsed_provider",
                 slot=int(row["slot"]), provider_name="helius", counter_mint=quote["mint"],
                 counter_quantity=quote_quantity, quote_asset_type=QUOTES[quote["mint"]],
-                provenance={"transactionIndex": row.get("transactionIndex", 0)},
+                provenance={"transactionIndex": row.get("transactionIndex", 0),
+                            "inputAssetRepresentation": "native" if swap.get("nativeInput") is not None else "spl",
+                            "outputAssetRepresentation": "native" if swap.get("nativeOutput") is not None else "spl"},
                 warning_codes=("historical_usd_price_unavailable", "fees_usd_unavailable"),
             ))
             if row.get("transactionIndex") is None:

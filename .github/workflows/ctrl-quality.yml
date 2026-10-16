@@ -3,7 +3,7 @@ name: CTRL quality
 on:
   pull_request:
   push:
-    branches: [main, "codex/ctrl-intelligence-*"]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
