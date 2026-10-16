@@ -218,3 +218,13 @@ Most existing UI paths are formatting-only; the dedicated style commit isolates 
 3. Deploy Python API/worker and a protected web preview when Vercel project creation is permitted.
 4. Run real-browser desktop/mobile and full live evidence verification.
 5. Add coverage-qualified wallet candidate discovery and early-token evidence ranking in subsequent accepted slices; seek approval before any production deployment.
+
+## Continued increment: mandatory Postgres CI
+
+The user approved continued implementation. Added `.github/workflows/ctrl-quality.yml` with independent web and Postgres 17 jobs, read-only repository permissions, pinned action commits, dependency-lock installs, bounded runtimes and no provider/deployment credentials. CI sets `CTRL_REQUIRE_POSTGRES=1`; missing database configuration now fails instead of silently skipping persistence verification. Local offline tests remain usable without a database.
+
+Database fixtures create and remove a random schema per test, so claims, admission counts and repeated runs cannot share test jobs. Added real-database cases for parallel workers, queue admission, expired leases before and after reclaim, completed idempotent reads, and rollback after JSON persistence failure. A fresh reviewer caught the original expiry-test gap; assertions now exercise expiry before replacing the lease UUID. Concurrent claim tests synchronize their start but do not promise exhaustive scheduler interleavings.
+
+Fresh local results: 17 frontend tests passed; 39 Python tests passed and 8 real-Postgres tests skipped because direct database connectivity is still unavailable. Ruff and compileall passed. Typecheck and Vercel-target build passed. ESLint: 0 errors, 12 existing warnings. The mandatory-database guard was observed failing before implementation and passing afterward. The new SQL cases require the hosted CI run; they are not claimed verified from local skips. CI execution status is recorded separately below when available. No new preview URL; Vercel project creation remains blocked by the previously observed permission error.
+
+Exact increment paths: `.github/workflows/ctrl-quality.yml`, `services/wallet/tests/conftest.py`, `services/wallet/tests/test_database_gate.py`, `services/wallet/tests/test_store.py`, `services/wallet/README.md`, `docs/CTRL_VERIFICATION.md`.

@@ -13,7 +13,7 @@ Private Python service + durable Postgres worker. The app never signs or submits
 
 ## Tests
 
-From `services/wallet`: `pytest -q`; `ruff check .`. For real Postgres tests set `CTRL_TEST_DATABASE_URL` to a disposable isolated test database. Tests create uniquely named jobs and never delete production/user data.
+From `services/wallet`: `pytest -q`; `ruff check .`. For real Postgres tests set `CTRL_TEST_DATABASE_URL` to a disposable isolated test database. Every database test creates and removes its own random `ctrl_test_*` schema. Use only a disposable database whose role can create schemas. Tests never truncate shared tables. Set `CTRL_REQUIRE_POSTGRES=1` to make missing database configuration a hard failure instead of a skip. The CTRL quality GitHub Actions workflow uses a dedicated Postgres 17 service with mandatory integration tests, without provider or deployment credentials.
 
 ## Current truth limits
 
