@@ -89,7 +89,7 @@ class HeliusHistory:
                 raise ValueError("Helius response schema invalid")
             sources.append({"provider": "helius", "payloadHash": sha256(response.content).hexdigest(),
                             "fetchedAt": datetime.now(timezone.utc).isoformat(),
-                            "recordCount": len(page), "parserVersion": "ctrl-helius-v2"})
+                            "recordCount": len(page), "parserVersion": "ctrl-helius-v3"})
             if not page:
                 return HistoryBatch(list(records.values()), sources, True, None, warnings)
             consumed += len(page)
@@ -109,25 +109,31 @@ class HeliusHistory:
         return HistoryBatch(list(records.values()), sources, False, cursor, warnings)
 
 
+def atomic_amount(value) -> Decimal:
+    """Positive Solana u64 base units; malformed values must not become balances."""
+    try:
+        amount = Decimal(str(value))
+    except InvalidOperation:
+        raise ValueError("Invalid atomic amount") from None
+    if (not amount.is_finite() or amount <= 0 or amount > 2**64 - 1
+            or amount != amount.to_integral_value()):
+        raise ValueError("Invalid atomic amount")
+    return amount
+
+
 def token_amount(leg: dict) -> Decimal:
     raw = leg["rawTokenAmount"]
-    decimals = int(raw["decimals"])
-    if not 0 <= decimals <= 30:
+    decimals = raw["decimals"]
+    if type(decimals) is not int or not 0 <= decimals <= 30:
         raise ValueError("Unsupported token decimals")
-    amount = Decimal(str(raw["tokenAmount"])) / (Decimal(10) ** decimals)
-    if not amount.is_finite() or amount <= 0:
-        raise ValueError("Invalid token amount")
-    return amount
+    return atomic_amount(raw["tokenAmount"]) / (Decimal(10) ** decimals)
 
 
 def native_leg(entry: dict, wallet: str) -> dict:
     """Map a provider native swap leg to SOL units without inferring its USD value."""
     if not isinstance(entry, dict) or entry.get("account") != wallet:
         raise ValueError("Native swap owner unavailable")
-    lamports = Decimal(str(entry.get("amount")))
-    if (not lamports.is_finite() or lamports <= 0 or lamports > 2**64 - 1
-            or lamports != lamports.to_integral_value()):
-        raise ValueError("Invalid native amount")
+    lamports = atomic_amount(entry.get("amount"))
     return {"mint": SOL_MINT, "userAccount": wallet,
             "rawTokenAmount": {"tokenAmount": str(lamports), "decimals": 9}}
 

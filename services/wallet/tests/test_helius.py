@@ -183,3 +183,15 @@ def test_sol_wrapping_and_unwrapping_are_never_trades(wrap):
     events, warnings = normalize_records([row], WALLET, SOL_MINT)
     assert events == []
     assert "unsupported_swap_route" in warnings
+
+
+@pytest.mark.parametrize("raw", [
+    {"tokenAmount": "100.5", "decimals": 6},
+    {"tokenAmount": str(2**64), "decimals": 6},
+    {"tokenAmount": "100", "decimals": 1.5},
+    {"tokenAmount": "100", "decimals": True},
+])
+def test_spl_raw_units_and_decimals_cannot_be_fractional_or_overflow(raw):
+    from ctrl_wallet.helius import token_amount
+    with pytest.raises(ValueError):
+        token_amount({"rawTokenAmount": raw})

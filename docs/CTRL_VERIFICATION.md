@@ -240,3 +240,9 @@ The parser previously required one SPL input and output, dropping native-SOL-onl
 Local Python: **52 passed, 8 database skips**, Ruff passed. New native cases use synthetic provider records, not fabricated live observations. Latest hosted results will be recorded after CI. Web source is unchanged from the already passing hosted run. Workflow push trigger is narrowed to main; pull requests retain checks without duplicating push/PR executions on the feature branch.
 
 Exact native increment paths: `services/wallet/ctrl_wallet/helius.py`, `services/wallet/tests/test_helius.py`, `services/wallet/README.md`, `docs/CTRL_SOURCE_PROVENANCE.md`, `docs/CTRL_VERIFICATION.md`, `.github/workflows/ctrl-quality.yml`.
+
+Hosted verification of native parser commit `d68ad62e7afe6bad27db77c4ca451498075889d8`: [run 38966501926](https://github.com/connorplaz14-blip/solana-meme-insight/actions/runs/38966501926) passed both jobs. Downloaded Postgres job logs confirm **60 Python tests passed, no skips**. Web tests, lint, typecheck and build also passed.
+
+### Continued increment: strict provider base units
+
+Four further red-first regressions found SPL raw amounts accepted fractional/overflow base units and fractional/boolean decimals were silently coerced. SPL and native quantities now share a positive integer uint64 validator; decimals must be genuine integers within the existing supported 0–30 range. These checks follow Solana's documented token account `u64` amount representation. The parser is now `ctrl-helius-v3`, preserving the distinction from already persisted v1/v2 evidence. Local Python **56 passed, 8 Postgres skips**, Ruff passed; hosted CI will verify all 64 cases. Exact files: `services/wallet/ctrl_wallet/helius.py`, `services/wallet/tests/test_helius.py`, `docs/CTRL_SOURCE_PROVENANCE.md`, `docs/CTRL_VERIFICATION.md`.
