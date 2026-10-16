@@ -14,7 +14,7 @@
 | Check | Result |
 | --- | --- |
 | Frontend Vitest | 17 passed across 4 files |
-| Python pytest | 38 passed; 4 skipped (real psycopg/Postgres integration unavailable from this runtime) |
+| Python pytest | 64 passed, no skips in hosted Postgres 17 CI; local offline run 56 passed/8 skips |
 | Python ruff / compileall | Pass |
 | Whole-app ESLint | 0 errors; 12 existing warnings (refresh exports / existing stream hook) |
 | TypeScript tsc --noEmit | Pass |
@@ -30,7 +30,7 @@ Created a dedicated development project `ctrl-intelligence-preview` (Neon projec
 
 Applied the checked-in migration through the connected SQL interface. Inserted a clearly labelled synthetic job, atomically claimed it, persisted its immutable synthetic $10 gross / $3 fees / $7 net payload, then read it back in a separate SQL call. A stale/wrong-lease update affected zero rows and retained the complete payload.
 
-This proves the SQL schema/persistence path on a real isolated PostgreSQL instance. It does not prove the Python psycopg network path: runtime DNS/network access blocks direct database connections. Four driver/worker integration tests therefore remain skipped. A local Postgres attempt was also blocked by runtime user/process permissions; it was not treated as successful persistence.
+The Neon SQL smoke proves the schema/persistence path on its isolated PostgreSQL instance. Direct runtime DNS/network access to Neon is still blocked. Hosted GitHub CI now independently verifies all eight psycopg/worker integration cases against disposable Postgres 17, with no skipped tests. This closes the driver-test gap without claiming Neon application connectivity. A local Postgres attempt was blocked by runtime user/process permissions and was not treated as successful persistence.
 
 ## Live provider evidence
 A ten-record read-only Helius Enhanced-history request succeeded for public wallet `86xCnPeV69n6t3DnyGvkKobf9FdN2H9oiVDdaMpo2MMY`. The returned records were TRANSFER/UNKNOWN, not a supported priced-swap sample. Pagination correctly stopped as partial at the ten-record budget. A separate finalized `getTransaction` RPC read confirmed the first transaction's slot and integer network fee; no transaction was submitted.
@@ -56,7 +56,7 @@ Private-preview access uses a session-only operator passphrase at the BFF, not a
 - User's continuous-coding instruction authorizes native implementation without repeated planning approvals.
 - Adapt the owner's accounting core in the target repository with provenance rather than editing the source project; future upstream sync requires deliberate patch review.
 - Keep unknown values unavailable; do not substitute fixtures to make the live UI appear populated. Synthetic values above exist only in tests/SQL audit records.
-- Direct driver integration and real-browser/deployment acceptance stay blocked; do not infer them from unit tests or a build.
+- Driver integration is now verified in hosted Postgres CI. Neon application connectivity, real-browser acceptance and hosted deployment remain open; do not infer them from CI or a build.
 - Existing lint warnings are deferred; the full lint command succeeds with zero errors.
 
 ## Local implementation commits
@@ -69,6 +69,8 @@ Private-preview access uses a session-only operator passphrase at the BFF, not a
 Remote delivery is a checkpoint commit from the verified original branch head, using the final reviewed tree and an expected-head guard. It preserves all upstream files and does not expose earlier internal audit drafts in public commit history. The final response records the remote checkpoint SHA.
 
 ## Exact changed paths
+- `.github/workflows/ctrl-quality.yml`
+- `services/wallet/tests/test_database_gate.py`
 - `.gitignore`
 - `docs/CTRL_SOURCE_PROVENANCE.md`
 - `docs/superpowers/plans/2026-10-16-ctrl-wallet.md`
@@ -246,3 +248,14 @@ Hosted verification of native parser commit `d68ad62e7afe6bad27db77c4ca451498075
 ### Continued increment: strict provider base units
 
 Four further red-first regressions found SPL raw amounts accepted fractional/overflow base units and fractional/boolean decimals were silently coerced. SPL and native quantities now share a positive integer uint64 validator; decimals must be genuine integers within the existing supported 0–30 range. These checks follow Solana's documented token account `u64` amount representation. The parser is now `ctrl-helius-v3`, preserving the distinction from already persisted v1/v2 evidence. Local Python **56 passed, 8 Postgres skips**, Ruff passed; hosted CI will verify all 64 cases. Exact files: `services/wallet/ctrl_wallet/helius.py`, `services/wallet/tests/test_helius.py`, `docs/CTRL_SOURCE_PROVENANCE.md`, `docs/CTRL_VERIFICATION.md`.
+
+### Final hosted result and remote commits
+
+[CTRL quality run 38967149595](https://github.com/connorplaz14-blip/solana-meme-insight/actions/runs/38967149595) completed successfully for `d7d37420535fe0e64efb69efd95d7ec40ae6709d`. Downloaded job logs confirm **64 Python tests passed with no skips**, **17 frontend tests passed**, Ruff/compileall passed, ESLint 0 errors/12 warnings, TypeScript and Vercel-target build passed. Python emits one upstream Starlette/httpx deprecation warning.
+
+Published continuation commits:
+- `6136209a673a1d36afa962f9ddaccf4bd321e832` — mandatory isolated Postgres CI and storage regression coverage.
+- `d68ad62e7afe6bad27db77c4ca451498075889d8` — native SOL swap quantities/provenance; reject wrap/unwrap trades.
+- `d7d37420535fe0e64efb69efd95d7ec40ae6709d` — strict SPL/native base units and decimals.
+
+Nine unique continuation files changed, listed in the increment sections above. All branch updates used expected-head guards; main remains `32e3d10760c902b80f1a43e5f087c495dce165b6`. Draft PR stays unmerged. Next implementation priorities remain historical USD/fee evidence, canonical transaction ordering/transfer basis and hosted preview/API/worker acceptance before expanding discovery or trusted rankings.
